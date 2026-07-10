@@ -1,80 +1,147 @@
 import { useState } from "react";
 import { WorkflowForm } from "./components/WorkflowForm";
 import { YamlPreview } from "./components/YamlPreview";
-import type { WorkflowConfig, WorkflowStep } from "./@types/workflow";
-import { Sparkles } from "lucide-react";
+import type { WorkflowConfig, VirtualFile } from "./@types/workflow";
+
+const PRO_ENTERPRISE_DEFAULT: WorkflowConfig = {
+  filename: "ci-matrix.yml",
+  name: "Cross-Platform Pipeline",
+  on_event: "push",
+  branches: "main, development",
+  runs_on: "ubuntu-latest",
+  matrix_key: "python-version",
+  matrix_values: "3.10, 3.11, 3.12",
+  steps: [
+    {
+      id: "step-checkout",
+      name: "Initialize and Checkout repository source-code",
+      type: "uses",
+      content: "actions/checkout@v4",
+      env: "",
+    },
+    {
+      id: "step-setup-lang",
+      name: "Setup Python runtime target version",
+      type: "uses",
+      content:
+        "actions/setup-python@v5\nwith:\n  python-version: ${{ matrix.python-version }}",
+      env: "",
+    },
+    {
+      id: "step-script",
+      name: "Install matrix requirements and run complete check suite",
+      type: "run",
+      content:
+        "pip install -r requirements.txt\nflake8 . --count --select=E9,F63,F7,F82 --show-source --statistics\npytest tests/",
+      env: "STAGE=Testing\nDEBUG=False",
+    },
+  ],
+};
 
 function App() {
-  const [generatedYaml, setGeneratedYaml] = useState<string | null>(null);
+  const [files, setFiles] = useState<VirtualFile[]>([
+    {
+      id: "f-enterprise",
+      filename: "ci-matrix.yml",
+      yaml: null,
+      config: PRO_ENTERPRISE_DEFAULT,
+    },
+  ]);
+  const [activeFileId, setActiveFileId] = useState<string>("f-enterprise");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleGenerateConfiguration = async (
-    config: WorkflowConfig & { steps: WorkflowStep[] },
-  ) => {
+  const activeFile = files.find((f) => f.id === activeFileId)!;
+
+  const handleUpdateConfig = (updatedConfig: WorkflowConfig) => {
+    setFiles((prev) =>
+      prev.map((f) =>
+        f.id === activeFileId
+          ? { ...f, filename: updatedConfig.filename, config: updatedConfig }
+          : f,
+      ),
+    );
+  };
+
+  const handleAddFile = () => {
+    const newId = `f-${Date.now()}`;
+    const filename = `pipeline-suite-${files.length + 1}.yml`;
+    const newFile: VirtualFile = {
+      id: newId,
+      filename: filename,
+      yaml: null,
+      config: {
+        ...PRO_ENTERPRISE_DEFAULT,
+        filename: filename,
+        name: "Automated Build System",
+      },
+    };
+    setFiles([...files, newFile]);
+    setActiveFileId(newId);
+  };
+
+  const triggerYamlGeneration = async () => {
     setLoading(true);
     setError(null);
-    setGeneratedYaml(null);
 
     try {
       const response = await fetch(
         "http://localhost:8000/api/generate-workflow",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(config),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(activeFile.config),
         },
       );
 
-      if (!response.ok) {
-        throw new Error(`Erreur serveur : ${response.status}`);
-      }
+      if (!response.ok)
+        throw new Error(`Échec serveur backend (${response.status}).`);
 
       const data = await response.json();
-
-      if (data && data.yaml) {
-        setGeneratedYaml(data.yaml); // Met à jour la preview avec le vrai YAML
-      } else {
-        throw new Error("Le format de réponse du serveur est incorrect.");
-      }
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === activeFileId ? { ...f, yaml: data.yaml } : f,
+        ),
+      );
     } catch (err: any) {
-      console.error("Détail de l'erreur interceptée :", err);
-      setError(err.message || "Impossible de joindre le serveur backend.");
+      console.error(err);
+      setError(
+        err.message ||
+          "Impossible de joindre le service de compilation Python FastAPI.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300 py-12 px-4 sm:px-6 lg:px-8 flex flex-col items-center">
-      {/* Header */}
-      <header className="text-center mb-12 max-w-xl">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 text-xs font-semibold rounded-full mb-3 border border-indigo-100 dark:border-indigo-900/30">
-          <Sparkles className="w-3.5 h-3.5 fill-current" /> Interface v1.0
-          Standard Base
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          GitHub Actions{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-500">
-            Low-Code
-          </span>{" "}
-          Builder
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+      <header className="text-center mb-6 max-w-2xl">
+        <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          Visual GitHub Actions{" "}
+          <span className="text-indigo-600">Enterprise Studio</span>
         </h1>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          Configurez graphiquement vos pipelines CI/CD simples et obtenez
-          instantanément un code YAML propre et valide.
+        <p className="mt-1 text-xs text-slate-400">
+          Génération industrielle de scripts multi-lignes, injection de scopes
+          d'environnement par tâche et matrices multi-langages.
         </p>
       </header>
 
-      {/* Main Workspace Layout */}
-      <main className="w-full max-w-5xl flex flex-col lg:flex-row items-center lg:items-start justify-center gap-8">
+      <main className="w-full max-w-7xl flex flex-col lg:flex-row items-stretch justify-center gap-6">
         <WorkflowForm
-          onGenerate={handleGenerateConfiguration}
+          activeConfig={activeFile.config}
+          onChangeConfig={handleUpdateConfig}
+          onGenerate={triggerYamlGeneration}
           loading={loading}
         />
-        <YamlPreview yaml={generatedYaml} loading={loading} error={error} />
+        <YamlPreview
+          files={files}
+          activeFileId={activeFileId}
+          onSelectFile={setActiveFileId}
+          onAddFile={handleAddFile}
+          loading={loading}
+          error={error}
+        />
       </main>
     </div>
   );
