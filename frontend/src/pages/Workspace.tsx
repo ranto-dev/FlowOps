@@ -1,3 +1,4 @@
+// frontend/src/pages/Workspace.tsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -9,6 +10,7 @@ import {
   Trash2,
   Sliders,
   ArrowLeft,
+  User,
 } from "lucide-react";
 import { WorkflowForm } from "../components/WorkflowForm";
 import { YamlPreview } from "../components/YamlPreview";
@@ -25,7 +27,10 @@ export const Workspace: React.FC = () => {
     "projects",
   );
 
-  // --- ÉTATS CRUD PROJETS ---
+  // ─── LECTURE SYNCHRONE DES PARAMÈTRES DU COMPTE GITHUB ───
+  const username = localStorage.getItem("flowops_user") || "Developer";
+  const avatarUrl = localStorage.getItem("flowops_avatar");
+
   const [projects, setProjects] = useState<Project[]>([
     {
       id: "p-1",
@@ -33,13 +38,9 @@ export const Workspace: React.FC = () => {
       description: "React Deployment suite",
     },
   ]);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
-    null,
-  );
   const [newProjName, setNewProjName] = useState("");
   const [newProjDesc, setNewProjDesc] = useState("");
 
-  // --- ÉTATS CONFIG WORKFLOW (Intégration de l'ancienne feature) ---
   const [isConfiguringWorkflow, setIsConfiguringWorkflow] = useState(false);
   const [activeConfig, setActiveConfig] = useState<any>(null);
   const [compiledYaml, setCompiledYaml] = useState<string | null>(null);
@@ -47,12 +48,12 @@ export const Workspace: React.FC = () => {
     "form",
   );
 
+  // ─── ACTION SECURE DE DÉCONNEXION DE SESSION ───
   const handleLogout = () => {
-    localStorage.removeItem("flowops_token");
-    navigate("/");
+    localStorage.clear();
+    navigate("/auth", { replace: true });
   };
 
-  // --- LOGIQUE CRUD ---
   const createProject = () => {
     if (!newProjName.trim()) return;
     const newProj: Project = {
@@ -68,66 +69,89 @@ export const Workspace: React.FC = () => {
   const deleteProject = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setProjects(projects.filter((p) => p.id !== id));
-    if (selectedProjectId === id) setSelectedProjectId(null);
   };
 
   return (
     <div className="flex-1 w-full max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row gap-6 text-left">
-      {/* BARRE LATÉRALE DE NAVIGATION DU WORKSPACE */}
-      <aside className="w-full md:w-64 shrink-0 flex flex-col gap-1 border-r border-slate-100 pr-4">
-        <button
-          onClick={() => {
-            setActiveTab("projects");
-            setIsConfiguringWorkflow(false);
-          }}
-          className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === "projects" ? "bg-purple-50 text-purple-700" : "text-slate-600 hover:bg-slate-50"}`}
-        >
-          <FolderGit2 className="w-4 h-4" /> My Projects
-        </button>
-        <button
-          onClick={() => {
-            setActiveTab("history");
-            setIsConfiguringWorkflow(false);
-          }}
-          className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === "history" ? "bg-purple-50 text-purple-700" : "text-slate-600 hover:bg-slate-50"}`}
-        >
-          <History className="w-4 h-4" /> History & Logs
-        </button>
-        <button
-          onClick={() => {
-            setActiveTab("help");
-            setIsConfiguringWorkflow(false);
-          }}
-          className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === "help" ? "bg-purple-50 text-purple-700" : "text-slate-600 hover:bg-slate-50"}`}
-        >
-          <HelpCircle className="w-4 h-4" /> Help Center
-        </button>
-        <hr className="my-2 border-slate-100" />
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-bold text-red-500 hover:bg-red-50 transition-all"
-        >
-          <LogOut className="w-4 h-4" /> Logout
-        </button>
+      {/* SIDEBAR AVEC BLOC PROFIL CONNECTÉ */}
+      <aside className="w-full md:w-64 shrink-0 flex flex-col justify-between border-r border-slate-100 pr-4 min-h-[500px]">
+        <div className="flex flex-col gap-1">
+          <button
+            onClick={() => {
+              setActiveTab("projects");
+              setIsConfiguringWorkflow(false);
+            }}
+            className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === "projects" ? "bg-purple-50 text-purple-700" : "text-slate-600 hover:bg-slate-50"}`}
+          >
+            <FolderGit2 className="w-4 h-4" /> My Projects
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("history");
+              setIsConfiguringWorkflow(false);
+            }}
+            className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === "history" ? "bg-purple-50 text-purple-700" : "text-slate-600 hover:bg-slate-50"}`}
+          >
+            <History className="w-4 h-4" /> History & Logs
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("help");
+              setIsConfiguringWorkflow(false);
+            }}
+            className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === "help" ? "bg-purple-50 text-purple-700" : "text-slate-600 hover:bg-slate-50"}`}
+          >
+            <HelpCircle className="w-4 h-4" /> Help Center
+          </button>
+        </div>
+
+        {/* COMPOSANT USER EN BAS DE LA SIDEBAR */}
+        <div className="pt-4 border-t border-slate-100 space-y-3">
+          <div className="flex items-center gap-3 px-2 py-1.5 bg-slate-50 rounded-2xl border border-slate-100">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={username}
+                className="w-8 h-8 rounded-full border border-purple-200"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
+                <User className="w-4 h-4" />
+              </div>
+            )}
+            <div className="flex flex-col overflow-hidden">
+              <span className="text-[11px] font-black text-slate-800 truncate">
+                {username}
+              </span>
+              <span className="text-[9px] font-mono font-bold text-emerald-600 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>{" "}
+                Connected via API
+              </span>
+            </div>
+          </div>
+
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-xs font-bold text-red-500 hover:bg-red-50 transition-all border border-transparent hover:border-red-100"
+          >
+            <LogOut className="w-4 h-4" /> Logout from Session
+          </button>
+        </div>
       </aside>
 
-      {/* ZONE CENTRALE CONTENU DYNAMIQUE */}
+      {/* CONTENU CENTRAL DE L'WORKSPACE */}
       <section className="flex-1 bg-white">
-        {/* ONGLET 1: PROJETS */}
         {activeTab === "projects" && !isConfiguringWorkflow && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="text-xl font-black text-slate-900 tracking-tight">
-                  Projects Dashboard
-                </h3>
-                <p className="text-xs text-slate-400">
-                  Manage repositories and assign deployment states
-                </p>
-              </div>
+            <div>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                Projects Dashboard
+              </h3>
+              <p className="text-xs text-slate-400">
+                Manage repositories and assign deployment states
+              </p>
             </div>
 
-            {/* Formulaire de création Rapide */}
             <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-400 uppercase">
@@ -161,7 +185,6 @@ export const Workspace: React.FC = () => {
               </button>
             </div>
 
-            {/* Grille de rendu des projets */}
             <div className="grid grid-cols-1 gap-3">
               {projects.map((p) => (
                 <div
@@ -179,7 +202,6 @@ export const Workspace: React.FC = () => {
                   <div className="flex gap-2">
                     <button
                       onClick={() => {
-                        // Initialisation forcée avec notre structure Node préconfigurée
                         setActiveConfig({
                           filename: `${p.name.toLowerCase().replace(/ /g, "-")}-ci.yaml`,
                           name: `${p.name} Pipeline`,
@@ -222,7 +244,7 @@ export const Workspace: React.FC = () => {
           </div>
         )}
 
-        {/* INTEGRATION DE LA FEATURE PRÉCÉDENTE SI CLICK CONFIGURE WORKFLOW */}
+        {/* WORKFLOW CONFIGURATION WORKSPACE INTEGRATION */}
         {activeTab === "projects" && isConfiguringWorkflow && (
           <div className="space-y-4 animate-in zoom-in-95 duration-200">
             <button
@@ -239,7 +261,7 @@ export const Workspace: React.FC = () => {
                 onGenerate={async () => {
                   setViewState("loading");
                   const res = await fetch(
-                    "http://localhost:8000/api/generate-workflow",
+                    `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/api/generate-workflow`,
                     {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
@@ -250,7 +272,7 @@ export const Workspace: React.FC = () => {
                   setTimeout(() => {
                     setCompiledYaml(data.yaml);
                     setViewState("preview");
-                  }, 8000);
+                  }, 2000);
                 }}
                 loading={false}
               />
@@ -277,12 +299,15 @@ export const Workspace: React.FC = () => {
                 onNewWorkflow={() => setIsConfiguringWorkflow(false)}
                 onReconfigure={() => setViewState("form")}
                 onSaveToServer={async () => {
-                  await fetch("http://localhost:8000/api/save-workflow", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(activeConfig),
-                  });
-                  alert("Saved successfully inside backend/generated/!");
+                  await fetch(
+                    `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/api/save-workflow`,
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(activeConfig),
+                    },
+                  );
+                  alert("Saved successfully!");
                 }}
                 saveStatus={null}
               />
@@ -290,31 +315,23 @@ export const Workspace: React.FC = () => {
           </div>
         )}
 
-        {/* ONGLET 2: HISTORIQUES */}
         {activeTab === "history" && (
           <div className="space-y-4 border border-dashed rounded-3xl p-8 text-center text-slate-400 text-xs">
             <History className="w-8 h-8 mx-auto opacity-30 text-purple-600" />
             <p className="font-bold text-slate-700">
               No Execution Logs available
             </p>
-            <p className="max-w-xs mx-auto text-[11px]">
-              The automatic GitHub Action dispatch trigger execution system is
-              scheduled for the next release milestone.
-            </p>
           </div>
         )}
 
-        {/* ONGLET 3: HELP */}
         {activeTab === "help" && (
           <div className="space-y-3 p-2">
             <h3 className="text-md font-bold text-slate-900">
               FlowOps Documentation
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              To wire a custom environment block, toggle the matrix values
-              within the visual tree. Ensure your GitHub Repository contains
-              write access permissions before running the physical export
-              system.
+              Ensure your GitHub Repository contains write access permissions
+              before running the physical export system.
             </p>
           </div>
         )}
