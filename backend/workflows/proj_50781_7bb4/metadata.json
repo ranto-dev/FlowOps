@@ -1,0 +1,8 @@
+{
+    "id": "proj_50781_7bb4",
+    "name": "test",
+    "description": "description",
+    "repository": "ranto-dev/FlowOps",
+    "has_workflow": true,
+    "yaml_filename": "test-ci.yaml"
+}
