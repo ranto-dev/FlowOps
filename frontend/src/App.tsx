@@ -1,3 +1,4 @@
+// frontend/src/App.tsx
 import { useState } from "react";
 import { WorkflowForm } from "./components/WorkflowForm";
 import { YamlPreview } from "./components/YamlPreview";
@@ -44,8 +45,8 @@ const COMPLEX_FLOWOPS_INITIAL: FlowOpsWorkflowConfig = {
       id: "j-deploy",
       name: "Production Deployment",
       runs_on: "ubuntu-latest",
-      needs: ["build-and-test"], // Dépendance hiérarchique 'needs'
-      job_if: "github.ref == 'refs/heads/main'", // Condition
+      needs: ["build-and-test"],
+      job_if: "github.ref == 'refs/heads/main'",
       steps: [
         {
           id: "s-6",
@@ -135,8 +136,8 @@ function App() {
           🚀 Flow<span className="text-indigo-600">Ops</span> Studio
         </h1>
         <p className="mt-1 text-xs text-slate-400">
-          Orchestrateur No-Code/Low-Code multi-jobs de niveau industriel basé
-          sur les spécifications de votre rapport CI/CD.
+          Orchestrateur No-Code/Low-Code multi-jobs modulaire basé sur vos
+          recherches DevOps.
         </p>
       </header>
 
