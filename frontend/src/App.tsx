@@ -1,39 +1,60 @@
 import { useState } from "react";
 import { WorkflowForm } from "./components/WorkflowForm";
 import { YamlPreview } from "./components/YamlPreview";
-import type { WorkflowConfig, VirtualFile } from "./@types/workflow";
+import type { FlowOpsWorkflowConfig, VirtualFile } from "./@types/workflow";
 
-const PRO_ENTERPRISE_DEFAULT: WorkflowConfig = {
-  filename: "ci-matrix.yml",
-  name: "Cross-Platform Pipeline",
-  on_event: "push",
-  branches: "main, development",
-  runs_on: "ubuntu-latest",
-  matrix_key: "python-version",
-  matrix_values: "3.10, 3.11, 3.12",
-  steps: [
+const COMPLEX_FLOWOPS_INITIAL: FlowOpsWorkflowConfig = {
+  filename: "production-pipeline.yml",
+  name: "FlowOps Advanced Suite",
+  on_events: ["push"],
+  branches: "main",
+  global_env: "PROJECT_NAME=FlowOpsCore",
+  jobs: [
     {
-      id: "step-checkout",
-      name: "Initialize and Checkout repository source-code",
-      type: "uses",
-      content: "actions/checkout@v4",
-      env: "",
+      id: "j-build",
+      name: "Build And Test",
+      runs_on: "ubuntu-latest",
+      needs: [],
+      matrix_key: "node-version",
+      matrix_values: "20, 22",
+      steps: [
+        { id: "s-1", name: "📥 Clone Repository", type: "checkout" },
+        { id: "s-2", name: "🟢 Load Node Matrix", type: "setup-node" },
+        {
+          id: "s-3",
+          name: "📦 Secure dependencies installation",
+          type: "npm",
+          npm_command: "ci",
+        },
+        {
+          id: "s-4",
+          name: "🧪 Execute tests suite",
+          type: "npm",
+          npm_command: "test",
+        },
+        {
+          id: "s-5",
+          name: "💾 Save build state",
+          type: "upload-artifact",
+          artifact_path: "dist/",
+        },
+      ],
     },
     {
-      id: "step-setup-lang",
-      name: "Setup Python runtime target version",
-      type: "uses",
-      content:
-        "actions/setup-python@v5\nwith:\n  python-version: ${{ matrix.python-version }}",
-      env: "",
-    },
-    {
-      id: "step-script",
-      name: "Install matrix requirements and run complete check suite",
-      type: "run",
-      content:
-        "pip install -r requirements.txt\nflake8 . --count --select=E9,F63,F7,F82 --show-source --statistics\npytest tests/",
-      env: "STAGE=Testing\nDEBUG=False",
+      id: "j-deploy",
+      name: "Production Deployment",
+      runs_on: "ubuntu-latest",
+      needs: ["build-and-test"], // Dépendance hiérarchique 'needs'
+      job_if: "github.ref == 'refs/heads/main'", // Condition
+      steps: [
+        {
+          id: "s-6",
+          name: "🐳 Package & Ship Container",
+          type: "docker",
+          docker_image: "flowops-api",
+          docker_registry: "ghcr",
+        },
+      ],
     },
   ],
 };
@@ -41,19 +62,19 @@ const PRO_ENTERPRISE_DEFAULT: WorkflowConfig = {
 function App() {
   const [files, setFiles] = useState<VirtualFile[]>([
     {
-      id: "f-enterprise",
-      filename: "ci-matrix.yml",
+      id: "f-1",
+      filename: "production-pipeline.yml",
       yaml: null,
-      config: PRO_ENTERPRISE_DEFAULT,
+      config: COMPLEX_FLOWOPS_INITIAL,
     },
   ]);
-  const [activeFileId, setActiveFileId] = useState<string>("f-enterprise");
+  const [activeFileId, setActiveFileId] = useState<string>("f-1");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const activeFile = files.find((f) => f.id === activeFileId)!;
 
-  const handleUpdateConfig = (updatedConfig: WorkflowConfig) => {
+  const handleUpdateConfig = (updatedConfig: FlowOpsWorkflowConfig) => {
     setFiles((prev) =>
       prev.map((f) =>
         f.id === activeFileId
@@ -65,15 +86,15 @@ function App() {
 
   const handleAddFile = () => {
     const newId = `f-${Date.now()}`;
-    const filename = `pipeline-suite-${files.length + 1}.yml`;
+    const filename = `workflow-suite-${files.length + 1}.yml`;
     const newFile: VirtualFile = {
       id: newId,
       filename: filename,
       yaml: null,
       config: {
-        ...PRO_ENTERPRISE_DEFAULT,
+        ...COMPLEX_FLOWOPS_INITIAL,
         filename: filename,
-        name: "Automated Build System",
+        name: "New FlowOps Stack",
       },
     };
     setFiles([...files, newFile]);
@@ -83,7 +104,6 @@ function App() {
   const triggerYamlGeneration = async () => {
     setLoading(true);
     setError(null);
-
     try {
       const response = await fetch(
         "http://localhost:8000/api/generate-workflow",
@@ -93,10 +113,8 @@ function App() {
           body: JSON.stringify(activeFile.config),
         },
       );
-
       if (!response.ok)
-        throw new Error(`Échec serveur backend (${response.status}).`);
-
+        throw new Error("Erreur de traitement sur le serveur FlowOps.");
       const data = await response.json();
       setFiles((prev) =>
         prev.map((f) =>
@@ -104,11 +122,7 @@ function App() {
         ),
       );
     } catch (err: any) {
-      console.error(err);
-      setError(
-        err.message ||
-          "Impossible de joindre le service de compilation Python FastAPI.",
-      );
+      setError(err.message || "Erreur serveur.");
     } finally {
       setLoading(false);
     }
@@ -118,12 +132,11 @@ function App() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8 flex flex-col items-center">
       <header className="text-center mb-6 max-w-2xl">
         <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          Visual GitHub Actions{" "}
-          <span className="text-indigo-600">Enterprise Studio</span>
+          🚀 Flow<span className="text-indigo-600">Ops</span> Studio
         </h1>
         <p className="mt-1 text-xs text-slate-400">
-          Génération industrielle de scripts multi-lignes, injection de scopes
-          d'environnement par tâche et matrices multi-langages.
+          Orchestrateur No-Code/Low-Code multi-jobs de niveau industriel basé
+          sur les spécifications de votre rapport CI/CD.
         </p>
       </header>
 
