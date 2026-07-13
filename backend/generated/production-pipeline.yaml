@@ -1,0 +1,36 @@
+name: NodeJS Continuous Integration Stack
+"on":
+  push:
+    branches:
+      - main
+env:
+  NODE_ENV: production
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version:
+          - "20"
+    steps:
+      - name: 📥 Checkout Source Code
+        uses: actions/checkout@v4
+      - name: 🟢 Load Node Virtual Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - name: 📦 Install dependencies packages
+        run: npm install
+      - name: 🧪 Lancement des suites de tests
+        run: npm test
+  deployment-workflow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+      - name: 🐳 Build Production Container
+        run: |-
+          docker build -t api-service .
+          docker tag api-service ${{ github.repository_owner }}/api-service:latest
+          docker push ${{ github.repository_owner }}/api-service:latest
