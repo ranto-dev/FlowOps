@@ -46,6 +46,9 @@ export const Workspace: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [gitRepos, setGitRepos] = useState<GitHubRepo[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
+  const [executingProjectId, setExecutingProjectId] = useState<string | null>(
+    null,
+  );
 
   // --- ÉTATS FORMULAIRE CRÉATION ---
   const [newProjName, setNewProjName] = useState("");
@@ -98,6 +101,29 @@ export const Workspace: React.FC = () => {
     navigate("/auth", { replace: true });
   };
 
+  // Centralisation de l'initialisation de la configuration par défaut d'un projet
+  const initWorkflowConfig = (project: Project) => {
+    setTargetProject(project);
+    setActiveConfig({
+      filename: `${project.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}-ci.yaml`,
+      name: `${project.name} Pipeline`,
+      on_events: ["push"],
+      branches: "main",
+      global_env: "NODE_ENV=production",
+      jobs: [
+        {
+          id: "j-1",
+          name: "build-and-test",
+          runs_on: "ubuntu-latest",
+          needs: [],
+          steps: [{ id: "s-1", name: "📥 Checkout Source", type: "checkout" }],
+        },
+      ],
+    });
+    setIsConfiguringWorkflow(true);
+    setViewState("form");
+  };
+
   const createProject = async () => {
     if (!newProjName.trim() || !selectedRepo) {
       alert("Please fill in the project name and select a GitHub Repository.");
@@ -118,28 +144,8 @@ export const Workspace: React.FC = () => {
       if (res.ok) {
         const createdProject = await res.json();
 
-        // Initialisation de la vue de configuration du workflow
-        setTargetProject(createdProject);
-        setActiveConfig({
-          filename: `${createdProject.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}-ci.yaml`,
-          name: `${createdProject.name} Pipeline`,
-          on_events: ["push"],
-          branches: "main",
-          global_env: "NODE_ENV=production",
-          jobs: [
-            {
-              id: "j-1",
-              name: "build-and-test",
-              runs_on: "ubuntu-latest",
-              needs: [],
-              steps: [
-                { id: "s-1", name: "📥 Checkout Source", type: "checkout" },
-              ],
-            },
-          ],
-        });
-        setIsConfiguringWorkflow(true);
-        setViewState("form");
+        // Après la création, redirection directe vers l'interface de configuration
+        initWorkflowConfig(createdProject);
 
         // Reset des champs du formulaire
         setNewProjName("");
@@ -178,15 +184,42 @@ export const Workspace: React.FC = () => {
     }
   };
 
-  // ─── ACTION SIMULATION D'EXÉCUTION ───
-  const triggerWorkflowExecution = (projectName: string, repo: string) => {
-    const confirmation = window.confirm(
-      `Do you really want to execute this workflow for [${projectName}] on GitHub repository (${repo})?`,
-    );
-    if (confirmation) {
+  // ─── ACTION RÉELLE D'EXÉCUTION DU WORKFLOW (PUSH + DISPATCH) ───
+  const triggerWorkflowExecution = async (
+    projectId: string,
+    projectName: string,
+  ) => {
+    if (!token) {
       alert(
-        "Workflow execution signal dispatched successfully! (Simulation Mode)",
+        "Session expired or missing GitHub access token. Please re-authenticate.",
       );
+      return;
+    }
+
+    setExecutingProjectId(projectId);
+
+    try {
+      const res = await fetch(`${API_URL}/api/projects/${projectId}/execute`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.status === "success") {
+        alert(`🎉 Success!\n\n${data.message}`);
+      } else {
+        alert(
+          `❌ Workflow Trigger Failed\n\nDetails: ${data.detail || "Unknown error occurred"}`,
+        );
+      }
+    } catch (err) {
+      console.error(err);
+      alert("💥 Error: Unable to connect to the backend execution runner.");
+    } finally {
+      setExecutingProjectId(null);
     }
   };
 
@@ -371,55 +404,50 @@ export const Workspace: React.FC = () => {
                         </p>
                       </div>
 
-                      <div className="flex gap-2 shrink-0 self-end sm:self-center">
+                      <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
                         {p.has_workflow ? (
-                          <button
-                            onClick={() =>
-                              triggerWorkflowExecution(p.name, p.repository)
-                            }
-                            className="px-3 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 hover:bg-emerald-700 shadow-sm shadow-emerald-100 transition-all uppercase tracking-wider text-[10px]"
-                          >
-                            <Play className="w-3 h-3 fill-white" /> Execute
-                            Workflow
-                          </button>
+                          <>
+                            {/* BOUTON EXECUTE WORKFLOW */}
+                            <button
+                              onClick={() =>
+                                triggerWorkflowExecution(p.id, p.name)
+                              }
+                              disabled={executingProjectId !== null}
+                              className="px-3 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 hover:bg-emerald-700 shadow-sm shadow-emerald-100 transition-all uppercase tracking-wider text-[10px] disabled:opacity-60"
+                            >
+                              {executingProjectId === p.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Play className="w-3 h-3 fill-white" />
+                              )}
+                              Execute
+                            </button>
+
+                            {/* BOUTON RE-CONFIGURE WORKFLOW */}
+                            <button
+                              onClick={() => initWorkflowConfig(p)}
+                              disabled={executingProjectId !== null}
+                              className="px-3 py-2 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 hover:bg-slate-200 transition-all uppercase tracking-wider text-[10px] disabled:opacity-50"
+                            >
+                              <Sliders className="w-3 h-3" /> Configure
+                            </button>
+                          </>
                         ) : (
+                          /* BOUTON DE CRÉATION INITIALE */
                           <button
-                            onClick={() => {
-                              setTargetProject(p);
-                              setActiveConfig({
-                                filename: `${p.name.toLowerCase().replace(/ /g, "-")}-ci.yaml`,
-                                name: `${p.name} Pipeline`,
-                                on_events: ["push"],
-                                branches: "main",
-                                global_env: "NODE_ENV=production",
-                                jobs: [
-                                  {
-                                    id: "j-1",
-                                    name: "build-and-test",
-                                    runs_on: "ubuntu-latest",
-                                    needs: [],
-                                    steps: [
-                                      {
-                                        id: "s-1",
-                                        name: "📥 Checkout Source",
-                                        type: "checkout",
-                                      },
-                                    ],
-                                  },
-                                ],
-                              });
-                              setIsConfiguringWorkflow(true);
-                              setViewState("form");
-                            }}
-                            className="px-3 py-2 bg-purple-50 text-purple-700 font-bold text-xs rounded-xl border border-purple-100 flex items-center gap-1.5 hover:bg-purple-100 transition-all uppercase tracking-wider text-[10px]"
+                            onClick={() => initWorkflowConfig(p)}
+                            disabled={executingProjectId !== null}
+                            className="px-3 py-2 bg-purple-50 text-purple-700 font-bold text-xs rounded-xl border border-purple-100 flex items-center gap-1.5 hover:bg-purple-100 transition-all uppercase tracking-wider text-[10px] disabled:opacity-50"
                           >
                             <Sliders className="w-3 h-3" /> Create Workflow
                           </button>
                         )}
 
+                        {/* BOUTON SUPPRIMER */}
                         <button
                           onClick={(e) => deleteProject(p.id, e)}
-                          className="p-2 text-slate-400 hover:text-red-500 rounded-xl hover:bg-slate-50 transition-all"
+                          disabled={executingProjectId !== null}
+                          className="p-2 text-slate-400 hover:text-red-500 rounded-xl hover:bg-slate-50 transition-all disabled:opacity-40"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -471,7 +499,7 @@ export const Workspace: React.FC = () => {
                   <div className="py-20 text-center space-y-2">
                     <div className="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
                     <p className="text-xs font-bold text-slate-700 font-mono">
-                      Saving workflow schemas into MongoDB...
+                      Compiling workflow configurations...
                     </p>
                   </div>
                 )}
@@ -491,19 +519,28 @@ export const Workspace: React.FC = () => {
                     }}
                     onReconfigure={() => setViewState("form")}
                     onSaveToServer={async () => {
-                      await fetch(
-                        `${API_URL}/api/projects/${targetProject.id}/workflow`,
-                        {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify(activeConfig),
-                        },
-                      );
-                      alert(
-                        "Workflow tracking saved inside MongoDB successfully!",
-                      );
-                      setIsConfiguringWorkflow(false);
-                      fetchProjects();
+                      try {
+                        const res = await fetch(
+                          `${API_URL}/api/projects/${targetProject.id}/workflow`,
+                          {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(activeConfig),
+                          },
+                        );
+
+                        if (res.ok) {
+                          alert(
+                            "Workflow configuration successfully saved to the project workspace directory!",
+                          );
+                          setIsConfiguringWorkflow(false);
+                          fetchProjects();
+                        } else {
+                          alert("Failed to save workflow file on the server.");
+                        }
+                      } catch (err) {
+                        alert("Communication error while saving the workflow.");
+                      }
                     }}
                     saveStatus={null}
                   />

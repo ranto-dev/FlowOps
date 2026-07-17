@@ -60,14 +60,16 @@ export const YamlPreview: React.FC<YamlPreviewProps> = ({
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={onNewWorkflow}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-[11px] rounded-xl transition-all border border-slate-700"
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-[11px] rounded-xl transition-all border border-slate-700 disabled:opacity-50"
           >
             <Plus className="w-3.5 h-3.5" />
             New Workflow
           </button>
           <button
             onClick={onReconfigure}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-[11px] rounded-xl transition-all border border-slate-700"
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-[11px] rounded-xl transition-all border border-slate-700 disabled:opacity-50"
           >
             <RefreshCcw className="w-3.5 h-3.5" />
             Reconfigure Workflow
@@ -111,7 +113,7 @@ export const YamlPreview: React.FC<YamlPreviewProps> = ({
 
         {activeFile.yaml ? (
           <div className="flex items-start select-text pt-2">
-            {/* Gouttière des numéros de ligne (non sélectionnable au clic/glissé) */}
+            {/* Gouttière des numéros de ligne */}
             <div className="flex flex-col text-right pr-4 text-slate-600 select-none border-r border-slate-800/60 min-w-[2.5rem]">
               {yamlLines.map((_, index) => (
                 <span

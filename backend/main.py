@@ -1,5 +1,5 @@
 # backend/main.py
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, Path
 import yaml
 import os
 import httpx
@@ -20,7 +20,9 @@ load_dotenv()
 
 app = FastAPI(title="FlowOps Core Engine", version="6.0.0")
 
-WORKFLOWS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "workflows")
+WORKFLOWS_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "generated_workflows"
+)
 os.makedirs(WORKFLOWS_DIR, exist_ok=True)
 
 setup_cors(app)
@@ -31,6 +33,9 @@ MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
 client = AsyncIOMotorClient(MONGO_URI)
 db = client["flowops_db"]
 projects_collection = db["projects"]
+
+# Base de données en mémoire pour FlowOps
+USERS_DB = {}
 
 # load DOTENV
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "ton_client_id_global")
@@ -65,7 +70,7 @@ async def get_device_code():
         response = await client.post(
             "https://github.com/login/device/code",
             headers={"Accept": "application/json"},
-            data={"client_id": client_id, "scope": "user repo"},
+            data={"client_id": client_id, "scope": "user repo workflow"},
         )
         if response.status_code != 200:
             raise HTTPException(
@@ -243,60 +248,33 @@ async def generate_workflow(config: FlowOpsWorkflowSchema):
 
 
 # sauvegarder un workflow
-@app.post("/api/save-workflow")
-async def save_workflow(config: FlowOpsWorkflowSchema):
-    try:
-        wf_dict = compile_flowops_workflow(config)
-        yaml_content = yaml.dump(
-            wf_dict, sort_keys=False, default_flow_style=False, allow_unicode=True
-        )
-
-        # Création sécurisée du dossier racine backend/generated/
-        target_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "generated"
-        )
-        os.makedirs(target_dir, exist_ok=True)
-
-        # Nettoyage extension
-        base_name = (
-            config.filename
-            if config.filename.endswith((".yml", ".yaml"))
-            else f"{config.filename}.yaml"
-        )
-        file_path = os.path.join(target_dir, base_name)
-
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(yaml_content)
-
-        return {"status": "success", "saved_path": file_path}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 @app.post("/api/projects/{project_id}/workflow")
 async def save_project_workflow(
-    project_id: str,
-    config: FlowOpsWorkflowSchema,
-    authorization: Annotated[str | None, Header()] = None,
+    project_id: str = Path(
+        ..., description="L'identifiant hexadécimal MongoDB du projet"
+    ),
+    config: FlowOpsWorkflowSchema = None,
 ):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=401, detail="Missing or invalid GitHub Access Token"
-        )
+    # 1. Vérification de la validité de l'ID et existence dans MongoDB
+    if not ObjectId.is_valid(project_id):
+        raise HTTPException(status_code=400, detail="Invalid MongoDB ObjectId format")
 
-    token = authorization.split(" ")[1]
-    project_dir = os.path.join(WORKFLOWS_DIR, project_id)
-    meta_path = os.path.join(project_dir, "metadata.json")
-
-    if not os.path.exists(meta_path):
-        raise HTTPException(status_code=404, detail="Project folder not found")
+    project = await db.projects.find_one({"_id": ObjectId(project_id)})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found in database")
 
     try:
+        # 2. Compilation du schéma FlowOps vers le dictionnaire au format GitHub Actions
         wf_dict = compile_flowops_workflow(config)
         yaml_content = yaml.dump(
             wf_dict, sort_keys=False, default_flow_style=False, allow_unicode=True
         )
 
+        # 3. Préparation sécurisée des répertoires locaux ciblés par Projet
+        project_dir = os.path.join(WORKFLOWS_DIR, project_id)
+        os.makedirs(project_dir, exist_ok=True)
+
+        # Nettoyage et uniformisation du nom de fichier
         base_name = (
             config.filename
             if config.filename.endswith((".yml", ".yaml"))
@@ -304,100 +282,32 @@ async def save_project_workflow(
         )
         file_path = os.path.join(project_dir, base_name)
 
+        # 4. Écriture locale du fichier YAML
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(yaml_content)
 
+        # 5. Sauvegarde de la configuration brute JSON (utile pour recharger le formulaire plus tard)
         config_path = os.path.join(project_dir, "config.json")
         with open(config_path, "w", encoding="utf-8") as f:
             json.dump(
                 config.model_dump() if hasattr(config, "model_dump") else config.dict(),
                 f,
                 indent=4,
+                ensure_ascii=False,
             )
 
-        with open(meta_path, "r", encoding="utf-8") as f:
-            meta_data = json.load(f)
+        # 6. Mise à jour du flag du projet directement dans MongoDB
+        await db.projects.update_one(
+            {"_id": ObjectId(project_id)},
+            {"$set": {"has_workflow": True, "yaml_filename": base_name}},
+        )
 
-        repo = meta_data.get("repository")
-        if not repo:
-            raise HTTPException(
-                status_code=400, detail="No GitHub repository linked to this project"
-            )
+        return {
+            "status": "success",
+            "message": "Workflow saved locally in project directory",
+            "yaml_filename": base_name,
+        }
 
-        # Encodage sécurisé en Base64 du YAML compilé
-        utf8_bytes = yaml_content.encode("utf-8")
-        encoded_content = base64.b64encode(utf8_bytes).decode("utf-8")
-
-        github_file_url = f"https://api.github.com/repos/{repo}/contents/.github/workflows/{base_name}"
-
-        async with httpx.AsyncClient(timeout=20.0) as client:
-            headers = {
-                "Authorization": f"token {token}",
-                "Accept": "application/vnd.github+json",
-                "User-Agent": "FlowOps-App",
-            }
-
-            # Étape A : Détecter si le fichier existe déjà pour récupérer le SHA
-            sha = None
-            try:
-                get_res = await client.get(github_file_url, headers=headers)
-                if get_res.status_code == 200:
-                    sha = get_res.json().get("sha")
-            except Exception as e:
-                print(
-                    f"[Warning] Failed to check existing workflow file on GitHub: {e}"
-                )
-
-            # Étape B : Préparer le payload du commit
-            # Ne force PAS "branch": "main" si le dépôt est vierge (sans commit)
-            # GitHub créera le fichier sur la branche par défaut (main ou master) automatiquement.
-            payload = {
-                "message": f"ci(flowops): sync {base_name} workflow pipeline",
-                "content": encoded_content,
-            }
-            if sha:
-                payload["sha"] = (
-                    sha  # Obligatoire uniquement pour mettre à jour un fichier existant
-                )
-
-            # Étape C : Écriture sur GitHub (PUT)
-            put_res = await client.put(github_file_url, headers=headers, json=payload)
-
-            if put_res.status_code not in [200, 201]:
-                error_response = (
-                    put_res.json()
-                    if put_res.headers.get("content-type", "").startswith(
-                        "application/json"
-                    )
-                    else put_res.text
-                )
-                print(
-                    f"[GitHub API Error] Status: {put_res.status_code}, Detail: {error_response}"
-                )
-
-                # Explication claire si le dépôt est vide
-                if put_res.status_code == 404:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="GitHub returned 404. Ensure your repository is not completely empty (create at least one commit or a README.md on GitHub first) and that your OAuth App Token has the 'repo' scope.",
-                    )
-
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"GitHub API rejected the file: {error_response}",
-                )
-
-        # 4. Finalisation locale
-        meta_data["has_workflow"] = True
-        meta_data["yaml_filename"] = base_name
-
-        with open(meta_path, "w", encoding="utf-8") as f:
-            json.dump(meta_data, f, indent=4)
-
-        return {"status": "success", "yaml": yaml_content}
-
-    except HTTPException as he:
-        raise he
     except Exception as e:
         import traceback
 
@@ -405,72 +315,183 @@ async def save_project_workflow(
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 
+"""
+Execute workflow
+"""
+
+
 @app.post("/api/projects/{project_id}/execute")
 async def execute_project_workflow(
-    project_id: str, authorization: Annotated[str | None, Header()] = None
+    project_id: str = Path(
+        ..., description="L'identifiant hexadécimal MongoDB du projet"
+    ),
+    authorization: Annotated[str | None, Header()] = None,
 ):
     """
-    Déclenche l'exécution du workflow sur le dépôt GitHub de l'utilisateur
-    via l'API GitHub Repository Dispatch.
+    Déclencheur d'exécution séquentiel :
+    1. Récupère le projet depuis MongoDB pour extraire le dépôt lié.
+    2. Lit la configuration locale (config.json) et le fichier YAML compilé.
+    3. Commit & Push le fichier YAML sur GitHub (.github/workflows/).
+    4. Envoie le signal Repository Dispatch pour lancer l'action GitHub.
     """
+    # ─── VALIDATION DU TOKEN DE CONNEXION ───
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(
-            status_code=401, detail="Missing or invalid GitHub Access Token"
+            status_code=401,
+            detail="Missing or invalid GitHub Access Token. Please log in again.",
         )
 
     token = authorization.split(" ")[1]
 
-    # 1. Récupérer les métadonnées du projet pour connaître le dépôt lié
-    project_dir = os.path.join(WORKFLOWS_DIR, project_id)
-    meta_path = os.path.join(project_dir, "metadata.json")
-
-    if not os.path.exists(meta_path):
-        raise HTTPException(status_code=404, detail="Project not found")
-
-    with open(meta_path, "r", encoding="utf-8") as f:
-        project_data = json.load(f)
-
-    repo = project_data.get("repository")  # Exemple: "mon-pseudo/mon-repo"
-    if not repo:
+    # ─── 1. RÉCUPÉRATION DU PROJET DEPUIS MONGODB ───
+    try:
+        project = await db.projects.find_one({"_id": ObjectId(project_id)})
+    except Exception:
         raise HTTPException(
-            status_code=400, detail="No GitHub repository linked to this project"
+            status_code=400, detail="Invalid project ID format (must be hex string)"
         )
 
-    # 2. Envoyer la requête de déclenchement à l'API GitHub
-    # L'événement "flowops_trigger" doit correspondre à celui attendu dans le YAML
-    async with httpx.AsyncClient(timeout=20.0) as client:
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found in database")
+
+    repo = project.get("repository")
+    if not repo:
+        raise HTTPException(
+            status_code=400,
+            detail="No GitHub repository linked to this project in database",
+        )
+
+    # Sécurité : Si l'utilisateur a entré une URL complète au lieu de 'pseudo/repo', on extrait le slug
+    if "github.com/" in repo:
+        repo = repo.split("github.com/")[-1].strip("/")
+    elif "github.com:" in repo:
+        repo = repo.split("github.com:")[-1].replace(".git", "").strip("/")
+
+    # ─── 2. RÉCUPÉRATION DE LA CONFIGURATION ET DU YAML LOCAL ───
+    project_dir = os.path.join(WORKFLOWS_DIR, project_id)
+    config_path = os.path.join(project_dir, "config.json")
+
+    if not os.path.exists(config_path):
+        raise HTTPException(
+            status_code=404,
+            detail="Local config.json file not found. Please save your workflow configuration first.",
+        )
+
+    with open(config_path, "r", encoding="utf-8") as f:
+        config_data = json.load(f)
+
+    # Récupération du nom du fichier YAML cible depuis config.json (ou premier .yaml présent)
+    yaml_filename = config_data.get("filename")
+    if not yaml_filename:
+        yaml_files = [
+            f for f in os.listdir(project_dir) if f.endswith((".yaml", ".yml"))
+        ]
+        if not yaml_files:
+            raise HTTPException(
+                status_code=400,
+                detail="No compiled workflow YAML file found for this project in local storage.",
+            )
+        yaml_filename = yaml_files[0]
+
+    yaml_path = os.path.join(project_dir, yaml_filename)
+    if not os.path.exists(yaml_path):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Workflow YAML file ({yaml_filename}) missing from server storage.",
+        )
+
+    with open(yaml_path, "r", encoding="utf-8") as f:
+        yaml_content = f.read()
+
+    # En-têtes d'authentification pour l'API GitHub REST v3
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        # ─── ÉTAPE 3 : PUSH DU FICHIER SUR GITHUB (.github/workflows/) ───
+        github_contents_url = f"https://api.github.com/repos/{repo}/contents/.github/workflows/{yaml_filename}"
+
+        # Vérification si le fichier existe déjà pour récupérer son 'sha' (obligatoire pour éditer un fichier existant)
+        sha = None
+        check_res = await client.get(github_contents_url, headers=headers)
+
+        if check_res.status_code == 200:
+            sha = check_res.json().get("sha")
+        elif check_res.status_code == 404:
+            # Si 404, le fichier n'existe pas encore ou le token manque de droits d'écriture sur les dépôts privés
+            pass
+        elif check_res.status_code == 401:
+            raise HTTPException(
+                status_code=401, detail="GitHub Access Token expired or invalid"
+            )
+
+        # Encodage requis par GitHub (Contenu textuel -> Octets UTF-8 -> Base64 standard -> Chaîne de caractères)
+        encoded_content = base64.b64encode(yaml_content.encode("utf-8")).decode("utf-8")
+
+        push_payload = {
+            "message": f"ci(flowops): update/create workflow {yaml_filename} via FlowOps Studio",
+            "content": encoded_content,
+            "branch": "main",  # Change par "master" si ton dépôt utilise l'ancienne nomenclature
+        }
+        if sha:
+            push_payload["sha"] = sha
+
+        push_res = await client.put(
+            github_contents_url, headers=headers, json=push_payload
+        )
+
+        if push_res.status_code not in [200, 201]:
+            # Traitement explicite des erreurs d'authentification ou d'arborescence GitHub
+            error_detail = push_res.text
+            try:
+                error_detail = push_res.json().get("message", push_res.text)
+            except Exception:
+                pass
+
+            if push_res.status_code == 404:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"GitHub returned 404 Not Found during file push to '{repo}'. "
+                    f"Verify that the repository exists, that your account has write access, "
+                    f"and that your GitHub token has BOTH 'repo' and 'workflow' scopes checked.",
+                )
+            raise HTTPException(
+                status_code=400,
+                detail=f"Failed to push YAML file to GitHub: {error_detail} (Status: {push_res.status_code})",
+            )
+
+        # ─── ÉTAPE 4 : ENVOI DU REPOSITORY DISPATCH TRIGGER ───
         github_dispatch_url = f"https://api.github.com/repos/{repo}/dispatches"
 
-        response = await client.post(
+        dispatch_res = await client.post(
             github_dispatch_url,
-            headers={
-                "Authorization": f"token {token}",
-                "Accept": "application/vnd.github+json",
-                "X-GitHub-Api-Version": "2022-11-28",
-            },
+            headers=headers,
             json={
-                "event_type": "flowops_trigger",  # Le nom du signal d'activation
+                "event_type": "flowops_trigger",
                 "client_payload": {
-                    "project_name": project_data.get("name"),
+                    "project_name": project.get("name", "FlowOps Project"),
                     "triggered_by": "FlowOps Dashboard",
                 },
             },
         )
 
-        # GitHub renvoie un code 204 No Content si le dispatch est accepté avec succès
-        if response.status_code == 204:
+        # HTTP 204 = Succès sans retour de contenu (comportement normal du Repository Dispatch)
+        if dispatch_res.status_code == 204:
             return {
                 "status": "success",
-                "message": f"Workflow successfully dispatched to {repo}!",
+                "message": f"Configuration file '{yaml_filename}' was successfully committed to branch 'main' "
+                f"and execution event ('flowops_trigger') dispatched to {repo}!",
             }
         else:
-            # En cas d'erreur (droits insuffisants, mauvais repo, etc.)
-            error_msg = response.text
+            error_msg = dispatch_res.text
             try:
-                error_msg = response.json().get("message", response.text)
-            except:
+                error_msg = dispatch_res.json().get("message", dispatch_res.text)
+            except Exception:
                 pass
             raise HTTPException(
                 status_code=400,
-                detail=f"GitHub API Error: {error_msg} (Status: {response.status_code})",
+                detail=f"YAML file pushed successfully, but Dispatch signal failed: {error_msg} (Status: {dispatch_res.status_code})",
             )
