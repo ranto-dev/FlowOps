@@ -18,7 +18,7 @@ import { YamlPreview } from "../components/YamlPreview";
 import Footer from "../components/Footer";
 
 interface Project {
-  id: string;
+  id: string; // Stockera l'ObjectId sous forme de string (ex: "64b1f...")
   name: string;
   description: string;
   repository: string;
@@ -42,7 +42,7 @@ export const Workspace: React.FC = () => {
   const token = localStorage.getItem("flowops_token");
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-  // --- ÉTATS DONNÉES DISQUE & API ---
+  // --- ÉTATS DONNÉES BASE DE DONNÉES & API ---
   const [projects, setProjects] = useState<Project[]>([]);
   const [gitRepos, setGitRepos] = useState<GitHubRepo[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
@@ -61,7 +61,7 @@ export const Workspace: React.FC = () => {
     "form",
   );
 
-  // Charge les projets persistants du serveur et les repos GitHub
+  // Charge les projets depuis MongoDB et les repos GitHub
   useEffect(() => {
     fetchProjects();
     fetchGitHubRepos();
@@ -71,9 +71,9 @@ export const Workspace: React.FC = () => {
     try {
       const res = await fetch(`${API_URL}/api/projects`);
       const data = await res.json();
-      setProjects(data); // Déjà triés par ordre DESC côté backend
+      setProjects(data); // Déjà triés par ordre DESC côté backend (via MongoDB)
     } catch (err) {
-      console.error("Error loading filesystem projects");
+      console.error("Error loading MongoDB projects");
     } finally {
       setLoadingProjects(false);
     }
@@ -98,10 +98,7 @@ export const Workspace: React.FC = () => {
     navigate("/auth", { replace: true });
   };
 
-  // frontend/src/pages/Workspace.tsx
-
   const createProject = async () => {
-    // Sécurité renforcée : On s'assure que le nom et le repo sont bien saisis
     if (!newProjName.trim() || !selectedRepo) {
       alert("Please fill in the project name and select a GitHub Repository.");
       return;
@@ -113,8 +110,8 @@ export const Workspace: React.FC = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: newProjName.trim(),
-          description: newProjDesc.trim() || "", // Si vide, on force une chaîne de caractères vide "" au lieu de undefined
-          repository: selectedRepo, // Doit correspondre EXACTEMENT au nom dans le modèle Pydantic backend
+          description: newProjDesc.trim() || "",
+          repository: selectedRepo,
         }),
       });
 
@@ -150,7 +147,6 @@ export const Workspace: React.FC = () => {
         setSelectedRepo("");
         fetchProjects();
       } else {
-        // Si le backend renvoie quand même une erreur, on l'affiche pour diagnostiquer
         const errorData = await res.json();
         console.error("Backend validation error details:", errorData);
         alert(`Server rejected data: ${JSON.stringify(errorData.detail)}`);
@@ -162,9 +158,23 @@ export const Workspace: React.FC = () => {
 
   const deleteProject = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm("Delete this project and all its workflows from disk?")) {
-      await fetch(`${API_URL}/api/projects/${id}`, { method: "DELETE" });
-      fetchProjects();
+    if (
+      confirm(
+        "Delete this project and all its workflows from MongoDB database?",
+      )
+    ) {
+      try {
+        const res = await fetch(`${API_URL}/api/projects/${id}`, {
+          method: "DELETE",
+        });
+        if (res.ok) {
+          fetchProjects();
+        } else {
+          alert("Failed to delete project from server.");
+        }
+      } catch (err) {
+        alert("Communication error during deletion.");
+      }
     }
   };
 
@@ -186,52 +196,50 @@ export const Workspace: React.FC = () => {
         {/* SIDEBAR */}
         <aside className="w-full md:w-64 shrink-0 flex flex-col justify-between border-r border-slate-100 pr-4 min-h-[500px]">
           <div className="flex flex-col gap-1">
-            <>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 via-purple-600 to-blue-500 flex items-center justify-center text-white font-bold text-xl shadow-md shadow-purple-500/20">
-                  ∞
-                </div>
-                <div>
-                  <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-1">
-                    Flow
-                    <span className="bg-gradient-to-r from-violet-600 to-blue-500 bg-clip-text text-transparent">
-                      Ops
-                    </span>
-                  </h1>
-                  <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase">
-                    Visual DevOps Studio
-                  </p>
-                </div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 via-purple-600 to-blue-500 flex items-center justify-center text-white font-bold text-xl shadow-md shadow-purple-500/20">
+                ∞
               </div>
+              <div>
+                <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-1">
+                  Flow
+                  <span className="bg-gradient-to-r from-violet-600 to-blue-500 bg-clip-text text-transparent">
+                    Ops
+                  </span>
+                </h1>
+                <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase">
+                  Visual DevOps Studio
+                </p>
+              </div>
+            </div>
 
-              <button
-                onClick={() => {
-                  setActiveTab("projects");
-                  setIsConfiguringWorkflow(false);
-                }}
-                className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === "projects" ? "bg-purple-50 text-purple-700" : "text-slate-600 hover:bg-slate-50"}`}
-              >
-                <FolderGit2 className="w-4 h-4" /> My Projects
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab("history");
-                  setIsConfiguringWorkflow(false);
-                }}
-                className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === "history" ? "bg-purple-50 text-purple-700" : "text-slate-600 hover:bg-slate-50"}`}
-              >
-                <History className="w-4 h-4" /> History & Logs
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab("help");
-                  setIsConfiguringWorkflow(false);
-                }}
-                className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === "help" ? "bg-purple-50 text-purple-700" : "text-slate-600 hover:bg-slate-50"}`}
-              >
-                <HelpCircle className="w-4 h-4" /> Help Center
-              </button>
-            </>
+            <button
+              onClick={() => {
+                setActiveTab("projects");
+                setIsConfiguringWorkflow(false);
+              }}
+              className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === "projects" ? "bg-purple-50 text-purple-700" : "text-slate-600 hover:bg-slate-50"}`}
+            >
+              <FolderGit2 className="w-4 h-4" /> My Projects
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("history");
+                setIsConfiguringWorkflow(false);
+              }}
+              className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === "history" ? "bg-purple-50 text-purple-700" : "text-slate-600 hover:bg-slate-50"}`}
+            >
+              <History className="w-4 h-4" /> History & Logs
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("help");
+                setIsConfiguringWorkflow(false);
+              }}
+              className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === "help" ? "bg-purple-50 text-purple-700" : "text-slate-600 hover:bg-slate-50"}`}
+            >
+              <HelpCircle className="w-4 h-4" /> Help Center
+            </button>
           </div>
 
           <div className="pt-4 border-t border-slate-100 space-y-3">
@@ -275,11 +283,11 @@ export const Workspace: React.FC = () => {
                   Projects Dashboard
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Manage filesystem repositories and dispatch automation trees
+                  Manage MongoDB records and dispatch automation trees
                 </p>
               </div>
 
-              {/* FORMULAIRE DE CRÉATION AVEC REPO GITHUB DYNAMIQUE */}
+              {/* FORMULAIRE DE CRÉATION */}
               <div className="p-5 rounded-2xl border border-slate-100 bg-slate-50/50 grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 uppercase">
@@ -330,14 +338,14 @@ export const Workspace: React.FC = () => {
                 </button>
               </div>
 
-              {/* RENDER DES PROJETS (ORDRE DESCENDANT DEPUIS L'API DISQUE) */}
+              {/* LISTE DES PROJETS */}
               {loadingProjects ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="w-6 h-6 text-purple-600 animate-spin" />
                 </div>
               ) : projects.length === 0 ? (
                 <div className="text-center py-12 text-slate-400 text-xs border border-dashed rounded-2xl">
-                  No projects found. Create your first environment configuration
+                  No projects found. Create your first database configuration
                   block above.
                 </div>
               ) : (
@@ -364,7 +372,6 @@ export const Workspace: React.FC = () => {
                       </div>
 
                       <div className="flex gap-2 shrink-0 self-end sm:self-center">
-                        {/* BOUTON D'ÉXÉCUTION (SI UN WORKFLOW A ÉTÉ COMMITTÉ SUR LE DISQUE) */}
                         {p.has_workflow ? (
                           <button
                             onClick={() =>
@@ -424,7 +431,7 @@ export const Workspace: React.FC = () => {
             </div>
           )}
 
-          {/* WORKFLOW CONFIGURATION VIEW PANEL */}
+          {/* VUE DE CONFIGURATION DU WORKFLOW */}
           {activeTab === "projects" &&
             isConfiguringWorkflow &&
             targetProject && (
@@ -447,7 +454,7 @@ export const Workspace: React.FC = () => {
                         {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify(activeConfig), // Envoie le schéma FlowOpsWorkflowSchema requis par ton compilateur
+                          body: JSON.stringify(activeConfig),
                         },
                       );
                       const data = await res.json();
@@ -464,7 +471,7 @@ export const Workspace: React.FC = () => {
                   <div className="py-20 text-center space-y-2">
                     <div className="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
                     <p className="text-xs font-bold text-slate-700 font-mono">
-                      Writing filesystem block workflows/projet ...
+                      Saving workflow schemas into MongoDB...
                     </p>
                   </div>
                 )}
@@ -493,7 +500,7 @@ export const Workspace: React.FC = () => {
                         },
                       );
                       alert(
-                        "Workflow saved inside project isolated directory successfully!",
+                        "Workflow tracking saved inside MongoDB successfully!",
                       );
                       setIsConfiguringWorkflow(false);
                       fetchProjects();
@@ -519,9 +526,8 @@ export const Workspace: React.FC = () => {
                 FlowOps Documentation
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Ensure your local environment configuration directory has
-                read/write system access rights before triggering execution
-                hooks.
+                Ensure your MongoDB container is up and running on port 27017
+                before applying pipeline triggers.
               </p>
             </div>
           )}

@@ -11,6 +11,10 @@ from compiler import compile_flowops_workflow
 from typing import Annotated
 import json
 import base64
+from motor.motor_asyncio import AsyncIOMotorClient
+import datetime
+from bson import ObjectId
+from helper import format_project
 
 load_dotenv()
 
@@ -21,12 +25,18 @@ os.makedirs(WORKFLOWS_DIR, exist_ok=True)
 
 setup_cors(app)
 
-USERS_DB = {}
+# --- INITIALISATION DE MONGODB ---
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+# On se connecte à la base de données nommée "flowops_db"
+client = AsyncIOMotorClient(MONGO_URI)
+db = client["flowops_db"]
+projects_collection = db["projects"]
 
 # load DOTENV
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "ton_client_id_global")
 
 
+# Declaration de BaseModel
 class LoginCheckRequest(BaseModel):
     device_code: str
 
@@ -161,51 +171,57 @@ GESTION DES PROJETS
 # creation d'un projet
 @app.post("/api/projects")
 async def create_project(req: ProjectCreateRequest):
-    # Crée un dossier projet et sauvegarde ses métadonnées
-    project_id = f"proj_{int(os.getpid())}_{os.urandom(2).hex()}"  # ID Unique
-    project_dir = os.path.join(WORKFLOWS_DIR, project_id)
-    os.makedirs(project_dir, exist_ok=True)
-
-    metadata = {
-        "id": project_id,
-        "name": req.name,
-        "description": req.description,
-        "repository": req.repository,
+    new_project = {
+        "name": req.name.strip(),
+        "description": req.description.strip(),
+        "repository": req.repository.strip(),
         "has_workflow": False,
+        "created_at": datetime.datetime.utcnow(),
+        "updated_at": datetime.datetime.utcnow(),
     }
 
-    with open(os.path.join(project_dir, "metadata.json"), "w") as f:
-        json.dump(metadata, f, indent=4)
-
-    return metadata
+    # Insertion dans MongoDB
+    result = await projects_collection.insert_one(new_project)
+    inserted_project = await projects_collection.find_one({"_id": result.inserted_id})
+    return format_project(inserted_project)
 
 
 # Liste tous les projets triés par ordre descendant
 @app.get("/api/projects")
 async def list_projects():
     projects_list = []
-    if not os.path.exists(WORKFLOWS_DIR):
-        return []
 
-    for project_id in os.listdir(WORKFLOWS_DIR):
-        meta_path = os.path.join(WORKFLOWS_DIR, project_id, "metadata.json")
-        if os.path.exists(meta_path):
-            with open(meta_path, "r") as f:
-                try:
-                    meta_data = json.load(f)
-                    # On utilise la date de modification du fichier pour le tri réel
-                    meta_data["_updated"] = os.path.getmtime(meta_path)
-                    projects_list.append(meta_data)
-                except:
-                    continue
+    cursor = projects_collection.find().sort(
+        "updated_at", -1
+    )  # .sort("updated_at", -1) s'occupe de faire le tri descendant directement au cœur de la BDD !
 
-    # Tri par ordre décroissant (le plus récent en premier)
-    projects_list.sort(key=lambda x: x["_updated"], reverse=True)
+    async for document in cursor:
+        projects_list.append(format_project(document))
 
-    # Nettoyage de la clé technique de tri avant envoi
-    for p in projects_list:
-        p.pop("_updated", None)
     return projects_list
+
+
+# supprimer un projet par son ID
+@app.delete("/api/projects/{project_id}")
+async def delete_project(project_id: str):
+    try:
+
+        obj_id = ObjectId(project_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Format d'ID de projet invalide.")
+
+    result = await projects_collection.delete_one({"_id": obj_id})
+
+    # Si le projet n'existait pas
+    if result.deleted_count == 0:
+        raise HTTPException(
+            status_code=404, detail="Projet introuvable, impossible de le supprimer."
+        )
+
+    return {
+        "status": "success",
+        "message": f"Project {project_id} successfully deleted from database.",
+    }
 
 
 """
@@ -224,6 +240,7 @@ async def generate_workflow(config: FlowOpsWorkflowSchema):
         return {"filename": config.filename, "yaml": yaml_content}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 # sauvegarder un workflow
 @app.post("/api/save-workflow")
