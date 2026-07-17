@@ -1,8 +1,11 @@
-name: test Pipeline
+name: Test workflow Pipeline
 'on':
   push:
     branches:
     - main
+  repository_dispatch:
+    types:
+    - flowops_trigger
 env:
   NODE_ENV: production
 jobs:

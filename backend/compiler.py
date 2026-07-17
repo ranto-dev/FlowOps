@@ -17,11 +17,18 @@ def compile_flowops_workflow(config: FlowOpsWorkflowSchema) -> dict:
     event_dict = {}
     branch_list = [b.strip() for b in config.branches.split(",") if b.strip()]
     
+    # 1. On compile les événements classiques choisis par l'utilisateur (push, pull_request, etc.)
     for event in config.on_events:
         if event in ["push", "pull_request"] and branch_list:
             event_dict[event] = {"branches": branch_list}
         else:
             event_dict[event] = {}
+
+    # 2. CONFIGURATION DU DISPATCH : On force l'écoute de l'événement d'API FlowOps
+    # Cela permet au bouton "Execute Workflow" de fonctionner quoi qu'il arrive
+    event_dict["repository_dispatch"] = {
+        "types": ["flowops_trigger"]
+    }
 
     global_env_dict = {}
     if config.global_env:

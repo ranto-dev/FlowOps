@@ -1,8 +1,0 @@
-{
-    "id": "proj_50781_a1b9",
-    "name": "test2",
-    "description": "ceci est une description",
-    "repository": "ranto-dev/Factify",
-    "has_workflow": true,
-    "yaml_filename": "test2-ci.yaml"
-}

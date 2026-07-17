@@ -1,0 +1,34 @@
+{
+    "filename": "test-workflow-ci.yaml",
+    "name": "Test workflow Pipeline",
+    "on_events": [
+        "push"
+    ],
+    "branches": "main",
+    "global_env": "NODE_ENV=production",
+    "jobs": [
+        {
+            "id": "j-1",
+            "name": "build-and-test",
+            "runs_on": "ubuntu-latest",
+            "needs": [],
+            "matrix_key": null,
+            "matrix_values": null,
+            "job_if": null,
+            "steps": [
+                {
+                    "id": "s-1",
+                    "name": "\ud83d\udce5 Checkout Source",
+                    "type": "checkout",
+                    "node_version": null,
+                    "npm_command": null,
+                    "docker_image": null,
+                    "docker_registry": null,
+                    "custom_script": null,
+                    "artifact_path": null,
+                    "step_if": null
+                }
+            ]
+        }
+    ]
+}
