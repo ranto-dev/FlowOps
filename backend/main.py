@@ -37,7 +37,7 @@ client = AsyncIOMotorClient(MONGO_URI)
 db = client["flowops_db"]
 projects_collection = db["projects"]
 
-# Base de données en mémoire pour FlowOps
+# Base de données en mémoire pour FlowOps pour l'utilisateur
 USERS_DB = {}
 
 # load DOTENV
