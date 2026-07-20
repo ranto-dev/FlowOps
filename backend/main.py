@@ -1,5 +1,5 @@
 # backend/main.py
-from fastapi import FastAPI, HTTPException, Header, Path
+from fastapi import FastAPI, HTTPException, Header, Path, Request
 import yaml
 import os
 import httpx
@@ -15,6 +15,9 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import datetime
 from bson import ObjectId
 from helper import format_project
+import asyncio
+from sse_starlette.sse import EventSourceResponse
+from fastapi.responses import StreamingResponse
 
 load_dotenv()
 
@@ -495,3 +498,47 @@ async def execute_project_workflow(
                 status_code=400,
                 detail=f"YAML file pushed successfully, but Dispatch signal failed: {error_msg} (Status: {dispatch_res.status_code})",
             )
+
+
+# Assure-toi que project_id est typé en : str
+@app.get("/api/projects/{project_id}/logs/stream")
+async def stream_project_logs(project_id: str, request: Request):
+
+    async def log_generator():
+        try:
+            # 1. Message de bienvenue dans la console Xterm
+            yield "event: log_message\ndata: \x1b[1;34m[SYSTEM] Handshake established. Fetching execution telemetry...\x1b[0m\n\n"
+            await asyncio.sleep(0.5)
+
+            # 2. Simulation ou récupération des logs (remplace ce bloc par tes vrais logs si besoin)
+            mock_logs = [
+                "🛠️ [BUILD] Triggering GitHub Workflow pipeline...",
+                "📦 [CHECKOUT] Fetching repository code structure...",
+                "🧪 [TEST] Running unit tests suite (14 passed, 0 failed)...",
+                "🚀 [DEPLOY] Pushing release artifacts to target runner...",
+                "🎉 [SUCCESS] Pipeline execution finished with exit code 0.",
+            ]
+
+            for log_line in mock_logs:
+                # Si l'utilisateur quitte la page ou déconnecte le stream
+                if await request.is_disconnected():
+                    print(
+                        f"Client disconnected from log stream for project {project_id}"
+                    )
+                    break
+
+                yield f"event: log_message\ndata: {log_line}\n\n"
+                await asyncio.sleep(1.0)  # Délai entre chaque ligne
+
+        except Exception as e:
+            yield f"event: log_message\ndata: \x1b[31m[ERROR] Stream error: {str(e)}\x1b[0m\n\n"
+
+    return StreamingResponse(
+        log_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Désactive le buffering si tu utilises Nginx
+        },
+    )

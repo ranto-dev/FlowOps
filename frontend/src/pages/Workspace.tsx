@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FolderGit2,
-  History,
+  History as HistoryIcon,
   HelpCircle,
   LogOut,
   Plus,
@@ -12,13 +12,15 @@ import {
   User,
   Play,
   Loader2,
+  BookOpen,
 } from "lucide-react";
 import { WorkflowForm } from "../components/WorkflowForm";
 import { YamlPreview } from "../components/YamlPreview";
+import { History } from "../components/History";
 import Footer from "../components/Footer";
 
 interface Project {
-  id: string; // Stockera l'ObjectId sous forme de string (ex: "64b1f...")
+  id: string;
   name: string;
   description: string;
   repository: string;
@@ -64,7 +66,6 @@ export const Workspace: React.FC = () => {
     "form",
   );
 
-  // Charge les projets depuis MongoDB et les repos GitHub
   useEffect(() => {
     fetchProjects();
     fetchGitHubRepos();
@@ -74,7 +75,7 @@ export const Workspace: React.FC = () => {
     try {
       const res = await fetch(`${API_URL}/api/projects`);
       const data = await res.json();
-      setProjects(data); // Déjà triés par ordre DESC côté backend (via MongoDB)
+      setProjects(data);
     } catch (err) {
       console.error("Error loading MongoDB projects");
     } finally {
@@ -101,7 +102,6 @@ export const Workspace: React.FC = () => {
     navigate("/auth", { replace: true });
   };
 
-  // Centralisation de l'initialisation de la configuration par défaut d'un projet
   const initWorkflowConfig = (project: Project) => {
     setTargetProject(project);
     setActiveConfig({
@@ -143,18 +143,13 @@ export const Workspace: React.FC = () => {
 
       if (res.ok) {
         const createdProject = await res.json();
-
-        // Après la création, redirection directe vers l'interface de configuration
         initWorkflowConfig(createdProject);
-
-        // Reset des champs du formulaire
         setNewProjName("");
         setNewProjDesc("");
         setSelectedRepo("");
         fetchProjects();
       } else {
         const errorData = await res.json();
-        console.error("Backend validation error details:", errorData);
         alert(`Server rejected data: ${JSON.stringify(errorData.detail)}`);
       }
     } catch (err) {
@@ -184,7 +179,6 @@ export const Workspace: React.FC = () => {
     }
   };
 
-  // ─── ACTION RÉELLE D'EXÉCUTION DU WORKFLOW (PUSH + DISPATCH) ───
   const triggerWorkflowExecution = async (
     projectId: string,
     projectName: string,
@@ -201,18 +195,18 @@ export const Workspace: React.FC = () => {
     try {
       const res = await fetch(`${API_URL}/api/projects/${projectId}/execute`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       const data = await res.json();
 
       if (res.ok && data.status === "success") {
         alert(`🎉 Success!\n\n${data.message}`);
+        // Rediriger automatiquement vers l'onglet des logs pour voir l'avancement en direct
+        setActiveTab("history");
       } else {
         alert(
-          `❌ Workflow Trigger Failed\n\nDetails: ${data.detail || "Unknown error occurred"}`,
+          `❌ Workflow Trigger Failed\n\nDetails: ${data.detail || "Unknown error"}`,
         );
       }
     } catch (err) {
@@ -225,22 +219,22 @@ export const Workspace: React.FC = () => {
 
   return (
     <>
-      <div className="flex-1 w-full max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row gap-6 text-left">
+      <div className="flex-1 w-full max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row gap-8 text-left">
         {/* SIDEBAR */}
-        <aside className="w-full md:w-64 shrink-0 flex flex-col justify-between border-r border-slate-100 pr-4 min-h-[500px]">
+        <aside className="w-full md:w-64 shrink-0 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-100 pb-6 md:pb-0 md:pr-6 min-h-[500px]">
           <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 via-purple-600 to-blue-500 flex items-center justify-center text-white font-bold text-xl shadow-md shadow-purple-500/20">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-purple-500/20">
                 ∞
               </div>
               <div>
                 <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-1">
                   Flow
-                  <span className="bg-gradient-to-r from-violet-600 to-blue-500 bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                     Ops
                   </span>
                 </h1>
-                <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase">
+                <p className="text-[10px] text-slate-400 font-bold tracking-wider uppercase">
                   Visual DevOps Studio
                 </p>
               </div>
@@ -251,7 +245,7 @@ export const Workspace: React.FC = () => {
                 setActiveTab("projects");
                 setIsConfiguringWorkflow(false);
               }}
-              className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === "projects" ? "bg-purple-50 text-purple-700" : "text-slate-600 hover:bg-slate-50"}`}
+              className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-bold transition-all duration-200 ${activeTab === "projects" ? "bg-purple-50 text-purple-700 shadow-sm shadow-purple-100/50" : "text-slate-600 hover:bg-slate-50"}`}
             >
               <FolderGit2 className="w-4 h-4" /> My Projects
             </button>
@@ -260,31 +254,31 @@ export const Workspace: React.FC = () => {
                 setActiveTab("history");
                 setIsConfiguringWorkflow(false);
               }}
-              className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === "history" ? "bg-purple-50 text-purple-700" : "text-slate-600 hover:bg-slate-50"}`}
+              className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-bold transition-all duration-200 ${activeTab === "history" ? "bg-purple-50 text-purple-700 shadow-sm shadow-purple-100/50" : "text-slate-600 hover:bg-slate-50"}`}
             >
-              <History className="w-4 h-4" /> History & Logs
+              <HistoryIcon className="w-4 h-4" /> History & Logs
             </button>
             <button
               onClick={() => {
                 setActiveTab("help");
                 setIsConfiguringWorkflow(false);
               }}
-              className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === "help" ? "bg-purple-50 text-purple-700" : "text-slate-600 hover:bg-slate-50"}`}
+              className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-xs font-bold transition-all duration-200 ${activeTab === "help" ? "bg-purple-50 text-purple-700 shadow-sm shadow-purple-100/50" : "text-slate-600 hover:bg-slate-50"}`}
             >
               <HelpCircle className="w-4 h-4" /> Help Center
             </button>
           </div>
 
-          <div className="pt-4 border-t border-slate-100 space-y-3">
-            <div className="flex items-center gap-3 px-2 py-1.5 bg-slate-50 rounded-2xl border border-slate-100">
+          <div className="pt-4 border-t border-slate-100 space-y-3 mt-6 md:mt-0">
+            <div className="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-100">
               {avatarUrl ? (
                 <img
                   src={avatarUrl}
                   alt={username}
-                  className="w-8 h-8 rounded-full border border-purple-200"
+                  className="w-8 h-8 rounded-full border border-purple-200 object-cover"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold">
                   <User className="w-4 h-4" />
                 </div>
               )}
@@ -300,15 +294,15 @@ export const Workspace: React.FC = () => {
             </div>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-xs font-bold text-red-500 hover:bg-red-50 transition-all border border-transparent hover:border-red-100"
+              className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-red-500 hover:bg-red-50/50 transition-all duration-200 border border-transparent"
             >
-              <LogOut className="w-4 h-4" /> Want to Logout
+              <LogOut className="w-4 h-4" /> Logout Account
             </button>
           </div>
         </aside>
 
         {/* COMPOSANT CENTRAL */}
-        <section className="flex-1 bg-white">
+        <section className="flex-1 bg-white min-w-0">
           {activeTab === "projects" && !isConfiguringWorkflow && (
             <div className="space-y-6 animate-in fade-in duration-200">
               <div>
@@ -320,40 +314,40 @@ export const Workspace: React.FC = () => {
                 </p>
               </div>
 
-              {/* FORMULAIRE DE CRÉATION */}
-              <div className="p-5 rounded-2xl border border-slate-100 bg-slate-50/50 grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">
+              {/* FORMULAIRE DE CRÉATION RETRAVAILLÉ */}
+              <div className="p-6 rounded-2xl border border-slate-100 bg-gradient-to-b from-slate-50/70 to-slate-50/20 shadow-inner grid grid-cols-1 lg:grid-cols-4 gap-4 items-end">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
                     Project Name
                   </label>
                   <input
                     type="text"
                     value={newProjName}
                     onChange={(e) => setNewProjName(e.target.value)}
-                    className="w-full p-2 text-xs bg-white border rounded-xl"
+                    className="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-medium text-slate-800"
                     placeholder="E.g., Production API"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
                     Description
                   </label>
                   <input
                     type="text"
                     value={newProjDesc}
                     onChange={(e) => setNewProjDesc(e.target.value)}
-                    className="w-full p-2 text-xs bg-white border rounded-xl"
-                    placeholder="Optional description"
+                    className="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-medium text-slate-800"
+                    placeholder="Optional details"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
                     Connected GitHub Repo
                   </label>
                   <select
                     value={selectedRepo}
                     onChange={(e) => setSelectedRepo(e.target.value)}
-                    className="w-full p-2 text-xs bg-white border rounded-xl font-mono text-slate-700"
+                    className="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-mono text-slate-700"
                   >
                     <option value="">-- Choose a Repository --</option>
                     {gitRepos.map((repo) => (
@@ -365,89 +359,101 @@ export const Workspace: React.FC = () => {
                 </div>
                 <button
                   onClick={createProject}
-                  className="w-full py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1 hover:bg-slate-800 transition-all uppercase tracking-wider text-[10px]"
+                  className="w-full py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 hover:bg-slate-800 hover:shadow-md transition-all duration-200 uppercase tracking-wider"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Setup Project
+                  <Plus className="w-4 h-4" /> Setup Project
                 </button>
               </div>
 
-              {/* LISTE DES PROJETS */}
+              {/* LISTE DES PROJETS OPTIMISÉE */}
               {loadingProjects ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-6 h-6 text-purple-600 animate-spin" />
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
                 </div>
               ) : projects.length === 0 ? (
-                <div className="text-center py-12 text-slate-400 text-xs border border-dashed rounded-2xl">
+                <div className="text-center py-16 text-slate-400 text-xs border border-dashed border-slate-200 rounded-2xl bg-slate-50/30">
                   No projects found. Create your first database configuration
                   block above.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-1 gap-4">
                   {projects.map((p) => (
                     <div
                       key={p.id}
-                      className="p-5 border border-slate-100 rounded-2xl hover:border-purple-200 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white shadow-sm"
+                      className="p-5 border border-slate-150 rounded-2xl hover:border-purple-300 hover:shadow-md transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-5 bg-white relative overflow-hidden group"
                     >
-                      <div>
-                        <span className="text-[9px] font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-500 font-bold uppercase">
-                          {p.id}
-                        </span>
-                        <h4 className="text-sm font-black text-slate-900 mt-1">
+                      {/* Subtile barre d'accentuation colorée pour les projets configurés */}
+                      {p.has_workflow && (
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-500" />
+                      )}
+
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-mono bg-slate-100 px-2 py-0.5 rounded-md text-slate-500 font-bold uppercase">
+                            ID: {p.id.slice(-6)}...
+                          </span>
+                          {p.has_workflow && (
+                            <span className="text-[9px] font-bold bg-purple-50 text-purple-700 px-2 py-0.5 rounded-md border border-purple-100/50">
+                              Active Pipeline
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="text-base font-black text-slate-900 tracking-tight">
                           {p.name}
                         </h4>
-                        <p className="text-xs text-slate-400">
-                          {p.description}
+                        <p className="text-xs text-slate-400 font-medium max-w-xl">
+                          {p.description || "No description provided."}
                         </p>
-                        <p className="text-[11px] font-mono text-purple-600 font-bold mt-2">
+                        <p className="text-[11px] font-mono text-slate-500 font-medium pt-1">
                           📦 Linked target:{" "}
-                          <span className="underline">{p.repository}</span>
+                          <span className="text-purple-600 font-bold underline decoration-purple-300">
+                            {p.repository}
+                          </span>
                         </p>
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
                         {p.has_workflow ? (
                           <>
-                            {/* BOUTON EXECUTE WORKFLOW */}
                             <button
                               onClick={() =>
                                 triggerWorkflowExecution(p.id, p.name)
                               }
                               disabled={executingProjectId !== null}
-                              className="px-3 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 hover:bg-emerald-700 shadow-sm shadow-emerald-100 transition-all uppercase tracking-wider text-[10px] disabled:opacity-60"
+                              className="px-4 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 hover:bg-emerald-700 hover:shadow-sm transition-all uppercase tracking-wider disabled:opacity-60"
                             >
                               {executingProjectId === p.id ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
                               ) : (
-                                <Play className="w-3 h-3 fill-white" />
+                                <Play className="w-3.5 h-3.5 fill-white" />
                               )}
                               Execute
                             </button>
 
-                            {/* BOUTON RE-CONFIGURE WORKFLOW */}
                             <button
                               onClick={() => initWorkflowConfig(p)}
                               disabled={executingProjectId !== null}
-                              className="px-3 py-2 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 hover:bg-slate-200 transition-all uppercase tracking-wider text-[10px] disabled:opacity-50"
+                              className="px-4 py-2 bg-slate-50 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 hover:bg-slate-100 transition-all uppercase tracking-wider disabled:opacity-50"
                             >
-                              <Sliders className="w-3 h-3" /> Configure
+                              <Sliders className="w-3.5 h-3.5" /> Configure
                             </button>
                           </>
                         ) : (
-                          /* BOUTON DE CRÉATION INITIALE */
                           <button
                             onClick={() => initWorkflowConfig(p)}
                             disabled={executingProjectId !== null}
-                            className="px-3 py-2 bg-purple-50 text-purple-700 font-bold text-xs rounded-xl border border-purple-100 flex items-center gap-1.5 hover:bg-purple-100 transition-all uppercase tracking-wider text-[10px] disabled:opacity-50"
+                            className="px-4 py-2 bg-purple-600 text-white font-bold text-xs rounded-xl shadow-sm hover:bg-purple-700 transition-all uppercase tracking-wider disabled:opacity-50"
                           >
-                            <Sliders className="w-3 h-3" /> Create Workflow
+                            <Sliders className="w-3.5 h-3.5 inline mr-1" />{" "}
+                            Create Workflow
                           </button>
                         )}
 
-                        {/* BOUTON SUPPRIMER */}
                         <button
                           onClick={(e) => deleteProject(p.id, e)}
                           disabled={executingProjectId !== null}
-                          className="p-2 text-slate-400 hover:text-red-500 rounded-xl hover:bg-slate-50 transition-all disabled:opacity-40"
+                          className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all disabled:opacity-40"
+                          title="Delete database record"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -466,9 +472,9 @@ export const Workspace: React.FC = () => {
               <div className="space-y-4 animate-in zoom-in-95 duration-200">
                 <button
                   onClick={() => setIsConfiguringWorkflow(false)}
-                  className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-900 mb-2"
+                  className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors mb-4"
                 >
-                  <ArrowLeft className="w-3.5 h-3.5" /> Cancel and Back
+                  <ArrowLeft className="w-4 h-4" /> Back to Dashboard
                 </button>
 
                 {viewState === "form" && (
@@ -496,10 +502,11 @@ export const Workspace: React.FC = () => {
                 )}
 
                 {viewState === "loading" && (
-                  <div className="py-20 text-center space-y-2">
-                    <div className="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    <p className="text-xs font-bold text-slate-700 font-mono">
-                      Compiling workflow configurations...
+                  <div className="py-24 text-center space-y-4 border border-slate-100 rounded-3xl bg-slate-50/50">
+                    <div className="w-8 h-8 border-3 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="text-xs font-bold text-slate-600 font-mono tracking-wide">
+                      Compiling visual workflow trees into production-ready
+                      standard YAML...
                     </p>
                   </div>
                 )}
@@ -548,24 +555,37 @@ export const Workspace: React.FC = () => {
               </div>
             )}
 
+          {/* ONGLET TELEMETRIE & RUNNER LOGS (History) INTÉGRÉ */}
           {activeTab === "history" && (
-            <div className="space-y-4 border border-dashed rounded-3xl p-8 text-center text-slate-400 text-xs">
-              <History className="w-8 h-8 mx-auto opacity-30 text-purple-600" />
-              <p className="font-bold text-slate-700">
-                No Execution Logs available
-              </p>
+            <div className="animate-in fade-in duration-200">
+              <History />
             </div>
           )}
 
+          {/* HELP CENTER OPTIMISÉ */}
           {activeTab === "help" && (
-            <div className="space-y-3 p-2">
-              <h3 className="text-md font-bold text-slate-900">
-                FlowOps Documentation
-              </h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Ensure your MongoDB container is up and running on port 27017
-                before applying pipeline triggers.
-              </p>
+            <div className="space-y-4 p-4 border border-slate-100 rounded-3xl bg-gradient-to-b from-slate-50/50 to-white shadow-sm animate-in fade-in duration-200">
+              <div className="flex items-center gap-2 text-slate-900 font-black text-base">
+                <BookOpen className="w-5 h-5 text-indigo-600" />
+                <h3>FlowOps Documentation Hub</h3>
+              </div>
+              <div className="text-xs text-slate-600 space-y-3 font-medium leading-relaxed max-w-2xl">
+                <p>
+                  Welcome to the workspace control panel. From here you can spin
+                  up dynamic execution pipelines hooks linked directly with your
+                  GitHub accounts deployments stacks.
+                </p>
+                <div className="p-3 bg-amber-50 border border-amber-150 rounded-xl text-amber-800 font-mono text-[11px] leading-normal">
+                  <span className="font-bold">⚠️ Local Stack Requirement:</span>{" "}
+                  Ensure your MongoDB container instances are running properly
+                  on port{" "}
+                  <code className="bg-amber-100/80 px-1 py-0.5 rounded font-bold">
+                    27017
+                  </code>{" "}
+                  and that backend API servers handles the incoming payload
+                  pipes before firing actions.
+                </div>
+              </div>
             </div>
           )}
         </section>
