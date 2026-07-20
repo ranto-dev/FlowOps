@@ -1,2 +1,4 @@
+__pycache__
 generated/
 generated_workflows/
+.env

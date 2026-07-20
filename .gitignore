@@ -1,4 +1,3 @@
 *.txt
 *.yml
 MY_AGENT.md
-backend/__pycache__

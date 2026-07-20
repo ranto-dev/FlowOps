@@ -500,45 +500,192 @@ async def execute_project_workflow(
             )
 
 
-# Assure-toi que project_id est typé en : str
-@app.get("/api/projects/{project_id}/logs/stream")
-async def stream_project_logs(project_id: str, request: Request):
+# Log SYSTEM
+@app.get("/api/projects/{project_id}/runs")
+async def get_project_workflow_runs(
+    project_id: str = Path(..., description="ID MongoDB du projet"),
+    authorization: Annotated[str | None, Header()] = None,
+):
+    """Récupère l'historique des exécutions (workflow runs) GitHub Actions pour un projet."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Token GitHub invalide ou manquant")
 
-    async def log_generator():
-        try:
-            # 1. Message de bienvenue dans la console Xterm
-            yield "event: log_message\ndata: \x1b[1;34m[SYSTEM] Handshake established. Fetching execution telemetry...\x1b[0m\n\n"
-            await asyncio.sleep(0.5)
+    token = authorization.split(" ")[1]
 
-            # 2. Simulation ou récupération des logs (remplace ce bloc par tes vrais logs si besoin)
-            mock_logs = [
-                "🛠️ [BUILD] Triggering GitHub Workflow pipeline...",
-                "📦 [CHECKOUT] Fetching repository code structure...",
-                "🧪 [TEST] Running unit tests suite (14 passed, 0 failed)...",
-                "🚀 [DEPLOY] Pushing release artifacts to target runner...",
-                "🎉 [SUCCESS] Pipeline execution finished with exit code 0.",
-            ]
+    if not ObjectId.is_valid(project_id):
+        raise HTTPException(status_code=400, detail="Format d'ID de projet invalide")
 
-            for log_line in mock_logs:
-                # Si l'utilisateur quitte la page ou déconnecte le stream
-                if await request.is_disconnected():
-                    print(
-                        f"Client disconnected from log stream for project {project_id}"
-                    )
-                    break
+    project = await db.projects.find_one({"_id": ObjectId(project_id)})
+    if not project or not project.get("repository"):
+        raise HTTPException(
+            status_code=404, detail="Projet ou dépôt associé introuvable"
+        )
 
-                yield f"event: log_message\ndata: {log_line}\n\n"
-                await asyncio.sleep(1.0)  # Délai entre chaque ligne
+    repo = project.get("repository")
+    if "github.com/" in repo:
+        repo = repo.split("github.com/")[-1].strip("/")
+    elif "github.com:" in repo:
+        repo = repo.split("github.com:")[-1].replace(".git", "").strip("/")
 
-        except Exception as e:
-            yield f"event: log_message\ndata: \x1b[31m[ERROR] Stream error: {str(e)}\x1b[0m\n\n"
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
 
-    return StreamingResponse(
-        log_generator(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",  # Désactive le buffering si tu utilises Nginx
-        },
-    )
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        res = await client.get(
+            f"https://api.github.com/repos/{repo}/actions/runs?per_page=10",
+            headers=headers,
+        )
+        if res.status_code != 200:
+            raise HTTPException(
+                status_code=res.status_code,
+                detail=f"Impossible de récupérer les exécutions depuis GitHub: {res.text}",
+            )
+
+        runs_data = res.json().get("workflow_runs", [])
+
+        # Formater les données pour le frontend
+        runs = []
+        for r in runs_data:
+            runs.append(
+                {
+                    "id": str(r["id"]),
+                    "name": r.get("name") or r.get("display_title", "Workflow Run"),
+                    "status": r.get("status"),  # queued, in_progress, completed
+                    "conclusion": r.get(
+                        "conclusion"
+                    ),  # success, failure, cancelled, None
+                    "event": r.get("event"),
+                    "branch": r.get("head_branch"),
+                    "commit_sha": r.get("head_sha", "")[:7],
+                    "created_at": r.get("created_at"),
+                    "updated_at": r.get("updated_at"),
+                    "html_url": r.get("html_url"),
+                }
+            )
+
+        return {"project_id": project_id, "repository": repo, "runs": runs}
+
+
+@app.get("/api/projects/{project_id}/runs/{run_id}/jobs")
+async def get_run_jobs(
+    project_id: str,
+    run_id: str,
+    authorization: Annotated[str | None, Header()] = None,
+):
+    """Récupère les détails des jobs et des étapes (steps) pour une exécution donnée."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Token GitHub invalide ou manquant")
+
+    token = authorization.split(" ")[1]
+
+    if not ObjectId.is_valid(project_id):
+        raise HTTPException(status_code=400, detail="Format ID invalide")
+
+    project = await db.projects.find_one({"_id": ObjectId(project_id)})
+    if not project or not project.get("repository"):
+        raise HTTPException(status_code=404, detail="Projet introuvable")
+
+    repo = project.get("repository")
+    if "github.com/" in repo:
+        repo = repo.split("github.com/")[-1].strip("/")
+
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        res = await client.get(
+            f"https://api.github.com/repos/{repo}/actions/runs/{run_id}/jobs",
+            headers=headers,
+        )
+        if res.status_code != 200:
+            raise HTTPException(
+                status_code=res.status_code,
+                detail="Erreur de récupération des jobs GitHub",
+            )
+
+        jobs_data = res.json().get("jobs", [])
+        jobs = []
+        for j in jobs_data:
+            steps = []
+            for s in j.get("steps", []):
+                steps.append(
+                    {
+                        "name": s.get("name"),
+                        "status": s.get("status"),
+                        "conclusion": s.get("conclusion"),
+                        "number": s.get("number"),
+                        "started_at": s.get("started_at"),
+                        "completed_at": s.get("completed_at"),
+                    }
+                )
+
+            jobs.append(
+                {
+                    "id": str(j["id"]),
+                    "name": j.get("name"),
+                    "status": j.get("status"),
+                    "conclusion": j.get("conclusion"),
+                    "started_at": j.get("started_at"),
+                    "completed_at": j.get("completed_at"),
+                    "steps": steps,
+                }
+            )
+
+        return {"run_id": run_id, "jobs": jobs}
+
+
+@app.get("/api/projects/{project_id}/runs/{run_id}/jobs/{job_id}/logs")
+async def get_job_logs(
+    project_id: str,
+    run_id: str,
+    job_id: str,
+    authorization: Annotated[str | None, Header()] = None,
+):
+    """Télécharge et renvoie le texte brut des logs pour un job donné."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Token GitHub invalide ou manquant")
+
+    token = authorization.split(" ")[1]
+
+    if not ObjectId.is_valid(project_id):
+        raise HTTPException(status_code=400, detail="Format ID invalide")
+
+    project = await db.projects.find_one({"_id": ObjectId(project_id)})
+    if not project or not project.get("repository"):
+        raise HTTPException(status_code=404, detail="Projet introuvable")
+
+    repo = project.get("repository")
+    if "github.com/" in repo:
+        repo = repo.split("github.com/")[-1].strip("/")
+
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+
+    async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+        res = await client.get(
+            f"https://api.github.com/repos/{repo}/actions/jobs/{job_id}/logs",
+            headers=headers,
+        )
+
+        if res.status_code == 404:
+            return {
+                "logs": "Les logs ne sont pas encore disponibles sur GitHub (exécution en cours de démarrage...)"
+            }
+
+        if res.status_code != 200:
+            return {
+                "logs": f"Impossible de charger les logs (Statut HTTP {res.status_code})"
+            }
+
+        # Nettoyage basique des horodatages ANSI de GitHub
+        raw_logs = res.text
+        return {"logs": raw_logs}
