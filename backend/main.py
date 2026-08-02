@@ -1,4 +1,3 @@
-# backend/main.py
 from fastapi import FastAPI, HTTPException, Header, Path, Request
 import yaml
 import os
@@ -21,7 +20,7 @@ from fastapi.responses import StreamingResponse
 
 load_dotenv()
 
-app = FastAPI(title="FlowOps Core Engine", version="6.0.0")
+app = FastAPI()
 
 WORKFLOWS_DIR = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "generated_workflows"
@@ -500,13 +499,15 @@ async def execute_project_workflow(
             )
 
 
-# Log SYSTEM
+# systeme de logs
+
+
+# Récupère l'historique des exécutions (workflow runs) GitHub Actions pour un projet.
 @app.get("/api/projects/{project_id}/runs")
 async def get_project_workflow_runs(
     project_id: str = Path(..., description="ID MongoDB du projet"),
     authorization: Annotated[str | None, Header()] = None,
 ):
-    """Récupère l'historique des exécutions (workflow runs) GitHub Actions pour un projet."""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token GitHub invalide ou manquant")
 
@@ -546,7 +547,7 @@ async def get_project_workflow_runs(
 
         runs_data = res.json().get("workflow_runs", [])
 
-        # Formater les données pour le frontend
+        # Formater les données
         runs = []
         for r in runs_data:
             runs.append(
@@ -569,13 +570,13 @@ async def get_project_workflow_runs(
         return {"project_id": project_id, "repository": repo, "runs": runs}
 
 
+# Récupère les détails des jobs et des étapes (steps) pour une exécution donnée.
 @app.get("/api/projects/{project_id}/runs/{run_id}/jobs")
 async def get_run_jobs(
     project_id: str,
     run_id: str,
     authorization: Annotated[str | None, Header()] = None,
 ):
-    """Récupère les détails des jobs et des étapes (steps) pour une exécution donnée."""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token GitHub invalide ou manquant")
 
@@ -640,6 +641,7 @@ async def get_run_jobs(
         return {"run_id": run_id, "jobs": jobs}
 
 
+# Télécharge et renvoie le texte brut des logs pour un job donné.
 @app.get("/api/projects/{project_id}/runs/{run_id}/jobs/{job_id}/logs")
 async def get_job_logs(
     project_id: str,
@@ -647,7 +649,6 @@ async def get_job_logs(
     job_id: str,
     authorization: Annotated[str | None, Header()] = None,
 ):
-    """Télécharge et renvoie le texte brut des logs pour un job donné."""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token GitHub invalide ou manquant")
 

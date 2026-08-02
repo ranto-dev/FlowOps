@@ -17,7 +17,7 @@ import {
 import { WorkflowForm } from "../components/WorkflowForm";
 import { YamlPreview } from "../components/YamlPreview";
 import { History } from "../components/History";
-import Footer from "../components/Footer";
+import LogoImage from "../assets/logo-flowOps-transparent.png";
 
 interface Project {
   id: string;
@@ -223,21 +223,11 @@ export const Workspace: React.FC = () => {
         {/* SIDEBAR */}
         <aside className="w-full md:w-64 shrink-0 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-100 pb-6 md:pb-0 md:pr-6 min-h-[500px]">
           <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-purple-500/20">
-                ∞
-              </div>
-              <div>
-                <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-1">
-                  Flow
-                  <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                    Ops
-                  </span>
-                </h1>
-                <p className="text-[10px] text-slate-400 font-bold tracking-wider uppercase">
-                  Visual DevOps Studio
-                </p>
-              </div>
+            <div className="flex items-center cursor-pointer group">
+              <img src={LogoImage} className="h-20" />
+              <span className="font-extrabold text-lg tracking-tight text-slate-900 group-hover:text-purple-600 transition-colors">
+                FlowOps
+              </span>
             </div>
 
             <button
@@ -590,7 +580,6 @@ export const Workspace: React.FC = () => {
           )}
         </section>
       </div>
-      <Footer />
     </>
   );
 };
