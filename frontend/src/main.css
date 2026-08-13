@@ -1,10 +1,11 @@
 @import "tailwindcss";
 
+* {
+  font-family:
+    "Comic Sans MS", "Comic Sans", "Comic Neue", cursive, sans-serif !important;
+}
+
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 5rem;
-}
-
-body {
-  font-family: "Comic Sans MS";
 }
