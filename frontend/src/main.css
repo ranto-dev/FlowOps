@@ -1,10 +1,13 @@
+/* importation de tailwindcss */
 @import "tailwindcss";
 
+/* definition de la police principale */
 * {
   font-family:
     "Comic Sans MS", "Comic Sans", "Comic Neue", cursive, sans-serif !important;
 }
 
+/* animation du scrolling */
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 5rem;
