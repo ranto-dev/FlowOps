@@ -100,7 +100,9 @@ export const History: React.FC = () => {
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/projects`);
+        const res = await fetch(`${API_URL}/api/projects`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (res.ok) {
           const data = await res.json();
           setProjects(data);
@@ -111,7 +113,7 @@ export const History: React.FC = () => {
       }
     };
     loadProjects();
-  }, [API_URL]);
+  }, [API_URL, token]);
 
   // 2. Chargement des Runs
   const fetchRuns = useCallback(

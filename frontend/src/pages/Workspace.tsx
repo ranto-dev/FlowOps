@@ -15,6 +15,7 @@ import {
   BookOpen,
   GitBranch,
   Layers,
+  X,
 } from "lucide-react";
 import { WorkflowForm } from "../components/WorkflowForm";
 import { YamlPreview } from "../components/YamlPreview";
@@ -46,7 +47,7 @@ export const Workspace: React.FC = () => {
   const token = localStorage.getItem("flowops_token");
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-  // --- ÉTATS DONNÉES BASE DE DONNÉES & API ---
+  // --- DATABASE & API STATES ---
   const [projects, setProjects] = useState<Project[]>([]);
   const [gitRepos, setGitRepos] = useState<GitHubRepo[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
@@ -54,12 +55,14 @@ export const Workspace: React.FC = () => {
     null,
   );
 
-  // --- ÉTATS FORMULAIRE CRÉATION ---
+  // --- MODAL & FORM CREATION STATES ---
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [newProjName, setNewProjName] = useState("");
   const [newProjDesc, setNewProjDesc] = useState("");
   const [selectedRepo, setSelectedRepo] = useState("");
 
-  // --- ÉTATS CONFIG WORKFLOW ---
+  // --- WORKFLOW CONFIG STATES ---
   const [isConfiguringWorkflow, setIsConfiguringWorkflow] = useState(false);
   const [targetProject, setTargetProject] = useState<Project | null>(null);
   const [activeConfig, setActiveConfig] = useState<any>(null);
@@ -75,7 +78,9 @@ export const Workspace: React.FC = () => {
 
   const fetchProjects = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/projects`);
+      const res = await fetch(`${API_URL}/api/projects`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await res.json();
       setProjects(data);
     } catch (err) {
@@ -104,6 +109,17 @@ export const Workspace: React.FC = () => {
     navigate("/auth", { replace: true });
   };
 
+  const resetForm = () => {
+    setNewProjName("");
+    setNewProjDesc("");
+    setSelectedRepo("");
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    resetForm();
+  };
+
   const initWorkflowConfig = (project: Project) => {
     setTargetProject(project);
     setActiveConfig({
@@ -126,16 +142,22 @@ export const Workspace: React.FC = () => {
     setViewState("form");
   };
 
-  const createProject = async () => {
+  const createProject = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!newProjName.trim() || !selectedRepo) {
       alert("Please fill in the project name and select a GitHub Repository.");
       return;
     }
 
+    setIsCreating(true);
+
     try {
       const res = await fetch(`${API_URL}/api/projects`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           name: newProjName.trim(),
           description: newProjDesc.trim() || "",
@@ -145,17 +167,17 @@ export const Workspace: React.FC = () => {
 
       if (res.ok) {
         const createdProject = await res.json();
-        initWorkflowConfig(createdProject);
-        setNewProjName("");
-        setNewProjDesc("");
-        setSelectedRepo("");
+        closeModal();
         fetchProjects();
+        initWorkflowConfig(createdProject);
       } else {
         const errorData = await res.json();
         alert(`Server rejected data: ${JSON.stringify(errorData.detail)}`);
       }
     } catch (err) {
       alert("Failed to communicate with the server.");
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -169,6 +191,7 @@ export const Workspace: React.FC = () => {
       try {
         const res = await fetch(`${API_URL}/api/projects/${id}`, {
           method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
           fetchProjects();
@@ -203,7 +226,9 @@ export const Workspace: React.FC = () => {
       const data = await res.json();
 
       if (res.ok && data.status === "success") {
-        alert(`🎉 Success!\n\n${data.message}`);
+        alert(
+          `🎉 Success!\n\n${projectName} — ${data.message}`,
+        );
         setActiveTab("history");
       } else {
         alert(
@@ -333,65 +358,14 @@ export const Workspace: React.FC = () => {
                   project repositories.
                 </p>
               </div>
-            </div>
 
-            {/* Formulaire de création de Projet */}
-            <div className="p-5 rounded-2xl border border-slate-200/80 bg-white shadow-sm space-y-4">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-wider">
-                <Plus className="w-4 h-4 text-purple-600" /> Create New Project
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3 items-end">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                    Project Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={newProjName}
-                    onChange={(e) => setNewProjName(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-medium text-slate-800"
-                    placeholder="E.g., Production API"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                    Description
-                  </label>
-                  <input
-                    type="text"
-                    value={newProjDesc}
-                    onChange={(e) => setNewProjDesc(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-medium text-slate-800"
-                    placeholder="Optional details..."
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                    GitHub Repo *
-                  </label>
-                  <select
-                    value={selectedRepo}
-                    onChange={(e) => setSelectedRepo(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-mono text-slate-700"
-                  >
-                    <option value="">-- Select Repository --</option>
-                    {gitRepos.map((repo) => (
-                      <option key={repo.id} value={repo.full_name}>
-                        {repo.full_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <button
-                  onClick={createProject}
-                  className="w-full py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow-sm hover:shadow-purple-200 transition-all uppercase tracking-wider h-[38px]"
-                >
-                  <Plus className="w-4 h-4" /> Initialize
-                </button>
-              </div>
+              {/* Action Button: Create New Project */}
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-sm hover:shadow-purple-200 transition-all uppercase tracking-wider"
+              >
+                <Plus className="w-4 h-4" /> New Project
+              </button>
             </div>
 
             {/* Liste des projets */}
@@ -403,12 +377,20 @@ export const Workspace: React.FC = () => {
                 </span>
               </div>
             ) : projects.length === 0 ? (
-              <div className="text-center py-16 text-slate-400 text-xs border border-dashed border-slate-200 rounded-2xl bg-white space-y-2">
+              <div className="text-center py-16 text-slate-400 text-xs border border-dashed border-slate-200 rounded-2xl bg-white space-y-3">
                 <Layers className="w-8 h-8 text-slate-300 mx-auto" />
-                <p className="font-medium">No projects found in database.</p>
-                <p className="text-[11px] text-slate-400">
-                  Create one using the form above to get started.
+                <p className="font-medium text-slate-600">
+                  No projects found in database.
                 </p>
+                <p className="text-[11px] text-slate-400">
+                  Click on "New Project" button above to get started.
+                </p>
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="mt-2 py-2 px-4 bg-purple-50 text-purple-700 hover:bg-purple-100 font-bold text-xs rounded-xl inline-flex items-center gap-1.5 transition-all uppercase tracking-wider border border-purple-200"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Create Project
+                </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4">
@@ -568,7 +550,10 @@ export const Workspace: React.FC = () => {
                       `${API_URL}/api/projects/${targetProject.id}/workflow`,
                       {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
+                        headers: {
+                          "Content-Type": "application/json",
+                          Authorization: `Bearer ${token}`,
+                        },
                         body: JSON.stringify(activeConfig),
                       },
                     );
@@ -627,6 +612,115 @@ export const Workspace: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* ================= MODAL DE CRÉATION DE PROJET ================= */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div
+            className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-purple-100 text-purple-600 rounded-xl">
+                  <FolderGit2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-slate-900">
+                    Create New Project
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Link a repository to set up automated pipelines
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={closeModal}
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={createProject} className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
+                  Project Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newProjName}
+                  onChange={(e) => setNewProjName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-medium text-slate-800"
+                  placeholder="E.g., Production API"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
+                  GitHub Repository <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={selectedRepo}
+                  onChange={(e) => setSelectedRepo(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-mono text-slate-700"
+                >
+                  <option value="">-- Select GitHub Repository --</option>
+                  {gitRepos.map((repo) => (
+                    <option key={repo.id} value={repo.full_name}>
+                      {repo.full_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
+                  Description
+                </label>
+                <textarea
+                  rows={3}
+                  value={newProjDesc}
+                  onChange={(e) => setNewProjDesc(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-medium text-slate-800 resize-none"
+                  placeholder="Optional details about this project..."
+                />
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 mt-6">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all uppercase tracking-wider"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreating}
+                  className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-sm hover:shadow-purple-200 transition-all uppercase tracking-wider disabled:opacity-50"
+                >
+                  {isCreating ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5" /> Initialize Project
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

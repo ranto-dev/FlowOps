@@ -2,33 +2,11 @@ import { useState } from "react";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import LogoImage from "../assets/logo-flowOps-transparent.png";
+import { LINKS } from "../constants/constants";
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
-
-  const LINKS = [
-    {
-      link: "Features",
-      to: "features",
-    },
-    {
-      link: "Architecture",
-      to: "architecture",
-    },
-    {
-      link: "Developer API",
-      to: "developer",
-    },
-    {
-      link: "Pricing",
-      to: "pricing",
-    },
-    {
-      link: "FAQ",
-      to: "faq",
-    },
-  ];
 
   return (
     <>
