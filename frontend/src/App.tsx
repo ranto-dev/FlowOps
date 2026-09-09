@@ -9,6 +9,7 @@ import {
 } from "react-router-dom";
 import { AuthPage } from "./pages/AuthPage";
 import { Workspace } from "./pages/Workspace";
+import { SetupPage } from "./pages/SetupPage";
 import { ArrowLeft } from "lucide-react";
 import LandingPage from "./pages/LandingPage";
 
@@ -69,6 +70,9 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* 3.5 Page de configuration GitHub OAuth (accessible à tous) */}
+          <Route path="/setup" element={<SetupPage />} />
 
           {/* Redirection pour les routes inconnues */}
           <Route path="*" element={<Navigate to="/" replace />} />
