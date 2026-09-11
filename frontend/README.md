@@ -20,8 +20,8 @@ cp .env.example .env
 ## GitHub OAuth — one-time configuration
 
 FlowOps never stores GitHub credentials in the source code. GitHub
-authentication uses the **OAuth Device Flow**, configured with **your own**
-GitHub OAuth App via environment variables.
+authentication uses the **OAuth Device Flow**, configured with
+**your own** GitHub OAuth App via environment variables.
 
 > Tip: the in-app `/setup` page (/auth redirects there automatically when the
 > backend reports that GitHub is not configured) walks you through the whole
@@ -32,6 +32,7 @@ GitHub OAuth App via environment variables.
    - **Application name**: `FlowOps`
    - **Homepage URL**: `http://localhost:5173`
    - **Authorization callback URL**: `http://localhost:5173/auth`
+     (required to create the app; the Device Flow does not actually use it)
 3. Copy the `Client ID` and `Client Secret`.
 4. In `backend/`, copy `.env.example` to `.env` and paste your values:
 
@@ -41,6 +42,11 @@ GitHub OAuth App via environment variables.
    ```
 
 5. Restart the backend.
+
+When an unauthenticated user clicks "Continue with GitHub", FlowOps shows a
+one-time activation code to copy, then opens GitHub **in a popup above the same
+page** (no new tab). As soon as the user approves, the popup closes by itself
+and the user is brought back to FlowOps automatically.
 
 ## Run
 

@@ -75,7 +75,7 @@ export const SetupPage: React.FC = () => {
       icon: <Settings className="w-4 h-4" />,
       title: "Remplir les champs",
       description:
-        "Application name : FlowOps — Homepage URL : http://localhost:5173 — Authorization callback URL : http://localhost:5173/auth",
+        "Application name : FlowOps — Homepage URL : http://localhost:5173 — Authorization callback URL : http://localhost:5173/auth (obligatoire pour créer l'app, le Device Flow ne l'utilise pas)",
     },
     {
       icon: <ShieldCheck className="w-4 h-4" />,
@@ -107,7 +107,7 @@ MONGO_URI=mongodb://localhost:27017/`,
     },
     {
       key: "device_uri",
-      label: "Endpoint Device Flow (déjà en place)",
+      label: "Endpoint OAuth (déjà en place)",
       content: `${API_URL}/api/auth/device-code`,
     },
   ];
@@ -205,8 +205,13 @@ MONGO_URI=mongodb://localhost:27017/`,
             </h1>
             <p className="text-sm text-slate-500 leading-relaxed max-w-xl">
               FlowOps utilise le <strong>GitHub OAuth Device Flow</strong> pour se
-              connecter en toute sécurité à vos dépôts. Pour que vous (ou tout
-              autre utilisateur) puissiez vous authentifier, créez un{" "}
+              connecter en toute sécurité à vos dépôts : FlowOps affiche un code
+              d'activation à copier, vous cliquez sur « Continue with GitHub »,
+              GitHub s'ouvre au-dessus de la page (aucun changement d'onglet),
+              vous autorisez l'accès puis vous revenez automatiquement dans
+              FlowOps dès la validation.
+              Pour que vous (ou tout autre utilisateur) puissiez vous
+              authentifier, créez un{" "}
               <strong>GitHub OAuth App personnel</strong> et renseignez ses
               credentials dans votre configuration locale. Aucune donnée
               sensible n'est codée en dur dans le code source.

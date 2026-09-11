@@ -1,22 +1,23 @@
-from fastapi import FastAPI, HTTPException, Header, Path, Request
-import yaml
-import os
-import httpx
-from pydantic import BaseModel
-from dotenv import load_dotenv
-from config import setup_cors
-from schemas import FlowOpsWorkflowSchema
-from compiler import compile_flowops_workflow
-from typing import Annotated
-import json
-import base64
-from motor.motor_asyncio import AsyncIOMotorClient
-import datetime
-from bson import ObjectId
-from helper import format_project
 import asyncio
-from sse_starlette.sse import EventSourceResponse
+import base64
+import datetime
+import json
+import os
+from typing import Annotated
+
+import httpx
+import yaml
+from bson import ObjectId
+from compiler import compile_flowops_workflow
+from config import setup_cors
+from dotenv import load_dotenv
+from fastapi import FastAPI, Header, HTTPException, Path, Request
 from fastapi.responses import StreamingResponse
+from helper import format_project
+from motor.motor_asyncio import AsyncIOMotorClient
+from pydantic import BaseModel
+from schemas import FlowOpsWorkflowSchema
+from sse_starlette.sse import EventSourceResponse
 
 load_dotenv()
 
@@ -39,8 +40,82 @@ projects_collection = db["projects"]
 # Base de données en mémoire pour FlowOps pour l'utilisateur
 USERS_DB = {}
 
-# load DOTENV
-GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "ton_client_id_global")
+# --- CONFIGURATION GITHUB OAUTH (issue de l'environnement) ---
+GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "").strip()
+GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET", "").strip()
+
+GITHUB_CONFIG_READY = bool(GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET)
+GITHUB_CONFIG_MISSING_MSG = (
+    "GitHub OAuth App is not configured. "
+    "Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in backend/.env "
+    "(see backend/.env.example)."
+)
+
+
+# --- OUTILS AUTH: EXTRACTION DU TOKEN BEARER ---
+def _extract_bearer_token(authorization: str | None) -> str | None:
+    """Extrait le token GitHub OAuth depuis l'en-tête Authorization."""
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    return authorization.split(" ", 1)[1].strip()
+
+
+# --- RÉSOLUTION DE L'UTILISATEUR GITHUB DEPUIS LE TOKEN ---
+# Cache en mémoire (token -> (github_id, username, avatar_url, expires_at))
+# pour éviter d'appeler l'API GitHub à chaque requête utilisateur.
+_GITHUB_USER_CACHE: dict[str, tuple[str, str, str, float]] = {}
+_GITHUB_USER_CACHE_TTL = 600  # secondes
+
+
+async def _resolve_github_user(token: str) -> tuple[str, str, str]:
+    """Retourne (github_id, username, avatar_url) pour le token donné.
+
+    Résout l'identité directement auprès de GitHub (impossible à falsifier)
+    et met en cache le résultat pendant quelques minutes.
+    """
+    from time import time
+
+    cached = _GITHUB_USER_CACHE.get(token)
+    if cached and cached[3] > time():
+        github_id, username, avatar_url, _ = cached
+        return github_id, username, avatar_url
+
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        user_response = await client.get(
+            "https://api.github.com/user",
+            headers={"Authorization": f"token {token}", "Accept": "application/json"},
+        )
+
+    if user_response.status_code != 200:
+        raise HTTPException(
+            status_code=401,
+            detail="GitHub Access Token expired or invalid. Please re-authenticate.",
+        )
+
+    user_data = user_response.json()
+    github_id = str(user_data.get("id"))
+    username = user_data.get("login", "")
+    avatar_url = user_data.get("avatar_url", "")
+
+    if not github_id or github_id == "None":
+        raise HTTPException(
+            status_code=401,
+            detail="Unable to resolve GitHub user profile. Please re-authenticate.",
+        )
+
+    _GITHUB_USER_CACHE[token] = (
+        github_id,
+        username,
+        avatar_url,
+        time() + _GITHUB_USER_CACHE_TTL,
+    )
+    return github_id, username, avatar_url
+
+
+def _ensure_owner(project: dict, github_id: str) -> None:
+    """Lève une 404 si le projet n'appartient pas à l'utilisateur connecté."""
+    if str(project.get("github_id", "")) != github_id:
+        raise HTTPException(status_code=404, detail="Project not found in database")
 
 
 # Declaration de BaseModel
@@ -59,20 +134,35 @@ AUTHENTIFICATION
 """
 
 
-# Demander un code d'activation d'appareil à l'API GitHub
+# Vérifie si l'application FlowOps est correctement configurée côté GitHub
+@app.get("/api/auth/status")
+async def auth_status():
+    return {
+        "configured": GITHUB_CONFIG_READY,
+        "missing_env_vars": (
+            []
+            if GITHUB_CONFIG_READY
+            else [
+                var
+                for var in ("GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET")
+                if not os.getenv(var, "").strip()
+            ]
+        ),
+        "message": None if GITHUB_CONFIG_READY else GITHUB_CONFIG_MISSING_MSG,
+    }
+
+
+# Demander un code d'activation d'appareil à l'API GitHub (Device Flow)
 @app.post("/api/auth/device-code")
 async def get_device_code():
-    client_id = os.getenv("GITHUB_CLIENT_ID")
-    if not client_id:
-        raise HTTPException(
-            status_code=500, detail="Backend GITHUB_CLIENT_ID is not configured."
-        )
+    if not GITHUB_CONFIG_READY:
+        raise HTTPException(status_code=500, detail=GITHUB_CONFIG_MISSING_MSG)
 
     async with httpx.AsyncClient(timeout=20.0) as client:
         response = await client.post(
             "https://github.com/login/device/code",
             headers={"Accept": "application/json"},
-            data={"client_id": client_id, "scope": "user repo workflow"},
+            data={"client_id": GITHUB_CLIENT_ID, "scope": "user repo workflow"},
         )
         if response.status_code != 200:
             raise HTTPException(
@@ -81,19 +171,20 @@ async def get_device_code():
         return response.json()
 
 
-# Polling adaptatif pour vérifier si l'utilisateur a validé sur GitHub
+# Polling adaptatif pour vérifier si l'utilisateur a validé l'autorisation sur GitHub.
+# Dès que GitHub répond avec un access_token, l'utilisateur est connecté.
 @app.post("/api/auth/check-login")
 async def check_login(req: LoginCheckRequest):
-    client_id = os.getenv("GITHUB_CLIENT_ID")
-    client_secret = os.getenv("GITHUB_CLIENT_SECRET")
+    if not GITHUB_CONFIG_READY:
+        raise HTTPException(status_code=500, detail=GITHUB_CONFIG_MISSING_MSG)
 
     async with httpx.AsyncClient(timeout=20.0) as client:
         response = await client.post(
             "https://github.com/login/oauth/access_token",
             headers={"Accept": "application/json"},
             data={
-                "client_id": client_id,
-                "client_secret": client_secret,
+                "client_id": GITHUB_CLIENT_ID,
+                "client_secret": GITHUB_CLIENT_SECRET,
                 "device_code": req.device_code,
                 "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
             },
@@ -150,12 +241,12 @@ async def check_login(req: LoginCheckRequest):
 async def get_github_repositories(
     authorization: Annotated[str | None, Header()] = None,
 ):
-    if not authorization or not authorization.startswith("Bearer "):
+    token = _extract_bearer_token(authorization)
+    if not token:
         raise HTTPException(
             status_code=401, detail="Missing or invalid GitHub Access Token"
         )
 
-    token = authorization.split(" ")[1]
     async with httpx.AsyncClient(timeout=20.0) as client:
         response = await client.get(
             "https://api.github.com/user/repos?per_page=100&sort=updated",
@@ -170,18 +261,29 @@ async def get_github_repositories(
         return [{"id": r["id"], "full_name": r["full_name"]} for r in repos]
 
 
-""" 
+"""
 GESTION DES PROJETS
 """
 
 
-# creation d'un projet
+# creation d'un projet (rattaché à l'utilisateur GitHub connecté)
 @app.post("/api/projects")
-async def create_project(req: ProjectCreateRequest):
+async def create_project(
+    req: ProjectCreateRequest,
+    authorization: Annotated[str | None, Header()] = None,
+):
+    token = _extract_bearer_token(authorization)
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing GitHub Access Token")
+
+    github_id, username, _ = await _resolve_github_user(token)
+
     new_project = {
         "name": req.name.strip(),
         "description": req.description.strip(),
         "repository": req.repository.strip(),
+        "github_id": github_id,
+        "created_by": username,
         "has_workflow": False,
         "created_at": datetime.datetime.utcnow(),
         "updated_at": datetime.datetime.utcnow(),
@@ -193,14 +295,20 @@ async def create_project(req: ProjectCreateRequest):
     return format_project(inserted_project)
 
 
-# Liste tous les projets triés par ordre descendant
+# Liste les projets du seul utilisateur connecté, triés par ordre descendant
 @app.get("/api/projects")
-async def list_projects():
+async def list_projects(
+    authorization: Annotated[str | None, Header()] = None,
+):
+    token = _extract_bearer_token(authorization)
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing GitHub Access Token")
+
+    github_id, _, _ = await _resolve_github_user(token)
+
     projects_list = []
 
-    cursor = projects_collection.find().sort(
-        "updated_at", -1
-    )  # .sort("updated_at", -1) s'occupe de faire le tri descendant directement au cœur de la BDD !
+    cursor = projects_collection.find({"github_id": github_id}).sort("updated_at", -1)
 
     async for document in cursor:
         projects_list.append(format_project(document))
@@ -208,14 +316,28 @@ async def list_projects():
     return projects_list
 
 
-# supprimer un projet par son ID
+# supprimer un projet par son ID (uniquement si l'utilisateur en est le propriétaire)
 @app.delete("/api/projects/{project_id}")
-async def delete_project(project_id: str):
-    try:
+async def delete_project(
+    project_id: str,
+    authorization: Annotated[str | None, Header()] = None,
+):
+    token = _extract_bearer_token(authorization)
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing GitHub Access Token")
 
+    github_id, _, _ = await _resolve_github_user(token)
+
+    try:
         obj_id = ObjectId(project_id)
     except Exception:
         raise HTTPException(status_code=400, detail="Format d'ID de projet invalide.")
+
+    project = await projects_collection.find_one({"_id": obj_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Projet introuvable.")
+
+    _ensure_owner(project, github_id)
 
     result = await projects_collection.delete_one({"_id": obj_id})
 
@@ -249,14 +371,21 @@ async def generate_workflow(config: FlowOpsWorkflowSchema):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# sauvegarder un workflow
+# sauvegarder un workflow (uniquement pour un projet appartenant à l'utilisateur)
 @app.post("/api/projects/{project_id}/workflow")
 async def save_project_workflow(
     project_id: str = Path(
         ..., description="L'identifiant hexadécimal MongoDB du projet"
     ),
     config: FlowOpsWorkflowSchema = None,
+    authorization: Annotated[str | None, Header()] = None,
 ):
+    token = _extract_bearer_token(authorization)
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing GitHub Access Token")
+
+    github_id, _, _ = await _resolve_github_user(token)
+
     # 1. Vérification de la validité de l'ID et existence dans MongoDB
     if not ObjectId.is_valid(project_id):
         raise HTTPException(status_code=400, detail="Invalid MongoDB ObjectId format")
@@ -264,6 +393,8 @@ async def save_project_workflow(
     project = await db.projects.find_one({"_id": ObjectId(project_id)})
     if not project:
         raise HTTPException(status_code=404, detail="Project not found in database")
+
+    _ensure_owner(project, github_id)
 
     try:
         # 2. Compilation du schéma FlowOps vers le dictionnaire au format GitHub Actions
@@ -337,13 +468,14 @@ async def execute_project_workflow(
     4. Envoie le signal Repository Dispatch pour lancer l'action GitHub.
     """
     # ─── VALIDATION DU TOKEN DE CONNEXION ───
-    if not authorization or not authorization.startswith("Bearer "):
+    token = _extract_bearer_token(authorization)
+    if not token:
         raise HTTPException(
             status_code=401,
             detail="Missing or invalid GitHub Access Token. Please log in again.",
         )
 
-    token = authorization.split(" ")[1]
+    github_id, _, _ = await _resolve_github_user(token)
 
     # ─── 1. RÉCUPÉRATION DU PROJET DEPUIS MONGODB ───
     try:
@@ -355,6 +487,8 @@ async def execute_project_workflow(
 
     if not project:
         raise HTTPException(status_code=404, detail="Project not found in database")
+
+    _ensure_owner(project, github_id)
 
     repo = project.get("repository")
     if not repo:
@@ -508,10 +642,11 @@ async def get_project_workflow_runs(
     project_id: str = Path(..., description="ID MongoDB du projet"),
     authorization: Annotated[str | None, Header()] = None,
 ):
-    if not authorization or not authorization.startswith("Bearer "):
+    token = _extract_bearer_token(authorization)
+    if not token:
         raise HTTPException(status_code=401, detail="Token GitHub invalide ou manquant")
 
-    token = authorization.split(" ")[1]
+    github_id, _, _ = await _resolve_github_user(token)
 
     if not ObjectId.is_valid(project_id):
         raise HTTPException(status_code=400, detail="Format d'ID de projet invalide")
@@ -521,6 +656,8 @@ async def get_project_workflow_runs(
         raise HTTPException(
             status_code=404, detail="Projet ou dépôt associé introuvable"
         )
+
+    _ensure_owner(project, github_id)
 
     repo = project.get("repository")
     if "github.com/" in repo:
@@ -577,10 +714,11 @@ async def get_run_jobs(
     run_id: str,
     authorization: Annotated[str | None, Header()] = None,
 ):
-    if not authorization or not authorization.startswith("Bearer "):
+    token = _extract_bearer_token(authorization)
+    if not token:
         raise HTTPException(status_code=401, detail="Token GitHub invalide ou manquant")
 
-    token = authorization.split(" ")[1]
+    github_id, _, _ = await _resolve_github_user(token)
 
     if not ObjectId.is_valid(project_id):
         raise HTTPException(status_code=400, detail="Format ID invalide")
@@ -588,6 +726,8 @@ async def get_run_jobs(
     project = await db.projects.find_one({"_id": ObjectId(project_id)})
     if not project or not project.get("repository"):
         raise HTTPException(status_code=404, detail="Projet introuvable")
+
+    _ensure_owner(project, github_id)
 
     repo = project.get("repository")
     if "github.com/" in repo:
@@ -649,10 +789,11 @@ async def get_job_logs(
     job_id: str,
     authorization: Annotated[str | None, Header()] = None,
 ):
-    if not authorization or not authorization.startswith("Bearer "):
+    token = _extract_bearer_token(authorization)
+    if not token:
         raise HTTPException(status_code=401, detail="Token GitHub invalide ou manquant")
 
-    token = authorization.split(" ")[1]
+    github_id, _, _ = await _resolve_github_user(token)
 
     if not ObjectId.is_valid(project_id):
         raise HTTPException(status_code=400, detail="Format ID invalide")
@@ -660,6 +801,8 @@ async def get_job_logs(
     project = await db.projects.find_one({"_id": ObjectId(project_id)})
     if not project or not project.get("repository"):
         raise HTTPException(status_code=404, detail="Projet introuvable")
+
+    _ensure_owner(project, github_id)
 
     repo = project.get("repository")
     if "github.com/" in repo:

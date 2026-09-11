@@ -28,8 +28,8 @@ const FAQ = () => {
                 a: "No! FlowOps uses GitHub OAuth and Webhook triggers. You don't need to modify any YAML workflow files.",
               },
               {
-                q: "How does GitHub Device Flow work?",
-                a: "Device Flow allows you to grant access securely without typing your GitHub password directly in FlowOps. You validate a generated code directly on GitHub's official domain.",
+                q: "How does GitHub authentication work?",
+                a: "FlowOps uses the GitHub Device Flow. You copy your one-time activation code, click Continue with GitHub \u2014 GitHub opens right above this page, no tab switching \u2014 and as soon as you approve, you're brought back to FlowOps automatically. Your password is never shared with FlowOps.",
               },
               {
                 q: "Is FlowOps free for open-source projects?",

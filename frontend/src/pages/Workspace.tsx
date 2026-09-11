@@ -10,6 +10,9 @@ import {
   Sliders,
   ArrowLeft,
   User,
+  UserRound,
+  Palette,
+  Languages,
   Play,
   Loader2,
   BookOpen,
@@ -41,6 +44,7 @@ export const Workspace: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"projects" | "history" | "help">(
     "projects",
   );
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const username = localStorage.getItem("flowops_user") || "Developer";
   const avatarUrl = localStorage.getItem("flowops_avatar");
@@ -75,6 +79,15 @@ export const Workspace: React.FC = () => {
     fetchProjects();
     fetchGitHubRepos();
   }, []);
+
+  useEffect(() => {
+    if (!profileOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setProfileOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [profileOpen]);
 
   const fetchProjects = async () => {
     try {
@@ -263,19 +276,22 @@ export const Workspace: React.FC = () => {
           </div>
 
           {/* Navigation Tabs */}
-          <nav className="flex items-center gap-1 bg-slate-100/70 p-1 rounded-xl border border-slate-200/50">
+          <nav className="flex items-center gap-6">
             <button
               onClick={() => {
                 setActiveTab("projects");
                 setIsConfiguringWorkflow(false);
               }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${
-                activeTab === "projects"
-                  ? "bg-white text-purple-700 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
-              }`}
+              className="group relative flex items-center gap-1.5 py-2 text-xs font-bold tracking-wide text-slate-600 hover:text-purple-700 transition-colors duration-200"
             >
               <FolderGit2 className="w-4 h-4" /> My Projects
+              <span
+                className={`absolute -bottom-0.5 left-0 h-[2px] w-full rounded-full bg-purple-600 origin-right transition-transform duration-300 ease-out ${
+                  activeTab === "projects"
+                    ? "scale-x-100"
+                    : "scale-x-0 group-hover:scale-x-100"
+                }`}
+              />
             </button>
 
             <button
@@ -283,13 +299,16 @@ export const Workspace: React.FC = () => {
                 setActiveTab("history");
                 setIsConfiguringWorkflow(false);
               }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${
-                activeTab === "history"
-                  ? "bg-white text-purple-700 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
-              }`}
+              className="group relative flex items-center gap-1.5 py-2 text-xs font-bold tracking-wide text-slate-600 hover:text-purple-700 transition-colors duration-200"
             >
               <HistoryIcon className="w-4 h-4" /> History & Logs
+              <span
+                className={`absolute -bottom-0.5 left-0 h-[2px] w-full rounded-full bg-purple-600 origin-right transition-transform duration-300 ease-out ${
+                  activeTab === "history"
+                    ? "scale-x-100"
+                    : "scale-x-0 group-hover:scale-x-100"
+                }`}
+              />
             </button>
 
             <button
@@ -297,48 +316,127 @@ export const Workspace: React.FC = () => {
                 setActiveTab("help");
                 setIsConfiguringWorkflow(false);
               }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${
-                activeTab === "help"
-                  ? "bg-white text-purple-700 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
-              }`}
+              className="group relative flex items-center gap-1.5 py-2 text-xs font-bold tracking-wide text-slate-600 hover:text-purple-700 transition-colors duration-200"
             >
               <HelpCircle className="w-4 h-4" /> Help Center
+              <span
+                className={`absolute -bottom-0.5 left-0 h-[2px] w-full rounded-full bg-purple-600 origin-right transition-transform duration-300 ease-out ${
+                  activeTab === "help"
+                    ? "scale-x-100"
+                    : "scale-x-0 group-hover:scale-x-100"
+                }`}
+              />
             </button>
           </nav>
 
           {/* User Profile & Actions */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2.5 pl-3 pr-2 py-1.5 bg-slate-100/60 rounded-xl border border-slate-200/60">
+          <div className="relative">
+            {/* Profil toggle : simple avatar rond, comme dans les apps modernes */}
+            <button
+              onClick={() => setProfileOpen((v) => !v)}
+              aria-haspopup="menu"
+              aria-expanded={profileOpen}
+              className={`rounded-full overflow-hidden ring-2 ring-offset-2 ring-offset-white transition-all duration-200 ${
+                profileOpen
+                  ? "ring-purple-500"
+                  : "ring-transparent hover:ring-purple-300"
+              }`}
+            >
               {avatarUrl ? (
                 <img
                   src={avatarUrl}
                   alt={username}
-                  className="w-7 h-7 rounded-full border border-purple-200 object-cover"
+                  className="w-9 h-9 rounded-full object-cover"
                 />
               ) : (
-                <div className="w-7 h-7 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-xs">
-                  <User className="w-3.5 h-3.5" />
+                <div className="w-9 h-9 bg-purple-100 text-purple-600 flex items-center justify-center">
+                  <User className="w-4 h-4" />
                 </div>
               )}
-              <div className="flex flex-col text-left">
-                <span className="text-[11px] font-bold text-slate-800 leading-tight">
-                  {username}
-                </span>
-                <span className="text-[9px] font-mono font-medium text-emerald-600 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
-                  Connected
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={handleLogout}
-              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 border border-transparent"
-              title="Logout Account"
-            >
-              <LogOut className="w-4 h-4" />
             </button>
+
+            {/* Dropdown menu */}
+            {profileOpen && (
+              <>
+                {/* Invisible overlay that closes the menu on outside click */}
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setProfileOpen(false)}
+                />
+                <div
+                  role="menu"
+                  className="absolute right-0 top-12 z-50 w-60 rounded-2xl bg-white border border-slate-200/80 shadow-xl shadow-slate-200/60 p-2 origin-top-right animate-in zoom-in-95 duration-150"
+                >
+                  {/* Profile header */}
+                  <div className="flex items-center gap-3 px-3 py-2.5 border-b border-slate-100">
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={username}
+                        className="w-9 h-9 rounded-full border-2 border-purple-200 object-cover"
+                      />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center border-2 border-purple-200">
+                        <User className="w-4 h-4" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-xs font-black text-slate-900 truncate">
+                        {username}
+                      </p>
+                      <p className="text-[10px] font-mono font-medium text-emerald-600 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                        Connected
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Preferences (placeholder for now) */}
+                  <div className="pt-1.5 space-y-0.5">
+                    <button
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-purple-700 hover:bg-purple-50 transition-colors cursor-not-allowed opacity-60"
+                      disabled
+                      title="Coming soon"
+                    >
+                      <UserRound className="w-4 h-4 text-slate-400" /> User Profile
+                      <span className="ml-auto text-[9px] font-bold text-slate-400 bg-slate-100 rounded-full px-2 py-0.5 uppercase">
+                        Soon
+                      </span>
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-purple-700 hover:bg-purple-50 transition-colors cursor-not-allowed opacity-60"
+                      disabled
+                      title="Coming soon"
+                    >
+                      <Palette className="w-4 h-4 text-slate-400" /> Theme
+                      <span className="ml-auto text-[9px] font-bold text-slate-400 bg-slate-100 rounded-full px-2 py-0.5 uppercase">
+                        Soon
+                      </span>
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-purple-700 hover:bg-purple-50 transition-colors cursor-not-allowed opacity-60"
+                      disabled
+                      title="Coming soon"
+                    >
+                      <Languages className="w-4 h-4 text-slate-400" /> Language
+                      <span className="ml-auto text-[9px] font-bold text-slate-400 bg-slate-100 rounded-full px-2 py-0.5 uppercase">
+                        Soon
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Logout */}
+                  <div className="border-t border-slate-100 my-1.5" />
+                  <button
+                    role="menuitem"
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" /> Logout
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </header>

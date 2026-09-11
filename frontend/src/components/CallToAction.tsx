@@ -17,8 +17,8 @@ const CallToAction = () => {
           </h2>
 
           <p className="text-sm sm:text-base text-slate-500 max-w-xl mx-auto">
-            Get started in under 60 seconds with GitHub Device Flow
-            authentication.
+            Sign in with GitHub Device Flow — GitHub opens above this page and
+            you're back automatically after you approve.
           </p>
 
           <div className="pt-2">

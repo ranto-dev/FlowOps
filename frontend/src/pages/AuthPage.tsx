@@ -1,42 +1,57 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Loader2,
-  Key,
-  CheckCircle2,
-  ExternalLink,
   ShieldCheck,
-  Copy,
-  Check,
-  RefreshCw,
+  Lock,
   Zap,
   Terminal,
   AlertCircle,
   GitPullRequest,
-  Lock,
-  ArrowRight,
-  Sparkles,
   Server,
+  Sparkles,
+  Copy,
+  Check,
+  ExternalLink,
+  CheckCircle2,
 } from "lucide-react";
+import { FaGithub } from "react-icons/fa6";
+
+interface DeviceCodeInfo {
+  device_code: string;
+  user_code: string;
+  verification_uri: string;
+  expires_in: number;
+  interval: number;
+}
 
 export const AuthPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const [deviceInfo, setDeviceInfo] = useState<{
-    device_code: string;
-    user_code: string;
-    verification_uri: string;
-    interval: number;
-  } | null>(null);
-
-  const [authStatus, setAuthStatus] = useState<"idle" | "waiting" | "success">(
-    "idle",
-  );
-  const [username, setUsername] = useState("");
+  const [phase, setPhase] = useState<"idle" | "waiting">("idle");
+  const [deviceInfo, setDeviceInfo] = useState<DeviceCodeInfo | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [asking, setAsking] = useState(false);
+  const [authState, setAuthState] = useState<"waiting" | "success">("waiting");
+  const [pollingMs, setPollingMs] = useState(5000);
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+  const popupRef = useRef<Window | null>(null);
+  const deviceInfoRef = useRef<DeviceCodeInfo | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Synchronise le ref avec le state (utilisé par le polling)
+  deviceInfoRef.current = deviceInfo;
+
+  const closePopup = () => {
+    try {
+      popupRef.current?.close();
+    } catch {
+      // ignore
+    }
+    popupRef.current = null;
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("flowops_token");
@@ -63,6 +78,85 @@ export const AuthPage: React.FC = () => {
     checkConfig();
   }, [navigate, API_URL]);
 
+  // Polling : dès que l'utilisateur valide sur GitHub, on le ramène
+  // automatiquement : la popup se ferme toute seule et la connexion réussit.
+  useEffect(() => {
+    if (phase !== "waiting") return;
+
+    const checkLogin = async () => {
+      const info = deviceInfoRef.current;
+      if (!info) return;
+
+      setAsking(true);
+      try {
+        const res = await fetch(`${API_URL}/api/auth/check-login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ device_code: info.device_code }),
+        });
+        const data = await res.json();
+
+        if (data.status === "success") {
+          localStorage.setItem("flowops_token", data.token);
+          localStorage.setItem("flowops_user", data.username);
+          localStorage.setItem("flowops_avatar", data.avatar_url);
+          localStorage.setItem("flowops_github_id", data.github_id);
+
+          setAuthState("success");
+          closePopup();
+          if (intervalRef.current) clearInterval(intervalRef.current);
+
+          // Redirection automatique vers le workspace, toujours dans ce même onglet
+          setTimeout(() => navigate("/workspace", { replace: true }), 1200);
+          return;
+        }
+
+        if (data.error === "expired_token") {
+          setErrorMessage(
+            "This authorization code has expired. Please click Generate Code again.",
+          );
+          setPhase("idle");
+          setDeviceInfo(null);
+          setLoading(false);
+          closePopup();
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          return;
+        }
+
+        if (data.error === "access_denied") {
+          setErrorMessage(
+            "Authorization was declined on GitHub. You can try again below.",
+          );
+          setPhase("idle");
+          setDeviceInfo(null);
+          setLoading(false);
+          closePopup();
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          return;
+        }
+
+        // "slow_down" => GitHub nous demande d'espacer les requêtes
+        if (data.error === "slow_down") {
+          setPollingMs((prev) => Math.min(prev + 5000, 20000));
+        }
+      } catch (error) {
+        console.log("Polling error", error);
+      } finally {
+        setAsking(false);
+      }
+    };
+
+    intervalRef.current = setInterval(checkLogin, pollingMs);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [phase, pollingMs, API_URL, navigate]);
+
+  // Nettoyage à la fermeture de la page
+  useEffect(() => {
+    return () => closePopup();
+  }, []);
+
   const startDeviceFlow = async () => {
     setLoading(true);
     setErrorMessage(null);
@@ -70,8 +164,8 @@ export const AuthPage: React.FC = () => {
       const res = await fetch(`${API_URL}/api/auth/device-code`, {
         method: "POST",
       });
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
         if (
           data?.detail &&
           typeof data.detail === "string" &&
@@ -82,87 +176,61 @@ export const AuthPage: React.FC = () => {
         }
         throw new Error();
       }
-      const data = await res.json();
+
       setDeviceInfo(data);
-      setAuthStatus("waiting");
+      setPollingMs(Math.max(Number(data.interval) * 1000 || 5000, 5000));
+      setPhase("waiting");
+      setAuthState("waiting");
     } catch (error) {
       console.log({ error });
       setErrorMessage(
-        "OAuth initialization failed. Please check your backend server connection.",
+        "Unable to start GitHub authentication. Please check your backend server connection.",
       );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCopyCode = () => {
-    if (!deviceInfo?.user_code) return;
-    navigator.clipboard.writeText(deviceInfo.user_code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const copyCode = async () => {
+    if (!deviceInfo) return;
+    try {
+      await navigator.clipboard.writeText(deviceInfo.user_code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard non disponible, on ne bloque pas
+    }
   };
 
-  // Backend polling
-  useEffect(() => {
-    if (authStatus !== "waiting" || !deviceInfo) return;
+  // Ouvre GitHub DANS UNE POPUP centrée au-dessus de cet onglet (pas un nouvel
+  // onglet) : on reste sur FlowOps, GitHub s'ouvre par-dessus. Le code est
+  // pré-rempli pour aller plus vite.
+  const openGithub = () => {
+    if (!deviceInfo) return;
 
-    let currentInterval = (deviceInfo.interval || 5) * 1000;
-    let timeoutId: ReturnType<typeof setTimeout>;
+    const width = 560;
+    const height = 700;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    const features = `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=yes,status=no,scrollbars=yes,resizable=yes`;
 
-    const pollGitHub = async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/auth/check-login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ device_code: deviceInfo.device_code }),
-        });
+    if (popupRef.current && !popupRef.current.closed) {
+      popupRef.current.focus();
+      return;
+    }
 
-        if (!res.ok) {
-          timeoutId = setTimeout(pollGitHub, currentInterval);
-          return;
-        }
+    const url = `${deviceInfo.verification_uri}?user_code=${encodeURIComponent(
+      deviceInfo.user_code,
+    )}`;
+    popupRef.current = window.open(url, "github_device_auth", features);
 
-        const data = await res.json();
-
-        if (data.status === "success") {
-          localStorage.setItem("flowops_token", data.token);
-          localStorage.setItem("flowops_user", data.username);
-          localStorage.setItem("flowops_avatar", data.avatar_url);
-          localStorage.setItem("flowops_github_id", data.github_id);
-
-          setUsername(data.username);
-          setAuthStatus("success");
-
-          setTimeout(() => {
-            navigate("/workspace", { replace: true });
-          }, 1200);
-          return;
-        }
-
-        if (data.error === "slow_down") {
-          currentInterval += 5000;
-          timeoutId = setTimeout(pollGitHub, currentInterval);
-        } else if (
-          data.error === "authorization_pending" ||
-          data.error === "waiting_user_validation"
-        ) {
-          timeoutId = setTimeout(pollGitHub, currentInterval);
-        } else if (data.error === "expired_token") {
-          setAuthStatus("idle");
-          setErrorMessage("The activation code has expired. Please try again.");
-        } else if (data.error) {
-          setAuthStatus("idle");
-          setErrorMessage(`Authentication error: ${data.error}`);
-        }
-      } catch (error) {
-        console.log(error);
-        timeoutId = setTimeout(pollGitHub, currentInterval);
-      }
-    };
-
-    timeoutId = setTimeout(pollGitHub, currentInterval);
-    return () => clearTimeout(timeoutId);
-  }, [authStatus, deviceInfo, navigate, API_URL]);
+    // Si le popup a été bloqué, on l'indique clairement
+    if (!popupRef.current) {
+      setErrorMessage(
+        "The GitHub window was blocked by your browser. Please allow popups for FlowOps, then click Continue with GitHub again.",
+      );
+    }
+  };
 
   return (
     <div className="min-h-screen w-full bg-slate-50 flex flex-col justify-between items-center p-4 sm:p-6 lg:p-10 font-sans text-slate-900 antialiased relative overflow-hidden">
@@ -202,11 +270,18 @@ export const AuthPage: React.FC = () => {
               Secure Gateway
             </div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-              Sign in to FlowOps
+              {phase === "waiting" && authState === "waiting"
+                ? "Authorize on GitHub"
+                : authState === "success"
+                  ? "Authentication Successful!"
+                  : "Sign in to FlowOps"}
             </h1>
             <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
-              Authenticate via GitHub Device Protocol to manage your CI/CD
-              pipelines.
+              {phase === "waiting" && authState === "waiting"
+                ? "Everything happens right here: GitHub opens above this page, and you're brought back automatically once you've approved."
+                : authState === "success"
+                  ? "You're signed in. Taking you to your workspace..."
+                  : "Authenticate with your GitHub account to manage your CI/CD pipelines."}
             </p>
           </div>
 
@@ -218,46 +293,29 @@ export const AuthPage: React.FC = () => {
             </div>
           )}
 
-          {/* STATE 1: IDLE */}
-          {authStatus === "idle" && (
-            <div className="space-y-4 pt-2">
-              <button
-                onClick={startDeviceFlow}
-                disabled={loading}
-                className="w-full py-4 px-6 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs uppercase tracking-widest rounded-2xl transition-all duration-200 flex items-center justify-center gap-3 shadow-lg shadow-purple-600/20 active:scale-[0.99] disabled:opacity-50 group"
-              >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-purple-200" />
-                ) : (
-                  <Key className="w-4 h-4 text-purple-200 group-hover:rotate-12 transition-transform" />
-                )}
-                <span>Generate Activation Code</span>
-                <ArrowRight className="w-4 h-4 text-purple-200 ml-auto group-hover:translate-x-1 transition-transform" />
-              </button>
-
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 font-medium">
-                <Lock className="w-3 h-3 text-slate-400" />
-                <span>OAuth 2.0 Encrypted Flow</span>
-              </div>
+          {/* Success banner */}
+          {authState === "success" && (
+            <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center justify-center gap-2 animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>Connected to GitHub successfully.</span>
             </div>
           )}
 
-          {/* STATE 2: WAITING FOR AUTHORIZATION */}
-          {authStatus === "waiting" && deviceInfo && (
-            <div className="space-y-5 text-left bg-purple-50/50 p-5 rounded-2xl border border-purple-100 animate-in zoom-in-95 duration-200">
-              {/* Big Code Box */}
-              <div className="space-y-1.5 text-center">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                  Your One-Time Code
+          {phase === "waiting" && deviceInfo && authState === "waiting" ? (
+            <div className="space-y-5 pt-1">
+              {/* Le code à copier (Device Flow) */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-3">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">
+                  Your activation code
                 </span>
-                <div className="flex items-center justify-between bg-white border border-purple-200 rounded-xl p-3 px-4 shadow-sm">
-                  <span className="text-2xl font-mono font-black text-purple-600 tracking-widest select-all">
+                <div className="flex items-center justify-center gap-3">
+                  <span className="font-mono text-2xl font-black tracking-widest text-slate-900 bg-white border border-slate-200 rounded-xl px-4 py-2.5">
                     {deviceInfo.user_code}
                   </span>
                   <button
-                    onClick={handleCopyCode}
-                    className="p-2 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 transition-colors border border-purple-200/60"
-                    title="Copy Code"
+                    onClick={copyCode}
+                    className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-purple-600 hover:border-purple-300 transition-all"
+                    aria-label="Copy code"
                   >
                     {copied ? (
                       <Check className="w-4 h-4 text-emerald-600" />
@@ -266,74 +324,54 @@ export const AuthPage: React.FC = () => {
                     )}
                   </button>
                 </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Copy this code. It's already pre-filled on GitHub, but you can
+                  paste it manually.
+                </p>
               </div>
 
-              {/* Steps */}
-              <div className="space-y-2 text-[11px] text-slate-600 leading-relaxed pt-2 border-t border-purple-100">
-                <div className="flex items-center gap-2">
-                  <span className="w-4 h-4 rounded-full bg-purple-100 text-purple-700 font-bold flex items-center justify-center text-[10px]">
-                    1
-                  </span>
-                  <span>Copy your code above.</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-4 h-4 rounded-full bg-purple-100 text-purple-700 font-bold flex items-center justify-center text-[10px]">
-                    2
-                  </span>
-                  <span>Click below to open GitHub login page.</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-4 h-4 rounded-full bg-purple-100 text-purple-700 font-bold flex items-center justify-center text-[10px]">
-                    3
-                  </span>
-                  <span>Paste code to authorize FlowOps.</span>
-                </div>
-              </div>
-
-              {/* GitHub Button */}
-              <a
-                href={deviceInfo.verification_uri}
-                target="_blank"
-                rel="noreferrer"
-                className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg text-center"
+              {/* Bouton : ouvre GitHub dans la même "fenêtre" FlowOps */}
+              <button
+                onClick={openGithub}
+                disabled={asking}
+                className="w-full py-4 px-6 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-widest rounded-2xl transition-all duration-200 flex items-center justify-center gap-3 shadow-lg shadow-slate-900/15 active:scale-[0.99] disabled:opacity-60 group border border-slate-800"
               >
-                <span>Authorize on GitHub</span>
-                <ExternalLink className="w-3.5 h-3.5 text-purple-400" />
-              </a>
+                <ExternalLink className="w-4 h-4" />
+                <span>Continue with GitHub</span>
+                {asking && <Loader2 className="w-4 h-4 animate-spin text-slate-300" />}
+              </button>
 
-              {/* Status Polling Bar */}
-              <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-purple-100">
-                <div className="flex items-center gap-2">
-                  <Loader2 className="w-3.5 h-3.5 text-purple-600 animate-spin" />
-                  <span>Waiting for validation...</span>
+              <div className="space-y-2">
+                <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 font-medium">
+                  <Loader2 className="w-3 h-3 animate-spin text-purple-600" />
+                  <span>Waiting for your authorization on GitHub...</span>
                 </div>
-                <button
-                  onClick={() => setAuthStatus("idle")}
-                  className="p-1 hover:bg-purple-100 rounded transition-colors text-slate-400 hover:text-slate-600"
-                  title="Restart"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                </button>
+                <p className="text-[11px] text-slate-400 font-medium">
+                  No tab switching: as soon as you approve, GitHub closes by
+                  itself and you're back on FlowOps.
+                </p>
               </div>
             </div>
-          )}
+          ) : (
+            <div className="space-y-4 pt-2">
+              <button
+                onClick={startDeviceFlow}
+                disabled={loading}
+                className="w-full py-4 px-6 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-widest rounded-2xl transition-all duration-200 flex items-center justify-center gap-3 shadow-lg shadow-slate-900/15 active:scale-[0.99] disabled:opacity-50 group border border-slate-800"
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-slate-300" />
+                ) : (
+                  <FaGithub className="w-4 h-4" />
+                )}
+                <span>
+                  {loading ? "Contacting GitHub..." : "Continue with GitHub"}
+                </span>
+              </button>
 
-          {/* STATE 3: SUCCESS */}
-          {authStatus === "success" && (
-            <div className="space-y-3 py-6 text-center animate-in zoom-in-95 duration-200">
-              <div className="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center border border-emerald-200 shadow-sm mx-auto">
-                <CheckCircle2 className="w-8 h-8" />
-              </div>
-              <div>
-                <h3 className="text-base font-black text-slate-900">
-                  Authentication Successful!
-                </h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Welcome back,{" "}
-                  <span className="font-mono text-purple-600 font-bold">
-                    {username}
-                  </span>
-                </p>
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 font-medium">
+                <Lock className="w-3 h-3 text-slate-400" />
+                <span>GitHub opens above this page, then you return automatically.</span>
               </div>
             </div>
           )}
@@ -349,9 +387,7 @@ export const AuthPage: React.FC = () => {
               <Zap className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-slate-900">
-                Live Telemetry
-              </h4>
+              <h4 className="text-xs font-bold text-slate-900">Live Telemetry</h4>
               <p className="text-[11px] text-slate-500 leading-normal mt-0.5">
                 Real-time log streaming and instant error detection.
               </p>
@@ -363,9 +399,7 @@ export const AuthPage: React.FC = () => {
               <GitPullRequest className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-slate-900">
-                ML Predictions
-              </h4>
+              <h4 className="text-xs font-bold text-slate-900">ML Predictions</h4>
               <p className="text-[11px] text-slate-500 leading-normal mt-0.5">
                 Pipeline execution duration and risk analysis.
               </p>
@@ -377,9 +411,7 @@ export const AuthPage: React.FC = () => {
               <Server className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-slate-900">
-                High Availability
-              </h4>
+              <h4 className="text-xs font-bold text-slate-900">High Availability</h4>
               <p className="text-[11px] text-slate-500 leading-normal mt-0.5">
                 99.9% SLA uptime for continuous monitoring.
               </p>
