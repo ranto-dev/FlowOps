@@ -19,10 +19,13 @@ import {
   GitBranch,
   Layers,
   X,
+  BrainCircuit,
 } from "lucide-react";
 import { WorkflowForm } from "../components/WorkflowForm";
 import { YamlPreview } from "../components/YamlPreview";
 import { History } from "../components/History";
+import { PredictionPanel } from "../components/PredictionPanel";
+import { MlopsCenter } from "../components/MlopsCenter";
 import LogoImage from "../assets/logo-flowOps-transparent.png";
 
 interface Project {
@@ -41,9 +44,9 @@ interface GitHubRepo {
 
 export const Workspace: React.FC = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"projects" | "history" | "help">(
-    "projects",
-  );
+  const [activeTab, setActiveTab] = useState<
+    "projects" | "history" | "mlops" | "help"
+  >("projects");
   const [profileOpen, setProfileOpen] = useState(false);
 
   const username = localStorage.getItem("flowops_user") || "Developer";
@@ -305,6 +308,23 @@ export const Workspace: React.FC = () => {
               <span
                 className={`absolute -bottom-0.5 left-0 h-[2px] w-full rounded-full bg-purple-600 origin-right transition-transform duration-300 ease-out ${
                   activeTab === "history"
+                    ? "scale-x-100"
+                    : "scale-x-0 group-hover:scale-x-100"
+                }`}
+              />
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab("mlops");
+                setIsConfiguringWorkflow(false);
+              }}
+              className="group relative flex items-center gap-1.5 py-2 text-xs font-bold tracking-wide text-slate-600 hover:text-purple-700 transition-colors duration-200"
+            >
+              <BrainCircuit className="w-4 h-4" /> MLflow
+              <span
+                className={`absolute -bottom-0.5 left-0 h-[2px] w-full rounded-full bg-purple-600 origin-right transition-transform duration-300 ease-out ${
+                  activeTab === "mlops"
                     ? "scale-x-100"
                     : "scale-x-0 group-hover:scale-x-100"
                 }`}
@@ -599,24 +619,33 @@ export const Workspace: React.FC = () => {
             </button>
 
             {viewState === "form" && (
-              <WorkflowForm
-                activeConfig={activeConfig}
-                onChangeConfig={setActiveConfig}
-                onGenerate={async () => {
-                  setViewState("loading");
-                  const res = await fetch(`${API_URL}/api/generate-workflow`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(activeConfig),
-                  });
-                  const data = await res.json();
-                  setTimeout(() => {
-                    setCompiledYaml(data.yaml);
-                    setViewState("preview");
-                  }, 1200);
-                }}
-                loading={false}
-              />
+              <>
+                <WorkflowForm
+                  activeConfig={activeConfig}
+                  onChangeConfig={setActiveConfig}
+                  onGenerate={async () => {
+                    setViewState("loading");
+                    const res = await fetch(`${API_URL}/api/generate-workflow`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(activeConfig),
+                    });
+                    const data = await res.json();
+                    setTimeout(() => {
+                      setCompiledYaml(data.yaml);
+                      setViewState("preview");
+                    }, 1200);
+                  }}
+                  loading={false}
+                />
+
+                {/* Prédiction IA du pipeline MLOps */}
+                <PredictionPanel
+                  config={activeConfig}
+                  repository={targetProject.repository}
+                  apiUrl={API_URL}
+                />
+              </>
             )}
 
             {viewState === "loading" && (
@@ -680,6 +709,11 @@ export const Workspace: React.FC = () => {
           <div className="animate-in fade-in duration-200">
             <History />
           </div>
+        )}
+
+        {/* TAB MLFLOW */}
+        {activeTab === "mlops" && (
+          <MlopsCenter apiUrl={API_URL} token={token} />
         )}
 
         {/* TAB 3: HELP CENTER */}

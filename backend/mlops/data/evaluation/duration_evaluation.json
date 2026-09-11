@@ -1,0 +1,20 @@
+{
+  "kind": "duration",
+  "version": 5,
+  "algorithm": "ridge",
+  "training_date": "2026-09-11T08:08:47Z",
+  "metrics": {
+    "mae": 21.847304532989618,
+    "rmse": 30.217046655085174,
+    "r2": 0.7269428700594114,
+    "relative_error": 0.11247628694972203,
+    "test_size": 120
+  },
+  "comparison_with_production": {
+    "previous_mae": 21.847304532989618,
+    "previous_rmse": 30.217046655085174,
+    "delta_mae": 0.0
+  },
+  "mlflow_run_id": "7d922dcdbdaf435fbb4c44d8d28fe44c",
+  "plot": "/run/media/rantodev/Ranto_s Files/ASJA M2 Docs/Projet de soutenance/flowops/backend/mlops/data/evaluation/duration_scatter_residuals.png"
+}

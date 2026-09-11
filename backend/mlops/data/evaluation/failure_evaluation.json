@@ -1,0 +1,34 @@
+{
+  "kind": "failure",
+  "version": 5,
+  "algorithm": "logistic",
+  "training_date": "2026-09-11T08:08:57Z",
+  "metrics": {
+    "accuracy": 0.6416666666666667,
+    "precision": 0.5853658536585366,
+    "recall": 0.48,
+    "f1": 0.5274725274725275,
+    "roc_auc": 0.7002857142857143,
+    "threshold": 0.6699999999999999,
+    "test_size": 120,
+    "failures_in_test": 50
+  },
+  "confusion_matrix": [
+    [
+      53,
+      17
+    ],
+    [
+      26,
+      24
+    ]
+  ],
+  "threshold": 0.6699999999999999,
+  "comparison_with_production": {
+    "previous_f1": 0.5274725274725275,
+    "previous_roc_auc": 0.7002857142857143,
+    "delta_f1": 0.0
+  },
+  "mlflow_run_id": "3aa1602d23a74f7c9c2a7ff527722619",
+  "plot": "/run/media/rantodev/Ranto_s Files/ASJA M2 Docs/Projet de soutenance/flowops/backend/mlops/data/evaluation/failure_confusion_matrix.png"
+}

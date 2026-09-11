@@ -1,0 +1,60 @@
+{
+  "kind": "duration",
+  "version": 5,
+  "dataset_version": "dataset-20260911-080830",
+  "training_date": "2026-09-11T08:08:47Z",
+  "mlflow_run_id": "7d922dcdbdaf435fbb4c44d8d28fe44c",
+  "algorithm": "ridge",
+  "features": [
+    "number_of_jobs",
+    "number_of_steps",
+    "number_of_actions",
+    "has_build",
+    "has_test",
+    "has_deployment",
+    "trigger_push",
+    "trigger_pull_request",
+    "trigger_schedule",
+    "trigger_repository_dispatch",
+    "previous_run_count",
+    "previous_success_rate",
+    "previous_failure_rate",
+    "average_previous_duration",
+    "language",
+    "language_version",
+    "runner",
+    "branch"
+  ],
+  "params": {
+    "alpha": "1.0",
+    "copy_X": "True",
+    "fit_intercept": "True",
+    "max_iter": "None",
+    "positive": "False",
+    "random_state": "None",
+    "solver": "auto",
+    "tol": "0.0001"
+  },
+  "metrics": {
+    "validation": {
+      "mae": 23.60094264221594,
+      "rmse": 32.18488020270374,
+      "r2": 0.6463737059594059
+    },
+    "test": {
+      "mae": 21.847304532989618,
+      "rmse": 30.217046655085174,
+      "r2": 0.7269428700594114,
+      "relative_error": 0.11247628694972203
+    },
+    "baseline": {
+      "val": {
+        "mae": 44.61764705882353,
+        "rmse": 54.32152103042424,
+        "r2": -0.0073597624973829046,
+        "relative_error": 0.24152998305272885
+      }
+    }
+  },
+  "thresholds": null
+}

@@ -1,3 +1,8 @@
 *.txt
 *.yml
 MY_AGENT.md
+
+# MLflow tracking stores (backend SQLite, régénérés par le pipeline)
+mlruns/
+mlruns_test/
+backend/mlruns/

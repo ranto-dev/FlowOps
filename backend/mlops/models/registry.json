@@ -1,0 +1,14 @@
+{
+  "duration": {
+    "registered_name": "flowops-duration-model",
+    "active_local_version": 5,
+    "status": "production",
+    "deployed_at": "2026-09-11T08:08:58Z"
+  },
+  "failure": {
+    "registered_name": "flowops-failure-model",
+    "active_local_version": 5,
+    "status": "production",
+    "deployed_at": "2026-09-11T08:08:58Z"
+  }
+}

@@ -30,6 +30,11 @@ os.makedirs(WORKFLOWS_DIR, exist_ok=True)
 
 setup_cors(app)
 
+# --- MODULE MLOPS (prédiction, tracking, monitoring) ---
+from mlops.api import router as mlops_router
+
+app.include_router(mlops_router)
+
 # --- INITIALISATION DE MONGODB ---
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
 # On se connecte à la base de données nommée "flowops_db"

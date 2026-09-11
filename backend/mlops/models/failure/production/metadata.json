@@ -1,0 +1,95 @@
+{
+  "kind": "failure",
+  "version": 5,
+  "dataset_version": "dataset-20260911-080847",
+  "training_date": "2026-09-11T08:08:57Z",
+  "mlflow_run_id": "3aa1602d23a74f7c9c2a7ff527722619",
+  "algorithm": "logistic",
+  "features": [
+    "number_of_jobs",
+    "number_of_steps",
+    "number_of_actions",
+    "has_build",
+    "has_test",
+    "has_deployment",
+    "trigger_push",
+    "trigger_pull_request",
+    "trigger_schedule",
+    "trigger_repository_dispatch",
+    "previous_run_count",
+    "previous_success_rate",
+    "previous_failure_rate",
+    "average_previous_duration",
+    "language",
+    "language_version",
+    "runner",
+    "branch"
+  ],
+  "params": {
+    "C": "1.0",
+    "class_weight": "balanced",
+    "dual": "False",
+    "fit_intercept": "True",
+    "intercept_scaling": "1",
+    "l1_ratio": "0.0",
+    "max_iter": "2000",
+    "n_jobs": "None",
+    "penalty": "deprecated",
+    "random_state": "42",
+    "solver": "lbfgs",
+    "tol": "0.0001",
+    "verbose": "0",
+    "warm_start": "False"
+  },
+  "threshold": 0.6699999999999999,
+  "metrics": {
+    "validation": {
+      "accuracy": 0.7058823529411765,
+      "precision": 0.46808510638297873,
+      "recall": 0.8148148148148148,
+      "f1": 0.5945945945945946,
+      "roc_auc": 0.7664197530864199
+    },
+    "test": {
+      "accuracy": 0.6416666666666667,
+      "precision": 0.5853658536585366,
+      "recall": 0.48,
+      "f1": 0.5274725274725275,
+      "support_failure": 50,
+      "roc_auc": 0.7002857142857143
+    },
+    "confusion_matrix": [
+      [
+        53,
+        17
+      ],
+      [
+        26,
+        24
+      ]
+    ],
+    "baseline": {
+      "val": {
+        "accuracy": 0.7352941176470589,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support_failure": 27,
+        "roc_auc": NaN
+      }
+    }
+  },
+  "thresholds": {
+    "min_f1": 0.5,
+    "min_precision": 0.45,
+    "min_recall": 0.4,
+    "min_roc_auc": 0.6
+  },
+  "validated_at": "2026-09-11T08:08:58Z",
+  "validation": {
+    "f1_min": true,
+    "precision_min": true,
+    "recall_min": true,
+    "roc_auc_min": true
+  }
+}
