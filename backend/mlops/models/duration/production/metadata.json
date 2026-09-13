@@ -1,9 +1,9 @@
 {
   "kind": "duration",
-  "version": 5,
-  "dataset_version": "dataset-20260911-080830",
-  "training_date": "2026-09-11T08:08:47Z",
-  "mlflow_run_id": "7d922dcdbdaf435fbb4c44d8d28fe44c",
+  "version": 41,
+  "dataset_version": "dataset-20260911-094435",
+  "training_date": "2026-09-11T09:44:49Z",
+  "mlflow_run_id": "0929c81f46194f7fb3d62eac3e444071",
   "algorithm": "ridge",
   "features": [
     "number_of_jobs",
@@ -37,22 +37,22 @@
   },
   "metrics": {
     "validation": {
-      "mae": 23.60094264221594,
-      "rmse": 32.18488020270374,
-      "r2": 0.6463737059594059
+      "mae": 27.043499275638403,
+      "rmse": 36.82797101601615,
+      "r2": 0.6759157138944364
     },
     "test": {
-      "mae": 21.847304532989618,
-      "rmse": 30.217046655085174,
-      "r2": 0.7269428700594114,
-      "relative_error": 0.11247628694972203
+      "mae": 17.542122945756336,
+      "rmse": 21.561159764782815,
+      "r2": 0.8081026549797959,
+      "relative_error": 0.10117069273207593
     },
     "baseline": {
       "val": {
-        "mae": 44.61764705882353,
-        "rmse": 54.32152103042424,
-        "r2": -0.0073597624973829046,
-        "relative_error": 0.24152998305272885
+        "mae": 50.38461538461539,
+        "rmse": 66.55601024700925,
+        "r2": -0.058466088197056676,
+        "relative_error": 0.28764620291380194
       }
     }
   },
@@ -61,7 +61,7 @@
     "max_rmse": 240.0,
     "min_r2": 0.4
   },
-  "validated_at": "2026-09-11T08:08:58Z",
+  "validated_at": "2026-09-11T09:45:09Z",
   "validation": {
     "mae_min": true,
     "rmse_min": true,

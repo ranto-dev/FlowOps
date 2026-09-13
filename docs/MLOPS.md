@@ -70,11 +70,15 @@ backend/mlops/
 Deux sources :
 
 - **Démonstration** : `mlops.data.sample_data.generate_sample_data()` génère
-  ~800 exécutions réalistes (4 workflows, ~1 585 jobs, ~8 550 steps), avec des
-  corrélations exploitables : durée dépendant du nombre de steps/jobs, langue,
-  événement ; échecs fortement auto-corrélés (un workflow « cassé » échoue
-  jusqu'à un push de correction sur `main`). C'est ce jeu qui permet le
-  benchmark hors-ligne du prototype.
+  par défaut **200 exécutions réalistes** (8 workflows, ~357 jobs, ~1 431 steps,
+  `seed=7` → résultats reproductibles), avec des corrélations exploitables :
+  durée **strictement cohérente** avec les tables jobs/steps (durée run = somme
+  réelle des steps + gaps entre jobs), langue/événement spécifiques ; échecs liés
+  à des features **observables à l'inférence** (branche ≠ `main`, événement
+  `schedule`/`repository_dispatch`, workflow avec déploiement) et à l'historique
+  par workflow (un workflow « cassé » échoue en rafale jusqu'à un push de
+  correction sur `main`). C'est ce jeu qui permet le benchmark hors-ligne du
+  prototype.
 - **Réel** : `mlops.collection.collector.collect(repo, token, limit_runs=200)`
   appelle l'API GitHub (`/actions/runs`, `/actions/jobs`, `/actions/workflows`)
   et écrit les 4 mêmes CSV bruts. Le token doit avoir les scopes `repo`
@@ -159,16 +163,22 @@ sklearn `[preprocessor, model]`.
 | durée         | LinearRegression, Ridge, RandomForest, GradientBoosting |
 | risque d'échec| LogisticRegression(balanced), RandomForest(balanced), GradientBoosting |
 
-**Sélection** : sur le F1 de validation pour la classification (classes
+**Sélection** : sur le **F1 de validation** pour la classification (classes
 déséquilibrées → l'Accuracy seule trompe), sur MAE/R² pour la régression ;
 AUC/R² en départage. La baseline (Dummy most-frequent) est toujours loguée
-pour juger de l'intérêt réel du modèle.
+pour juger de l'intérêt réel du modèle. Sur les petits jeux (≈200 exécutions),
+le F1 d'une seule tranche de validation est très bruité : la classification
+sélectionne donc sur l'**AUC cross-validée** (StratifiedKFold × 5 sur
+train+val) — stabilité du rang — puis logue le F1 de validation simple pour
+transparence.
 
-**Seuil de décision du classifieur** (`best_threshold`) : l'échec de CI est
-rare (≈5-15 %). Seuiller à 0.5 rend le modèle trop conservateur (recall ≈ 0).
-On calibre donc le seuil qui maximise le F1 **sur la validation uniquement**,
-puis on l'applique au test et à l'inférence. Le seuil est stocké dans les
-métadonnées du modèle et exposé par l'API.
+**Seuil de décision du classifieur** (`optimal_threshold`) : l'échec de CI est
+rare (≈15-25 %). Seuiller à 0.5 rend le modèle trop conservateur (recall ≈ 0).
+Le seuil est calibré sur des **prédictions out-of-fold** (chaque ligne de
+train+val est prédite par un modèle entraîné sans la contenir → distribution
+comparable au futur réel) : parmi les seuils à F1 quasi-maximal on garde le
+plus élevé pour privilégier la précision. Il n'est jamais calculé sur le test,
+et est stocké dans les métadonnées du modèle puis exposé par l'API.
 
 Le meilleur pipeline est **ré-entraîné sur train+validation**, évalué sur le
 test, puis sauvegardé en artefact candidat
@@ -410,9 +420,12 @@ GITHUB_TOKEN=ghp_xxx GITHUB_REPO="owner/repo" \
 ## 9. Limites & pistes (honnêteté du prototype)
 
 - Les données de démonstration sont **synthétiques** : elles servent à démontrer
-  le cycle complet, pas à certifier une précision réelle. Les métriques du jeu
-  de démo (~MAE 22 s, R² ≈ 0.72, F1 ≈ 0.53 sur ~800 runs) ne sont pas
-  représentatives de données réelles.
+  le cycle complet, pas à certifier une précision réelle. Avec le jeu par défaut
+  (`seed=7`, 200 runs), le pipeline actuel donne ~MAE 18 s / R² ≈ 0.81 (durée)
+  et F1 ≈ 0.84 / AUC ≈ 0.93 (échec, seuil ≈ 0.60) ; ces chiffres sont
+  *démonstratifs* et dépendent du tirage : sur d'autres seeds (± quelques %
+  d'échecs en test) les métriques oscillent fortement, c'est la variance normale
+  des petits échantillons temporels.
 - Les seuils de risques (`0.30`/`0.70`) sont configurables, pas « appris » ;
   les seuils de validation sont calibrés sur les expériences et surchargeables.
 - La classification d'échec souffre du déséquilibre de classes : sur de vrais

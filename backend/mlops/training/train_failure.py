@@ -20,14 +20,17 @@ from sklearn.metrics import (
     accuracy_score, confusion_matrix, f1_score, precision_score,
     recall_score, roc_auc_score,
 )
+from sklearn.model_selection import StratifiedKFold
+from sklearn.base import clone
 
 from mlops.config import (
     CLASSIFICATION_DATASET_CSV, MLFLOW_EXPERIMENT_NAMES, FEATURE_COLUMNS,
+    RANDOM_STATE,
 )
 from mlops.tracking.tracking import ensure_experiment
 from mlops.training.common import (
     make_pipeline, temporal_split, save_candidate, next_version,
-    dataset_version, now_iso, best_threshold,
+    dataset_version, now_iso, best_threshold, optimal_threshold,
 )
 
 REGISTRY_KIND = "failure"
@@ -85,7 +88,19 @@ def train_failure_model(verbose: bool = True) -> dict:
 
     results: dict[str, dict] = {}
     thresholds: dict[str, float] = {}
-    best_name, best_f1, best_pipeline, best_thr = None, -1.0, None, 0.5
+    best_name, best_cv_auc, best_pipeline = None, -1.0, None
+
+    # Jeu d'entraînement élargi (train+val) pour la sélection par
+    # cross-validation. Sur de petits jeux, le F1 d'une seule tranche de
+    # validation est très bruité : on sélectionne sur l'AUC CV moyenne
+    # (stabilité du rang), puis on calibre le seuil sur des prédictions
+    # out-of-fold (jamais le test) : chaque ligne de train+val est prédite par
+    # un modèle entraîné sans la contenir => distribution comparable au vrai futur.
+    X_tv = pd.concat([X_train, X_val])
+    y_tv = pd.concat([y_train, y_val])
+    y_tv = y_tv.reset_index(drop=True)
+    skf = StratifiedKFold(n_splits=5, shuffle=True,
+                          random_state=RANDOM_STATE)
 
     for name, model in CANDIDATES.items():
         with mlflow.start_run(run_name=f"failure-{name}") as run:
@@ -98,8 +113,25 @@ def train_failure_model(verbose: bool = True) -> dict:
             m["threshold"] = thr
             thresholds[name] = thr
 
+            aucs: list[float] = []
+            oof_p = np.full(len(X_tv), np.nan)
+            for tr_idx, va_idx in skf.split(X_tv, y_tv):
+                fold = make_pipeline(clone(model))
+                fold.fit(X_tv.iloc[tr_idx], y_tv.iloc[tr_idx])
+                f_proba = fold.predict_proba(X_tv.iloc[va_idx])[:, 1]
+                oof_p[va_idx] = f_proba
+                if len(set(y_tv.iloc[va_idx])) > 1:
+                    aucs.append(float(roc_auc_score(y_tv.iloc[va_idx], f_proba)))
+            m["cv_auc"] = float(np.mean(aucs)) if aucs else float("nan")
+            # Seuil out-of-fold : F1 maximal vu hors-échantillon
+            m["cv_threshold"] = float(optimal_threshold(y_tv, oof_p)) \
+                if not np.isnan(oof_p).any() else thr
+
             mlflow.log_params({p: v for p, v in model.get_params().items()})
-            mlflow.log_metrics({f"val_{k}": v for k, v in m.items() if k not in ("support_failure", "threshold")})
+            mlflow.log_metrics({f"val_{k}": v for k, v in m.items()
+                                if k not in ("support_failure", "threshold",
+                                             "cv_auc", "cv_threshold")})
+            mlflow.log_metric("cv_auc", m["cv_auc"])
             mlflow.log_param("algorithm", name)
             mlflow.log_param("baseline_val_f1", base_metrics["f1"])
             mlflow.log_param("threshold", thr)
@@ -107,29 +139,22 @@ def train_failure_model(verbose: bool = True) -> dict:
             results[name] = m
             if verbose:
                 print(f"[{name:18s}] val F1={m['f1']:.3f}  "
-                      f"AUC={m['roc_auc']:.3f}  P={m['precision']:.3f}  "
-                      f"R={m['recall']:.3f}  @seuil={thr:.2f}")
+                      f"val AUC={m['roc_auc']:.3f}  CV-AUC={m['cv_auc']:.3f}  "
+                      f"CV-seuil={m['cv_threshold']:.2f}")
 
-            # Sélection : F1 max sur classes positives avec AUC en départage
-            better_f1 = m["f1"] > best_f1 + 1e-9
-            tie_better_auc = (
-                abs(m["f1"] - best_f1) < 1e-9
-                and m["roc_auc"] > 0
-                and (best_pipeline is None or m["roc_auc"] > best_f1)
-            )
-            if better_f1 or tie_better_auc:
-                best_f1, best_name, best_pipeline = m["f1"], name, pipeline
-                best_thr = thr
+            # Sélection : AUC cross-validée (moyenne sur train+val)
+            if m["cv_auc"] > best_cv_auc + 1e-9:
+                best_cv_auc, best_name, best_pipeline = m["cv_auc"], name, pipeline
 
     if verbose:
+        best_f1 = results[best_name]["f1"]
         print(f"[select] meilleur modèle : {best_name} "
-              f"(F1 val={best_f1:.3f} @ seuil {best_thr:.2f}, "
-              f"baseline={base_metrics['f1']:.3f})")
+              f"(CV-AUC avg={best_cv_auc:.3f})")
 
-    X_tv = pd.concat([X_train, X_val])
-    y_tv = pd.concat([y_train, y_val])
+    # Ré-entraînement sur train+val ; seuil = le seuil out-of-fold du vainqueur
     best_pipeline.fit(X_tv, y_tv)
-    if best_thr is not None and hasattr(best_pipeline, "predict_proba"):
+    best_thr = float(results[best_name]["cv_threshold"])
+    if hasattr(best_pipeline, "predict_proba"):
         proba_test = best_pipeline.predict_proba(X_test)[:, 1]
         y_pred_test = (proba_test >= best_thr).astype(int)
     else:  # pragma: no cover — aucun candidat n'est sans predict_proba
@@ -144,7 +169,7 @@ def train_failure_model(verbose: bool = True) -> dict:
         )
         mlflow.log_metrics({f"test_{k}": v for k, v in test_metrics.items() if k != "support_failure"})
         mlflow.log_metric("baseline_val_f1", base_metrics["f1"])
-        mlflow.log_metric("best_val_f1", best_f1)
+        mlflow.log_metric("best_cv_auc", best_cv_auc)
         model_info = mlflow.sklearn.log_model(best_pipeline, artifact_path="model")
         mlflow.log_artifact(str(CLASSIFICATION_DATASET_CSV))
         run_id = run.info.run_id

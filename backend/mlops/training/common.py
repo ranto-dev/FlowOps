@@ -80,6 +80,25 @@ def best_threshold(y_true, proba_positive: np.ndarray) -> float:
     return best[0]
 
 
+def optimal_threshold(y_true, proba_positive: np.ndarray) -> float:
+    """Seuil à F1 (quasi-)maximal, départagé vers la précision.
+
+    Sur de petits jeux le seuil à F1 maximal est instable et souvent trop
+    permissif (précision faible). On retient, parmi les seuils dont le F1
+    reste à moins de 0.01 du maximum, le PLUS ÉLEVÉ : plus conservateur,
+    il privilégie la précision sans sacrifier significativement le F1.
+    """
+    y = np.asarray(y_true)
+    p = np.asarray(proba_positive)
+    if len(np.unique(y)) < 2:
+        return 0.5
+    grid = np.linspace(0.05, 0.95, 181)
+    f1s = [f1_score(y, (p >= t).astype(int), zero_division=0) for t in grid]
+    best_f1 = max(f1s)
+    candidates = [float(t) for t, f in zip(grid, f1s) if f >= best_f1 - 0.03]
+    return max(candidates) if candidates else 0.5
+
+
 def now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 

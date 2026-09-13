@@ -1,1 +1,12 @@
 timestamp,workflow_name,repository,duration_predicted,failure_probability,risk_level,duration_actual,failure_actual,model_versions
+2026-09-11T10:03:22Z,Test Pipeline,iari-bios/iari-bios,63.9,0.1641,low,,,"{""duration"": 41, ""failure"": 38}"
+2026-09-11T10:03:25Z,Test Pipeline,iari-bios/iari-bios,63.9,0.1641,low,,,"{""duration"": 41, ""failure"": 38}"
+2026-09-11T10:03:27Z,Test Pipeline,iari-bios/iari-bios,63.9,0.1641,low,,,"{""duration"": 41, ""failure"": 38}"
+2026-09-11T10:03:28Z,Test Pipeline,iari-bios/iari-bios,93.7,0.0904,low,,,"{""duration"": 41, ""failure"": 38}"
+2026-09-11T10:03:39Z,Test Pipeline,iari-bios/iari-bios,93.7,0.0904,low,,,"{""duration"": 41, ""failure"": 38}"
+2026-09-11T10:03:43Z,Test Pipeline,iari-bios/iari-bios,93.7,0.0904,low,,,"{""duration"": 41, ""failure"": 38}"
+2026-09-11T10:03:48Z,Test Pipeline,iari-bios/iari-bios,104.1,0.0832,low,,,"{""duration"": 41, ""failure"": 38}"
+2026-09-11T10:03:54Z,Test Pipeline,iari-bios/iari-bios,104.1,0.0832,low,,,"{""duration"": 41, ""failure"": 38}"
+2026-09-11T10:50:27Z,Test Pipeline,iari-bios/iari-bios,215.5,0.166,low,,,"{""duration"": 41, ""failure"": 38}"
+2026-09-11T10:50:31Z,Test Pipeline,iari-bios/iari-bios,104.1,0.0832,low,,,"{""duration"": 41, ""failure"": 38}"
+2026-09-11T10:50:34Z,Test Pipeline,iari-bios/iari-bios,93.7,0.0904,low,,,"{""duration"": 41, ""failure"": 38}"
