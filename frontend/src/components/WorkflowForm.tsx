@@ -27,10 +27,13 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
     if (activeConfig.jobs.length > 0 && !activeJobId) {
       setActiveJobId(activeConfig.jobs[0].id);
     }
-  }, [activeConfig]);
+  }, [activeConfig, activeJobId]);
 
-  const updateGlobal = (field: keyof FlowOpsWorkflowConfig, value: any) => {
-    const updated = { ...config, [field]: value };
+  const updateGlobal = <K extends keyof FlowOpsWorkflowConfig>(
+    field: K,
+    value: FlowOpsWorkflowConfig[K],
+  ) => {
+    const updated = { ...config, [field]: value } as FlowOpsWorkflowConfig;
     setConfig(updated);
     onChangeConfig(updated);
   };
@@ -58,13 +61,13 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
     setActiveJobId(newId);
   };
 
-  const updateJobField = (
+  const updateJobField = <K extends keyof LowCodeJob>(
     jobId: string,
-    field: keyof LowCodeJob,
-    value: any,
+    field: K,
+    value: LowCodeJob[K],
   ) => {
     const updatedJobs = config.jobs.map((j) =>
-      j.id === jobId ? { ...j, [field]: value } : j,
+      j.id === jobId ? ({ ...j, [field]: value } as LowCodeJob) : j,
     );
     const updatedConfig = { ...config, jobs: updatedJobs };
     setConfig(updatedConfig);
@@ -83,30 +86,30 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
 
   const addStepToActiveJob = (type: LowCodeStep["type"]) => {
     if (!activeJobId) return;
-    let defs: Partial<LowCodeStep> = { type };
+    const defs: Partial<LowCodeStep> = { type };
     let name = "Custom step";
 
-    if (type === "checkout") name = "📥 Checkout Repository";
+    if (type === "checkout") name = "Checkout Repository";
     if (type === "setup-node") {
-      name = "🟢 Setup NodeJS Env";
+      name = "Setup NodeJS Env";
       defs.node_version = "22";
     }
     if (type === "npm") {
-      name = "📦 Run NPM script";
+      name = "Run NPM script";
       defs.npm_command = "install";
     }
     if (type === "docker") {
-      name = "🐳 Build Production Container";
+      name = "Build Production Container";
       defs.docker_image = "api-service";
       defs.docker_registry = "dockerhub";
     }
     if (type === "upload-artifact") {
-      name = "💾 Archive Build Artifacts";
+      name = "Archive Build Artifacts";
       defs.artifact_path = "dist/";
     }
     if (type === "custom-run") {
-      name = "⚙️ Execute Shell commands";
-      defs.custom_script = "echo 'FlowOps Run'";
+      name = "Execute Shell commands";
+      defs.custom_script = "echo 'FlowOps run'";
     }
 
     const newStep: LowCodeStep = {
@@ -123,17 +126,17 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
     onChangeConfig(updatedConfig);
   };
 
-  const updateStepField = (
+  const updateStepField = <K extends keyof LowCodeStep>(
     stepId: string,
-    field: keyof LowCodeStep,
-    value: any,
+    field: K,
+    value: LowCodeStep[K],
   ) => {
     const updatedJobs = config.jobs.map((j) => {
       if (j.id === activeJobId) {
         return {
           ...j,
           steps: j.steps.map((s) =>
-            s.id === stepId ? { ...s, [field]: value } : s,
+            s.id === stepId ? ({ ...s, [field]: value } as LowCodeStep) : s,
           ),
         };
       }
@@ -158,7 +161,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
   const selectedJob = config.jobs.find((j) => j.id === activeJobId);
 
   return (
-    <div className="w-full max-w-3xl mx-auto bg-white p-8 rounded-3xl border border-slate-100 shadow-xl space-y-6 text-left animate-in fade-in zoom-in-95 duration-200">
+    <div className="w-full max-w-3xl mx-auto bg-white p-8 rounded-3xl border border-slate-100 shadow-xl space-y-6 text-left">
       {/* SECTION 1 */}
       <div className="bg-slate-50/70 p-5 rounded-2xl space-y-4 border border-slate-100">
         <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
@@ -389,7 +392,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
                   <button
                     key={type}
                     type="button"
-                    onClick={() => addStepToActiveJob(type as any)}
+                    onClick={() => addStepToActiveJob(type as LowCodeStep["type"])}
                     className="px-2.5 py-1 bg-purple-50 text-purple-700 hover:bg-purple-100 text-[10px] font-bold rounded-lg border border-purple-200/40 capitalize transition-all"
                   >
                     + {type}
@@ -517,7 +520,9 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
         className="w-full py-4 bg-gradient-to-r from-violet-600 via-purple-600 to-blue-500 hover:opacity-95 text-white font-extrabold text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-purple-600/10 transition-all flex items-center justify-center gap-2"
       >
         <Play className="w-3.5 h-3.5 fill-current" />
-        {loading ? "Calcul de la Matrice..." : "Generate Configuration"}
+        {loading
+          ? "Calcul de la matrice..."
+          : "Générer la configuration YAML"}
       </button>
     </div>
   );

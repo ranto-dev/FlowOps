@@ -5,16 +5,12 @@ export const LINKS = [
     to: "features",
   },
   {
-    link: "Architecture",
-    to: "architecture",
+    link: "How it works",
+    to: "how-it-works",
   },
   {
-    link: "Developer API",
-    to: "developer",
-  },
-  {
-    link: "Pricing",
-    to: "pricing",
+    link: "MLOps",
+    to: "mlops",
   },
   {
     link: "FAQ",

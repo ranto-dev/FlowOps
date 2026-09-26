@@ -1,9 +1,9 @@
 {
   "kind": "failure",
-  "version": 38,
-  "dataset_version": "dataset-20260911-094449",
-  "training_date": "2026-09-11T09:45:07Z",
-  "mlflow_run_id": "9be9b5f611ef4d18a1c4d34d8a45290c",
+  "version": 39,
+  "dataset_version": "dataset-20260913-195804",
+  "training_date": "2026-09-13T19:58:25Z",
+  "mlflow_run_id": "7f0c2a78e39a47e186b88b8a38e7326f",
   "algorithm": "logistic",
   "features": [
     "number_of_jobs",
@@ -85,7 +85,7 @@
     "min_recall": 0.4,
     "min_roc_auc": 0.6
   },
-  "validated_at": "2026-09-11T09:45:09Z",
+  "validated_at": "2026-09-13T19:58:28Z",
   "validation": {
     "f1_min": true,
     "precision_min": true,

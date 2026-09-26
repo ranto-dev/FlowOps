@@ -45,7 +45,7 @@ export const YamlPreview: React.FC<YamlPreviewProps> = ({
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col bg-slate-950 rounded-3xl shadow-2xl overflow-hidden border border-slate-800 text-left animate-in fade-in slide-in-from-bottom-4 duration-300">
+    <div className="w-full max-w-4xl mx-auto flex flex-col bg-slate-950 rounded-3xl shadow-2xl overflow-hidden border border-slate-800 text-left">
       {/* BARRE DE CONTRÔLE SUPÉRIEURE */}
       <div className="bg-slate-900/80 px-6 py-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
@@ -64,7 +64,7 @@ export const YamlPreview: React.FC<YamlPreviewProps> = ({
             className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-[11px] rounded-xl transition-all border border-slate-700 disabled:opacity-50"
           >
             <Plus className="w-3.5 h-3.5" />
-            New Workflow
+            Nouveau workflow
           </button>
           <button
             onClick={onReconfigure}
@@ -72,7 +72,7 @@ export const YamlPreview: React.FC<YamlPreviewProps> = ({
             className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-[11px] rounded-xl transition-all border border-slate-700 disabled:opacity-50"
           >
             <RefreshCcw className="w-3.5 h-3.5" />
-            Reconfigure Workflow
+            Reconfigurer
           </button>
           <button
             onClick={onSaveToServer}
@@ -84,7 +84,7 @@ export const YamlPreview: React.FC<YamlPreviewProps> = ({
             ) : (
               <Save className="w-3.5 h-3.5" />
             )}
-            Save Workflow Configuration
+            Enregistrer le workflow
           </button>
         </div>
       </div>

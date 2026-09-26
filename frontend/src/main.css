@@ -1,14 +1,129 @@
 /* importation de tailwindcss */
 @import "tailwindcss";
 
-/* definition de la police principale */
-* {
-  font-family:
-    "Comic Sans MS", "Comic Sans", "Comic Neue", cursive, sans-serif !important;
+/* Design tokens — palette conservée (slate + accent purple) */
+@theme {
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    monospace;
 }
 
-/* animation du scrolling */
+/* Base typographique propre, sans police système inattendue */
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 5rem;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Accessibilité : anneau de focus visible cohérent sur tous les éléments interactifs */
+:focus-visible {
+  outline: 2px solid var(--color-purple-500);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+button,
+a,
+select,
+textarea,
+input,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Barre de défilement discrète (utilisée dans les consoles/logs) */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-slate-800) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--color-slate-700);
+  border-radius: 9999px;
+}
+
+/* ---- FlowOps landing (dark, developer-first) ---- */
+@keyframes landing-accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes landing-accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+@keyframes landing-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes landing-flow-dash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+.animate-landing-accordion-down {
+  animation: landing-accordion-down 0.3s ease-out;
+}
+
+.animate-landing-accordion-up {
+  animation: landing-accordion-up 0.3s ease-out;
+}
+
+.animate-landing-blink {
+  animation: landing-blink 1.1s step-end infinite;
+}
+
+.landing-flow-line {
+  stroke-dasharray: 6 6;
+  animation: landing-flow-dash 1.2s linear infinite;
+}
+
+.landing-dark ::selection {
+  background: rgb(139 92 246 / 0.35);
+  color: #fafafa;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-landing-blink,
+  .landing-flow-line,
+  .animate-landing-accordion-down,
+  .animate-landing-accordion-up {
+    animation: none;
+  }
 }

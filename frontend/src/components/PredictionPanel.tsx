@@ -113,7 +113,7 @@ export const PredictionPanel: React.FC<PredictionPanelProps> = ({
   const hasFailure = p?.failure_probability !== undefined && p?.failure_probability !== null;
 
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white shadow-sm animate-in fade-in duration-200">
+    <div className="rounded-2xl border border-slate-200/80 bg-white shadow-sm">
       <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
         <div className="flex items-center gap-2">
           <div className="p-2 bg-gradient-to-br from-purple-600 to-indigo-600 text-white rounded-xl">
@@ -121,7 +121,7 @@ export const PredictionPanel: React.FC<PredictionPanelProps> = ({
           </div>
           <div>
             <h3 className="text-sm font-black text-slate-900 tracking-tight">
-              Prediction IA — MLflow
+              Prédiction IA — MLflow
             </h3>
             <p className="text-[10px] text-slate-500 font-medium">
               Estimation avant exécution par le pipeline MLOps de FlowOps

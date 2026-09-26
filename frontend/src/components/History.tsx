@@ -3,7 +3,6 @@ import {
   PlayCircle,
   CheckCircle2,
   XCircle,
-  Clock,
   Loader2,
   RefreshCw,
   Terminal,
@@ -16,7 +15,10 @@ import {
   Copy,
   Check,
   ArrowDownCircle,
+  FolderGit2,
+  Cog,
 } from "lucide-react";
+import { Badge } from "./ui/Badge";
 
 interface Project {
   id: string;
@@ -331,30 +333,30 @@ export const History: React.FC = () => {
   const renderStatusBadge = (status: string, conclusion: string | null) => {
     if (status === "in_progress" || status === "queued") {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">
+        <Badge tone="amber" dot>
           <Loader2 className="w-3 h-3 animate-spin" />
           {status === "queued" ? "En attente" : "En cours"}
-        </span>
+        </Badge>
       );
     }
     if (conclusion === "success") {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-          <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Succès
-        </span>
+        <Badge tone="green" dot>
+          <CheckCircle2 className="w-3 h-3" /> Succès
+        </Badge>
       );
     }
     if (conclusion === "failure") {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-          <XCircle className="w-3 h-3 text-rose-600" /> Échec
-        </span>
+        <Badge tone="red" dot>
+          <XCircle className="w-3 h-3" /> Échec
+        </Badge>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
-        <Clock className="w-3 h-3" /> {conclusion || status}
-      </span>
+      <Badge tone="neutral" dot>
+        {conclusion || status}
+      </Badge>
     );
   };
 
@@ -365,25 +367,29 @@ export const History: React.FC = () => {
         <div>
           <h3 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
             <Terminal className="w-5 h-5 text-purple-600" />
-            Execution Logs & Monitoring
+            Historique des exécutions
           </h3>
           <p className="text-[11px] text-slate-400">
-            Supervision temps réel et historique des builds
+            Supervision en temps réel et historique des builds
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <select
-            value={selectedProjectId}
-            onChange={(e) => setSelectedProjectId(e.target.value)}
-            className="p-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-100"
-          >
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                📁 {p.name}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <FolderGit2 className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <select
+              value={selectedProjectId}
+              onChange={(e) => setSelectedProjectId(e.target.value)}
+              className="pl-9 pr-3 py-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-100"
+              aria-label="Sélectionner un projet"
+            >
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <button
             onClick={() => {
@@ -570,9 +576,7 @@ export const History: React.FC = () => {
                         className="flex items-center justify-between cursor-pointer mb-3 pb-2 border-b border-slate-100"
                       >
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-[11px] font-bold text-slate-400">
-                            ⚙️
-                          </span>
+                          <Cog className="w-3.5 h-3.5 text-slate-400" />
                           <span className="font-extrabold text-slate-800 text-xs">
                             {job.name}
                           </span>

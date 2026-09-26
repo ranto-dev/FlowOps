@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FolderGit2,
@@ -10,15 +10,12 @@ import {
   Sliders,
   ArrowLeft,
   User,
-  UserRound,
-  Palette,
-  Languages,
+  Menu,
+  X,
   Play,
   Loader2,
   BookOpen,
   GitBranch,
-  Layers,
-  X,
   BrainCircuit,
 } from "lucide-react";
 import { WorkflowForm } from "../components/WorkflowForm";
@@ -27,6 +24,13 @@ import { History } from "../components/History";
 import { PredictionPanel } from "../components/PredictionPanel";
 import { MlopsCenter } from "../components/MlopsCenter";
 import LogoImage from "../assets/logo-flowOps-transparent.png";
+import { useToast } from "../components/ui/useToast";
+import { ConfirmDialog } from "../components/ui/ConfirmDialog";
+import { Modal } from "../components/ui/Modal";
+import { Breadcrumbs } from "../components/ui/Breadcrumbs";
+import { Button } from "../components/ui/Button";
+import { EmptyState, LoadingState } from "../components/ui/States";
+import type { FlowOpsWorkflowConfig } from "../@types/workflow";
 
 interface Project {
   id: string;
@@ -42,12 +46,23 @@ interface GitHubRepo {
   full_name: string;
 }
 
+interface StoredConfig {
+  filename: string;
+  name: string;
+  on_events: string[];
+  branches: string;
+  global_env: string;
+  jobs: FlowOpsWorkflowConfig["jobs"];
+}
+
 export const Workspace: React.FC = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState<
     "projects" | "history" | "mlops" | "help"
   >("projects");
   const [profileOpen, setProfileOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const username = localStorage.getItem("flowops_user") || "Developer";
   const avatarUrl = localStorage.getItem("flowops_avatar");
@@ -69,19 +84,59 @@ export const Workspace: React.FC = () => {
   const [newProjDesc, setNewProjDesc] = useState("");
   const [selectedRepo, setSelectedRepo] = useState("");
 
+  // --- DELETE CONFIRMATION ---
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // --- LOGOUT CONFIRMATION ---
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+
   // --- WORKFLOW CONFIG STATES ---
   const [isConfiguringWorkflow, setIsConfiguringWorkflow] = useState(false);
   const [targetProject, setTargetProject] = useState<Project | null>(null);
-  const [activeConfig, setActiveConfig] = useState<any>(null);
+  const [activeConfig, setActiveConfig] = useState<StoredConfig | null>(null);
   const [compiledYaml, setCompiledYaml] = useState<string | null>(null);
   const [viewState, setViewState] = useState<"form" | "loading" | "preview">(
     "form",
   );
 
+  const fetchProjects = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/projects`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProjects(data);
+      }
+    } catch {
+      toast.error(
+        "Impossible de charger les projets",
+        "Le serveur est peut-être arrêté.",
+      );
+    } finally {
+      setLoadingProjects(false);
+    }
+  }, [API_URL, token, toast]);
+
+  const fetchGitHubRepos = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/github/repositories`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setGitRepos(data);
+      }
+    } catch {
+      // silencieux : le sélecteur de repo affichera la liste vide
+    }
+  }, [API_URL, token]);
+
   useEffect(() => {
     fetchProjects();
     fetchGitHubRepos();
-  }, []);
+  }, [fetchProjects, fetchGitHubRepos]);
 
   useEffect(() => {
     if (!profileOpen) return;
@@ -92,48 +147,16 @@ export const Workspace: React.FC = () => {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [profileOpen]);
 
-  const fetchProjects = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/projects`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setProjects(data);
-    } catch (err) {
-      console.error("Error loading MongoDB projects");
-    } finally {
-      setLoadingProjects(false);
-    }
-  };
-
-  const fetchGitHubRepos = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/github/repositories`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setGitRepos(data);
-      }
-    } catch (err) {
-      console.error("Failed to sync GitHub repositories");
-    }
-  };
-
   const handleLogout = () => {
     localStorage.clear();
     navigate("/auth", { replace: true });
   };
 
-  const resetForm = () => {
+  const closeModal = () => {
+    setIsModalOpen(false);
     setNewProjName("");
     setNewProjDesc("");
     setSelectedRepo("");
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    resetForm();
   };
 
   const initWorkflowConfig = (project: Project) => {
@@ -150,10 +173,11 @@ export const Workspace: React.FC = () => {
           name: "build-and-test",
           runs_on: "ubuntu-latest",
           needs: [],
-          steps: [{ id: "s-1", name: "📥 Checkout Source", type: "checkout" }],
+          steps: [{ id: "s-1", name: "Checkout Source", type: "checkout" }],
         },
       ],
     });
+    setCompiledYaml(null);
     setIsConfiguringWorkflow(true);
     setViewState("form");
   };
@@ -161,7 +185,10 @@ export const Workspace: React.FC = () => {
   const createProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProjName.trim() || !selectedRepo) {
-      alert("Please fill in the project name and select a GitHub Repository.");
+      toast.error(
+        "Informations incomplètes",
+        "Renseignez le nom du projet et sélectionnez un dépôt GitHub.",
+      );
       return;
     }
 
@@ -184,39 +211,62 @@ export const Workspace: React.FC = () => {
       if (res.ok) {
         const createdProject = await res.json();
         closeModal();
-        fetchProjects();
+        await fetchProjects();
+        toast.success(
+          "Projet créé",
+          `« ${createdProject.name} » est prêt. Configurez son workflow.`,
+        );
         initWorkflowConfig(createdProject);
       } else {
-        const errorData = await res.json();
-        alert(`Server rejected data: ${JSON.stringify(errorData.detail)}`);
+        const errorData = await res.json().catch(() => null);
+        toast.error(
+          "Création refusée",
+          errorData?.detail
+            ? JSON.stringify(errorData.detail)
+            : "Le serveur a rejeté la requête.",
+        );
       }
-    } catch (err) {
-      alert("Failed to communicate with the server.");
+    } catch {
+      toast.error(
+        "Échec de communication",
+        "Impossible de joindre le serveur.",
+      );
     } finally {
       setIsCreating(false);
     }
   };
 
-  const deleteProject = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (
-      confirm(
-        "Delete this project and all its workflows from MongoDB database?",
-      )
-    ) {
-      try {
-        const res = await fetch(`${API_URL}/api/projects/${id}`, {
+  const confirmDeleteProject = async () => {
+    if (!projectToDelete) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(
+        `${API_URL}/api/projects/${projectToDelete.id}`,
+        {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          fetchProjects();
-        } else {
-          alert("Failed to delete project from server.");
-        }
-      } catch (err) {
-        alert("Communication error during deletion.");
+        },
+      );
+      if (res.ok) {
+        toast.success(
+          "Projet supprimé",
+          `« ${projectToDelete.name} » a été retiré de la base.`,
+        );
+        setProjectToDelete(null);
+        fetchProjects();
+      } else {
+        toast.error(
+          "Suppression impossible",
+          "Le serveur a refusé la suppression.",
+        );
       }
+    } catch {
+      toast.error(
+        "Erreur de communication",
+        "Impossible de joindre le serveur pendant la suppression.",
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -225,8 +275,9 @@ export const Workspace: React.FC = () => {
     projectName: string,
   ) => {
     if (!token) {
-      alert(
-        "Session expired or missing GitHub access token. Please re-authenticate.",
+      toast.error(
+        "Session expirée",
+        "Votre jeton GitHub a expiré. Ré-authentifiez-vous.",
       );
       return;
     }
@@ -242,280 +293,302 @@ export const Workspace: React.FC = () => {
       const data = await res.json();
 
       if (res.ok && data.status === "success") {
-        alert(
-          `🎉 Success!\n\n${projectName} — ${data.message}`,
+        toast.success(
+          "Workflow déclenché",
+          `${projectName} — ${data.message}`,
         );
         setActiveTab("history");
       } else {
-        alert(
-          `❌ Workflow Trigger Failed\n\nDetails: ${data.detail || "Unknown error"}`,
+        toast.error(
+          "Échec du déclenchement",
+          data.detail || "Erreur inconnue.",
         );
       }
-    } catch (err) {
-      console.error(err);
-      alert("💥 Error: Unable to connect to the backend execution runner.");
+    } catch {
+      toast.error(
+        "Workflow non déclenché",
+        "Impossible de joindre le runner d'exécution.",
+      );
     } finally {
       setExecutingProjectId(null);
     }
   };
 
+  const saveWorkflow = async () => {
+    if (!targetProject || !activeConfig) return;
+    try {
+      const res = await fetch(
+        `${API_URL}/api/projects/${targetProject.id}/workflow`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(activeConfig),
+        },
+      );
+
+      if (res.ok) {
+        toast.success(
+          "Workflow enregistré",
+          `Le workflow de « ${targetProject.name} » a été sauvegardé.`,
+        );
+        setIsConfiguringWorkflow(false);
+        fetchProjects();
+      } else {
+        toast.error(
+          "Enregistrement impossible",
+          "Le serveur a refusé de sauvegarder le workflow.",
+        );
+      }
+    } catch {
+      toast.error(
+        "Erreur de communication",
+        "Impossible de sauvegarder le workflow.",
+      );
+    }
+  };
+
+  const generateWorkflow = async () => {
+    if (!activeConfig) return;
+    setViewState("loading");
+    try {
+      const res = await fetch(`${API_URL}/api/generate-workflow`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(activeConfig),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.yaml) {
+        toast.error(
+          "Génération impossible",
+          data.detail || "Le serveur n'a pas pu compiler le workflow.",
+        );
+        setViewState("form");
+        return;
+      }
+      setCompiledYaml(data.yaml);
+      setViewState("preview");
+    } catch {
+      toast.error("Erreur de communication", "Génération du workflow échouée.");
+      setViewState("form");
+    }
+  };
+
+  const switchTab = (tab: "projects" | "history" | "mlops" | "help") => {
+    setActiveTab(tab);
+    setIsConfiguringWorkflow(false);
+    setMobileNavOpen(false);
+  };
+
+  const NAV_TABS: {
+    key: "projects" | "history" | "mlops" | "help";
+    label: string;
+    icon: React.ReactNode;
+  }[] = [
+    { key: "projects", label: "Projets", icon: <FolderGit2 className="w-4 h-4" /> },
+    { key: "history", label: "Historique", icon: <HistoryIcon className="w-4 h-4" /> },
+    { key: "mlops", label: "MLflow", icon: <BrainCircuit className="w-4 h-4" /> },
+    { key: "help", label: "Aide", icon: <HelpCircle className="w-4 h-4" /> },
+  ];
+
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans text-slate-800">
       {/* ================= HEADER HORIZONTAL (NAVBAR) ================= */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-6 py-3">
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          {/* Brand Logo & Name */}
           <div
             onClick={() => {
-              setActiveTab("projects");
-              setIsConfiguringWorkflow(false);
+              switchTab("projects");
+              setProfileOpen(false);
             }}
             className="flex items-center gap-2 cursor-pointer group"
           >
-            <img src={LogoImage} className="h-9 w-auto" alt="FlowOps Logo" />
-            <span className="font-black text-xl tracking-tight text-slate-900 group-hover:text-purple-600 transition-colors">
+            <img src={LogoImage} className="h-8 w-auto" alt="FlowOps Logo" />
+            <span className="font-black text-lg tracking-tight text-slate-900 group-hover:text-purple-600 transition-colors">
               FlowOps
             </span>
           </div>
 
-          {/* Navigation Tabs */}
-          <nav className="flex items-center gap-6">
-            <button
-              onClick={() => {
-                setActiveTab("projects");
-                setIsConfiguringWorkflow(false);
-              }}
-              className="group relative flex items-center gap-1.5 py-2 text-xs font-bold tracking-wide text-slate-600 hover:text-purple-700 transition-colors duration-200"
-            >
-              <FolderGit2 className="w-4 h-4" /> My Projects
-              <span
-                className={`absolute -bottom-0.5 left-0 h-[2px] w-full rounded-full bg-purple-600 origin-right transition-transform duration-300 ease-out ${
-                  activeTab === "projects"
-                    ? "scale-x-100"
-                    : "scale-x-0 group-hover:scale-x-100"
+          {/* Navigation Tabs (desktop) */}
+          <nav className="hidden md:flex items-center gap-6">
+            {NAV_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => switchTab(tab.key)}
+                className={`group relative flex items-center gap-1.5 py-2 text-xs font-bold tracking-wide transition-colors duration-200 ${
+                  activeTab === tab.key
+                    ? "text-purple-700"
+                    : "text-slate-600 hover:text-purple-700"
                 }`}
-              />
-            </button>
-
-            <button
-              onClick={() => {
-                setActiveTab("history");
-                setIsConfiguringWorkflow(false);
-              }}
-              className="group relative flex items-center gap-1.5 py-2 text-xs font-bold tracking-wide text-slate-600 hover:text-purple-700 transition-colors duration-200"
-            >
-              <HistoryIcon className="w-4 h-4" /> History & Logs
-              <span
-                className={`absolute -bottom-0.5 left-0 h-[2px] w-full rounded-full bg-purple-600 origin-right transition-transform duration-300 ease-out ${
-                  activeTab === "history"
-                    ? "scale-x-100"
-                    : "scale-x-0 group-hover:scale-x-100"
-                }`}
-              />
-            </button>
-
-            <button
-              onClick={() => {
-                setActiveTab("mlops");
-                setIsConfiguringWorkflow(false);
-              }}
-              className="group relative flex items-center gap-1.5 py-2 text-xs font-bold tracking-wide text-slate-600 hover:text-purple-700 transition-colors duration-200"
-            >
-              <BrainCircuit className="w-4 h-4" /> MLflow
-              <span
-                className={`absolute -bottom-0.5 left-0 h-[2px] w-full rounded-full bg-purple-600 origin-right transition-transform duration-300 ease-out ${
-                  activeTab === "mlops"
-                    ? "scale-x-100"
-                    : "scale-x-0 group-hover:scale-x-100"
-                }`}
-              />
-            </button>
-
-            <button
-              onClick={() => {
-                setActiveTab("help");
-                setIsConfiguringWorkflow(false);
-              }}
-              className="group relative flex items-center gap-1.5 py-2 text-xs font-bold tracking-wide text-slate-600 hover:text-purple-700 transition-colors duration-200"
-            >
-              <HelpCircle className="w-4 h-4" /> Help Center
-              <span
-                className={`absolute -bottom-0.5 left-0 h-[2px] w-full rounded-full bg-purple-600 origin-right transition-transform duration-300 ease-out ${
-                  activeTab === "help"
-                    ? "scale-x-100"
-                    : "scale-x-0 group-hover:scale-x-100"
-                }`}
-              />
-            </button>
+              >
+                {tab.icon}
+                {tab.label}
+                <span
+                  className={`absolute -bottom-0.5 left-0 h-[2px] w-full rounded-full bg-purple-600 origin-left transition-transform duration-300 ${
+                    activeTab === tab.key
+                      ? "scale-x-100"
+                      : "scale-x-0 group-hover:scale-x-100"
+                  }`}
+                />
+              </button>
+            ))}
           </nav>
 
-          {/* User Profile & Actions */}
-          <div className="relative">
-            {/* Profil toggle : simple avatar rond, comme dans les apps modernes */}
+          <div className="flex items-center gap-2">
+            {/* Mobile menu toggle */}
             <button
-              onClick={() => setProfileOpen((v) => !v)}
-              aria-haspopup="menu"
-              aria-expanded={profileOpen}
-              className={`rounded-full overflow-hidden ring-2 ring-offset-2 ring-offset-white transition-all duration-200 ${
-                profileOpen
-                  ? "ring-purple-500"
-                  : "ring-transparent hover:ring-purple-300"
-              }`}
+              onClick={() => setMobileNavOpen((v) => !v)}
+              className="md:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors"
+              aria-label={mobileNavOpen ? "Fermer le menu" : "Ouvrir le menu"}
             >
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={username}
-                  className="w-9 h-9 rounded-full object-cover"
-                />
+              {mobileNavOpen ? (
+                <X className="w-5 h-5" />
               ) : (
-                <div className="w-9 h-9 bg-purple-100 text-purple-600 flex items-center justify-center">
-                  <User className="w-4 h-4" />
-                </div>
+                <Menu className="w-5 h-5" />
               )}
             </button>
 
-            {/* Dropdown menu */}
-            {profileOpen && (
-              <>
-                {/* Invisible overlay that closes the menu on outside click */}
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setProfileOpen(false)}
-                />
-                <div
-                  role="menu"
-                  className="absolute right-0 top-12 z-50 w-60 rounded-2xl bg-white border border-slate-200/80 shadow-xl shadow-slate-200/60 p-2 origin-top-right animate-in zoom-in-95 duration-150"
-                >
-                  {/* Profile header */}
-                  <div className="flex items-center gap-3 px-3 py-2.5 border-b border-slate-100">
-                    {avatarUrl ? (
-                      <img
-                        src={avatarUrl}
-                        alt={username}
-                        className="w-9 h-9 rounded-full border-2 border-purple-200 object-cover"
-                      />
-                    ) : (
-                      <div className="w-9 h-9 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center border-2 border-purple-200">
-                        <User className="w-4 h-4" />
+            {/* User Profile & Actions */}
+            <div className="relative">
+              <button
+                onClick={() => setProfileOpen((v) => !v)}
+                aria-haspopup="menu"
+                aria-expanded={profileOpen}
+                className={`rounded-full overflow-hidden ring-2 ring-offset-2 ring-offset-white transition-all duration-200 ${
+                  profileOpen
+                    ? "ring-purple-500"
+                    : "ring-transparent hover:ring-purple-300"
+                }`}
+              >
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={username}
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 bg-purple-100 text-purple-600 flex items-center justify-center">
+                    <User className="w-4 h-4" />
+                  </div>
+                )}
+              </button>
+
+              {profileOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setProfileOpen(false)}
+                  />
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-12 z-50 w-60 rounded-2xl bg-white border border-slate-200/80 shadow-xl shadow-slate-200/60 p-2"
+                  >
+                    <div className="flex items-center gap-3 px-3 py-2.5 border-b border-slate-100">
+                      {avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt={username}
+                          className="w-9 h-9 rounded-full border-2 border-purple-200 object-cover"
+                        />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center border-2 border-purple-200">
+                          <User className="w-4 h-4" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-xs font-black text-slate-900 truncate">
+                          {username}
+                        </p>
+                        <p className="text-[10px] font-mono font-medium text-emerald-600 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                          Connected
+                        </p>
                       </div>
-                    )}
-                    <div className="min-w-0">
-                      <p className="text-xs font-black text-slate-900 truncate">
-                        {username}
-                      </p>
-                      <p className="text-[10px] font-mono font-medium text-emerald-600 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-                        Connected
-                      </p>
+                    </div>
+
+                    <div className="pt-1.5">
+                      <button
+                        role="menuitem"
+                        onClick={() => {
+                          setProfileOpen(false);
+                          setLogoutConfirmOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold text-red-600 hover:bg-red-50 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" /> Se déconnecter
+                      </button>
                     </div>
                   </div>
-
-                  {/* Preferences (placeholder for now) */}
-                  <div className="pt-1.5 space-y-0.5">
-                    <button
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-purple-700 hover:bg-purple-50 transition-colors cursor-not-allowed opacity-60"
-                      disabled
-                      title="Coming soon"
-                    >
-                      <UserRound className="w-4 h-4 text-slate-400" /> User Profile
-                      <span className="ml-auto text-[9px] font-bold text-slate-400 bg-slate-100 rounded-full px-2 py-0.5 uppercase">
-                        Soon
-                      </span>
-                    </button>
-                    <button
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-purple-700 hover:bg-purple-50 transition-colors cursor-not-allowed opacity-60"
-                      disabled
-                      title="Coming soon"
-                    >
-                      <Palette className="w-4 h-4 text-slate-400" /> Theme
-                      <span className="ml-auto text-[9px] font-bold text-slate-400 bg-slate-100 rounded-full px-2 py-0.5 uppercase">
-                        Soon
-                      </span>
-                    </button>
-                    <button
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-purple-700 hover:bg-purple-50 transition-colors cursor-not-allowed opacity-60"
-                      disabled
-                      title="Coming soon"
-                    >
-                      <Languages className="w-4 h-4 text-slate-400" /> Language
-                      <span className="ml-auto text-[9px] font-bold text-slate-400 bg-slate-100 rounded-full px-2 py-0.5 uppercase">
-                        Soon
-                      </span>
-                    </button>
-                  </div>
-
-                  {/* Logout */}
-                  <div className="border-t border-slate-100 my-1.5" />
-                  <button
-                    role="menuitem"
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold text-red-600 hover:bg-red-50 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" /> Logout
-                  </button>
-                </div>
-              </>
-            )}
+                </>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Mobile navigation drawer */}
+        {mobileNavOpen && (
+          <div className="md:hidden pt-2 pb-4 border-t border-slate-100 mt-3">
+            <nav className="flex flex-col gap-1">
+              {NAV_TABS.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => switchTab(tab.key)}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors ${
+                    activeTab === tab.key
+                      ? "bg-purple-50 text-purple-700"
+                      : "text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        )}
       </header>
 
       {/* ================= CONTENU PRINCIPAL ================= */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
         {/* TAB 1: PROJECTS */}
         {activeTab === "projects" && !isConfiguringWorkflow && (
-          <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                  Projects Workspace
+                  Projets
                 </h2>
                 <p className="text-xs text-slate-500 mt-1">
-                  Configure pipelines, trigger automated workflows, and inspect
-                  project repositories.
+                  Configurez des pipelines, déclenchez des workflows et suivez
+                  vos dépôts GitHub.
                 </p>
               </div>
 
-              {/* Action Button: Create New Project */}
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-sm hover:shadow-purple-200 transition-all uppercase tracking-wider"
-              >
-                <Plus className="w-4 h-4" /> New Project
-              </button>
+              <Button onClick={() => setIsModalOpen(true)}>
+                <Plus className="w-4 h-4" /> Nouveau projet
+              </Button>
             </div>
 
-            {/* Liste des projets */}
             {loadingProjects ? (
-              <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-slate-200/80">
-                <Loader2 className="w-8 h-8 text-purple-600 animate-spin mb-2" />
-                <span className="text-xs font-semibold text-slate-500">
-                  Loading workspace projects...
-                </span>
-              </div>
+              <LoadingState label="Chargement des projets..." />
             ) : projects.length === 0 ? (
-              <div className="text-center py-16 text-slate-400 text-xs border border-dashed border-slate-200 rounded-2xl bg-white space-y-3">
-                <Layers className="w-8 h-8 text-slate-300 mx-auto" />
-                <p className="font-medium text-slate-600">
-                  No projects found in database.
-                </p>
-                <p className="text-[11px] text-slate-400">
-                  Click on "New Project" button above to get started.
-                </p>
-                <button
-                  onClick={() => setIsModalOpen(true)}
-                  className="mt-2 py-2 px-4 bg-purple-50 text-purple-700 hover:bg-purple-100 font-bold text-xs rounded-xl inline-flex items-center gap-1.5 transition-all uppercase tracking-wider border border-purple-200"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Create Project
-                </button>
-              </div>
+              <EmptyState
+                title="Aucun projet trouvé"
+                description='Cliquez sur « Nouveau projet » pour relier un dépôt GitHub.'
+                action={
+                  <Button onClick={() => setIsModalOpen(true)} variant="primary">
+                    <Plus className="w-3.5 h-3.5" /> Créer un projet
+                  </Button>
+                }
+              />
             ) : (
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {projects.map((p) => (
                   <div
                     key={p.id}
-                    className="p-5 bg-white border border-slate-200/80 rounded-2xl hover:border-purple-300 hover:shadow-md transition-all duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden group"
+                    className="p-5 bg-white border border-slate-200/80 rounded-2xl hover:border-purple-300 hover:shadow-md transition-all duration-200 flex flex-col gap-4 relative overflow-hidden group"
                   >
                     {p.has_workflow && (
                       <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-600" />
@@ -528,12 +601,12 @@ export const Workspace: React.FC = () => {
                         </span>
                         {p.has_workflow ? (
                           <span className="text-[10px] font-bold bg-purple-50 text-purple-700 px-2 py-0.5 rounded-md border border-purple-100 flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-purple-600 inline-block animate-pulse"></span>
-                            Active Pipeline
+                            <span className="w-1.5 h-1.5 rounded-full bg-purple-600 inline-block animate-pulse" />
+                            Pipeline actif
                           </span>
                         ) : (
                           <span className="text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md">
-                            No Pipeline
+                            Aucun workflow
                           </span>
                         )}
                       </div>
@@ -543,7 +616,7 @@ export const Workspace: React.FC = () => {
                       </h3>
 
                       <p className="text-xs text-slate-500 font-medium">
-                        {p.description || "No description provided."}
+                        {p.description || "Aucune description fournie."}
                       </p>
 
                       <div className="flex items-center gap-1.5 text-xs text-slate-600 font-mono pt-1">
@@ -555,48 +628,51 @@ export const Workspace: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+                    <div className="flex items-center gap-2 shrink-0">
                       {p.has_workflow ? (
                         <>
-                          <button
+                          <Button
+                            variant="success"
+                            size="sm"
                             onClick={() =>
                               triggerWorkflowExecution(p.id, p.name)
                             }
                             disabled={executingProjectId !== null}
-                            className="px-4 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 hover:bg-emerald-700 hover:shadow-sm transition-all uppercase tracking-wider disabled:opacity-60"
                           >
                             {executingProjectId === p.id ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
                             ) : (
-                              <Play className="w-3.5 h-3.5 fill-white" />
+                              <Play className="w-3.5 h-3.5 fill-current" />
                             )}
                             Run
-                          </button>
+                          </Button>
 
-                          <button
+                          <Button
+                            variant="secondary"
+                            size="sm"
                             onClick={() => initWorkflowConfig(p)}
                             disabled={executingProjectId !== null}
-                            className="px-4 py-2 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 hover:bg-slate-200 transition-all uppercase tracking-wider disabled:opacity-50"
                           >
-                            <Sliders className="w-3.5 h-3.5" /> Configure
-                          </button>
+                            <Sliders className="w-3.5 h-3.5" /> Éditer le
+                            workflow
+                          </Button>
                         </>
                       ) : (
-                        <button
+                        <Button
+                          size="sm"
                           onClick={() => initWorkflowConfig(p)}
                           disabled={executingProjectId !== null}
-                          className="px-4 py-2 bg-purple-600 text-white font-bold text-xs rounded-xl shadow-sm hover:bg-purple-700 transition-all uppercase tracking-wider disabled:opacity-50"
                         >
-                          <Sliders className="w-3.5 h-3.5 inline mr-1" />
-                          Create Pipeline
-                        </button>
+                          <Sliders className="w-3.5 h-3.5" /> Créer un workflow
+                        </Button>
                       )}
 
                       <button
-                        onClick={(e) => deleteProject(p.id, e)}
+                        onClick={() => setProjectToDelete(p)}
                         disabled={executingProjectId !== null}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all disabled:opacity-40"
-                        title="Delete project"
+                        className="ml-auto p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all disabled:opacity-40"
+                        title="Supprimer le projet"
+                        aria-label={`Supprimer ${p.name}`}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -610,38 +686,38 @@ export const Workspace: React.FC = () => {
 
         {/* WORKFLOW CONFIGURATION VIEW */}
         {activeTab === "projects" && isConfiguringWorkflow && targetProject && (
-          <div className="space-y-4 animate-in zoom-in-95 duration-200">
-            <button
-              onClick={() => setIsConfiguringWorkflow(false)}
-              className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors mb-2"
-            >
-              <ArrowLeft className="w-4 h-4" /> Back to Dashboard
-            </button>
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <Breadcrumbs
+                items={[
+                  {
+                    label: "Projets",
+                    onClick: () => setIsConfiguringWorkflow(false),
+                  },
+                  { label: targetProject.name },
+                  { label: viewState === "preview" ? "Aperçu YAML" : "Configuration" },
+                ]}
+              />
 
-            {viewState === "form" && (
+              <button
+                onClick={() => setIsConfiguringWorkflow(false)}
+                className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-purple-600 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" /> Retour au tableau de bord
+              </button>
+            </div>
+
+            {viewState === "form" && activeConfig && (
               <>
                 <WorkflowForm
                   activeConfig={activeConfig}
                   onChangeConfig={setActiveConfig}
-                  onGenerate={async () => {
-                    setViewState("loading");
-                    const res = await fetch(`${API_URL}/api/generate-workflow`, {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify(activeConfig),
-                    });
-                    const data = await res.json();
-                    setTimeout(() => {
-                      setCompiledYaml(data.yaml);
-                      setViewState("preview");
-                    }, 1200);
-                  }}
+                  onGenerate={generateWorkflow}
                   loading={false}
                 />
 
-                {/* Prédiction IA du pipeline MLOps */}
                 <PredictionPanel
-                  config={activeConfig}
+                  config={activeConfig as unknown as Record<string, unknown>}
                   repository={targetProject.repository}
                   apiUrl={API_URL}
                 />
@@ -652,18 +728,18 @@ export const Workspace: React.FC = () => {
               <div className="py-24 text-center space-y-4 border border-slate-200/80 rounded-2xl bg-white">
                 <Loader2 className="w-8 h-8 text-purple-600 animate-spin mx-auto" />
                 <p className="text-xs font-bold text-slate-600 font-mono tracking-wide">
-                  Compiling visual workflow trees into YAML...
+                  Compilation de la configuration vers le YAML...
                 </p>
               </div>
             )}
 
-            {viewState === "preview" && (
+            {viewState === "preview" && activeConfig && (
               <YamlPreview
                 activeFile={{
                   id: targetProject.id,
                   filename: activeConfig.filename,
                   yaml: compiledYaml,
-                  config: activeConfig,
+                  config: activeConfig as FlowOpsWorkflowConfig,
                 }}
                 loading={false}
                 onNewWorkflow={() => {
@@ -671,33 +747,7 @@ export const Workspace: React.FC = () => {
                   fetchProjects();
                 }}
                 onReconfigure={() => setViewState("form")}
-                onSaveToServer={async () => {
-                  try {
-                    const res = await fetch(
-                      `${API_URL}/api/projects/${targetProject.id}/workflow`,
-                      {
-                        method: "POST",
-                        headers: {
-                          "Content-Type": "application/json",
-                          Authorization: `Bearer ${token}`,
-                        },
-                        body: JSON.stringify(activeConfig),
-                      },
-                    );
-
-                    if (res.ok) {
-                      alert(
-                        "Workflow configuration successfully saved to the project!",
-                      );
-                      setIsConfiguringWorkflow(false);
-                      fetchProjects();
-                    } else {
-                      alert("Failed to save workflow file on the server.");
-                    }
-                  } catch (err) {
-                    alert("Communication error while saving the workflow.");
-                  }
-                }}
+                onSaveToServer={saveWorkflow}
                 saveStatus={null}
               />
             )}
@@ -706,9 +756,7 @@ export const Workspace: React.FC = () => {
 
         {/* TAB 2: HISTORY & LOGS */}
         {activeTab === "history" && (
-          <div className="animate-in fade-in duration-200">
-            <History />
-          </div>
+          <History />
         )}
 
         {/* TAB MLFLOW */}
@@ -718,27 +766,25 @@ export const Workspace: React.FC = () => {
 
         {/* TAB 3: HELP CENTER */}
         {activeTab === "help" && (
-          <div className="space-y-4 p-6 border border-slate-200/80 rounded-2xl bg-white shadow-sm animate-in fade-in duration-200">
+          <div className="space-y-4 p-6 border border-slate-200/80 rounded-2xl bg-white shadow-sm">
             <div className="flex items-center gap-2 text-slate-900 font-black text-lg">
               <BookOpen className="w-5 h-5 text-purple-600" />
-              <h3>FlowOps Documentation & Guidelines</h3>
+              <h3>Documentation & bonnes pratiques</h3>
             </div>
             <div className="text-xs text-slate-600 space-y-3 font-medium leading-relaxed max-w-3xl">
               <p>
-                Welcome to FlowOps Workspace. This platform allows you to map
-                out custom CI/CD automation pipelines, target repositories from
-                GitHub, and monitor runner logs in real-time.
+                FlowOps permet de modéliser des pipelines CI/CD en low-code,
+                de les déployer sur un dépôt GitHub et de suivre l'exécution
+                des runners en temps réel.
               </p>
               <div className="p-4 bg-amber-50 border border-amber-200/80 rounded-xl text-amber-800 font-mono text-[11px] leading-relaxed">
-                <span className="font-bold">
-                  ⚠️ Infrastructure Requirement:
-                </span>{" "}
-                Ensure your local/remote MongoDB instance is operational on port{" "}
+                <span className="font-bold">⚠ Prérequis :</span> une instance
+                MongoDB locale ou distante sur le port{" "}
                 <code className="bg-amber-100 px-1 py-0.5 rounded font-bold">
                   27017
                 </code>{" "}
-                and the backend service is reachable before executing runner
-                triggers.
+                et le service backend accessible avant de déclencher des
+                exécutions.
               </div>
             </div>
           </div>
@@ -746,113 +792,119 @@ export const Workspace: React.FC = () => {
       </main>
 
       {/* ================= MODAL DE CRÉATION DE PROJET ================= */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div
-            className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-purple-100 text-purple-600 rounded-xl">
-                  <FolderGit2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-black text-base text-slate-900">
-                    Create New Project
-                  </h3>
-                  <p className="text-[11px] text-slate-500 font-medium">
-                    Link a repository to set up automated pipelines
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={closeModal}
-                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Modal Form */}
-            <form onSubmit={createProject} className="p-6 space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
-                  Project Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={newProjName}
-                  onChange={(e) => setNewProjName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-medium text-slate-800"
-                  placeholder="E.g., Production API"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
-                  GitHub Repository <span className="text-red-500">*</span>
-                </label>
-                <select
-                  required
-                  value={selectedRepo}
-                  onChange={(e) => setSelectedRepo(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-mono text-slate-700"
-                >
-                  <option value="">-- Select GitHub Repository --</option>
-                  {gitRepos.map((repo) => (
-                    <option key={repo.id} value={repo.full_name}>
-                      {repo.full_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
-                  Description
-                </label>
-                <textarea
-                  rows={3}
-                  value={newProjDesc}
-                  onChange={(e) => setNewProjDesc(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-medium text-slate-800 resize-none"
-                  placeholder="Optional details about this project..."
-                />
-              </div>
-
-              {/* Modal Actions */}
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 mt-6">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all uppercase tracking-wider"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isCreating}
-                  className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-sm hover:shadow-purple-200 transition-all uppercase tracking-wider disabled:opacity-50"
-                >
-                  {isCreating ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-3.5 h-3.5" /> Initialize Project
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
+      <Modal
+        open={isModalOpen}
+        onClose={closeModal}
+        title="Nouveau projet"
+        description="Reliez un dépôt GitHub pour configurer un pipeline automatisé."
+        icon={
+          <div className="p-2 bg-purple-100 text-purple-600 rounded-xl">
+            <FolderGit2 className="w-5 h-5" />
           </div>
-        </div>
-      )}
+        }
+        footer={
+          <>
+            <Button variant="secondary" size="sm" onClick={closeModal}>
+              Annuler
+            </Button>
+            <Button
+              size="sm"
+              form="create-project-form"
+              type="submit"
+              loading={isCreating}
+            >
+              {isCreating ? "Création..." : (
+                <>
+                  <Plus className="w-3.5 h-3.5" /> Initialiser
+                </>
+              )}
+            </Button>
+          </>
+        }
+      >
+        <form id="create-project-form" onSubmit={createProject} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
+              Nom du projet <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={newProjName}
+              onChange={(e) => setNewProjName(e.target.value)}
+              className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-medium text-slate-800"
+              placeholder="Ex : Production API"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
+              Dépôt GitHub <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={selectedRepo}
+              onChange={(e) => setSelectedRepo(e.target.value)}
+              className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-mono text-slate-700"
+            >
+              <option value="">
+                {gitRepos.length === 0
+                  ? "-- Aucun dépôt disponible --"
+                  : "-- Sélectionner un dépôt GitHub --"}
+              </option>
+              {gitRepos.map((repo) => (
+                <option key={repo.id} value={repo.full_name}>
+                  {repo.full_name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
+              Description
+            </label>
+            <textarea
+              rows={3}
+              value={newProjDesc}
+              onChange={(e) => setNewProjDesc(e.target.value)}
+              className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-medium text-slate-800 resize-none"
+              placeholder="Détails optionnels sur ce projet..."
+            />
+          </div>
+        </form>
+      </Modal>
+
+      {/* ================= DIALOGUE DE SUPPRESSION ================= */}
+      <ConfirmDialog
+        open={projectToDelete !== null}
+        onClose={() => {
+          if (!isDeleting) setProjectToDelete(null);
+        }}
+        onConfirm={confirmDeleteProject}
+        danger
+        loading={isDeleting}
+        title="Supprimer le projet ?"
+        confirmLabel="Supprimer"
+        description={
+          <>
+            Le projet{" "}
+            <span className="font-black text-slate-900">
+              « {projectToDelete?.name} »
+            </span>{" "}
+            et tous ses workflows seront définitivement retirés de la base de
+            données. Cette action est irréversible.
+          </>
+        }
+      />
+
+      {/* ================= DIALOGUE DE DÉCONNEXION ================= */}
+      <ConfirmDialog
+        open={logoutConfirmOpen}
+        onClose={() => setLogoutConfirmOpen(false)}
+        onConfirm={handleLogout}
+        title="Se déconnecter ?"
+        confirmLabel="Se déconnecter"
+        description="Vous devrez vous ré-authentifier avec GitHub pour accéder à nouveau au workspace."
+      />
     </div>
   );
 };

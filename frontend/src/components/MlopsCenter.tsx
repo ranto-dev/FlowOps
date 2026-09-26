@@ -4,12 +4,15 @@ import {
   BrainCircuit,
   Database,
   FlaskConical,
+  Info,
   Loader2,
   RefreshCw,
   RotateCw,
   Server,
   TrendingDown,
 } from "lucide-react";
+import { useToast } from "./ui/useToast";
+import { ConfirmDialog } from "./ui/ConfirmDialog";
 
 interface ModelCard {
   deployed: boolean;
@@ -67,6 +70,8 @@ export const MlopsCenter: React.FC<MlopsCenterProps> = ({ apiUrl, token }) => {
   const [loading, setLoading] = useState(true);
   const [retraining, setRetraining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showRetrainConfirm, setShowRetrainConfirm] = useState(false);
+  const toast = useToast();
 
   const loadStatus = async () => {
     setLoading(true);
@@ -88,7 +93,8 @@ export const MlopsCenter: React.FC<MlopsCenterProps> = ({ apiUrl, token }) => {
   }, []);
 
   const retrain = async () => {
-    if (!confirm("Relancer l'entraînement complet sur les données collectées ?")) return;
+    if (!showRetrainConfirm) return;
+    setShowRetrainConfirm(false);
     setRetraining(true);
     try {
       const res = await fetch(`${apiUrl}/api/mlops/retrain`, {
@@ -96,14 +102,17 @@ export const MlopsCenter: React.FC<MlopsCenterProps> = ({ apiUrl, token }) => {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const data = await res.json();
-      alert(
-        res.ok
-          ? `Pipeline retrainé.\nDuration validé : ${data.summary?.validation?.duration}\nFailure validé : ${data.summary?.validation?.failure}`
-          : `Erreur : ${data.detail || "retrain failed"}`,
-      );
+      if (res.ok) {
+        toast.success(
+          "Pipeline retrainé",
+          `Duration validé : ${data.summary?.validation?.duration ?? "—"}\nFailure validé : ${data.summary?.validation?.failure ?? "—"}`,
+        );
+      } else {
+        toast.error("Retrain impossible", data.detail || "Le retrain a échoué.");
+      }
       await loadStatus();
     } catch {
-      alert("Échec de communication pendant le retrain.");
+      toast.error("Échec de communication pendant le retrain.");
     } finally {
       setRetraining(false);
     }
@@ -114,15 +123,15 @@ export const MlopsCenter: React.FC<MlopsCenterProps> = ({ apiUrl, token }) => {
   const dt = status?.monitoring?.drift?.pred_vs_actual_mae_seconds;
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-200">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <div className="p-2 bg-gradient-to-br from-purple-600 to-indigo-600 text-white rounded-xl">
             <BrainCircuit className="w-5 h-5" />
           </div>
           <div>
             <h2 className="text-lg font-black text-slate-900 tracking-tight">
-              MLflow Center
+              Centre MLflow
             </h2>
             <p className="text-[11px] text-slate-500 font-medium">
               Cycle MLOps : entraînement, validation, registre de modèles et monitoring des prédictions
@@ -139,7 +148,7 @@ export const MlopsCenter: React.FC<MlopsCenterProps> = ({ apiUrl, token }) => {
             Rafraîchir
           </button>
           <button
-            onClick={retrain}
+            onClick={() => setShowRetrainConfirm(true)}
             disabled={retraining}
             className="flex items-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-[10px] rounded-xl uppercase tracking-wider transition-all shadow-sm disabled:opacity-60"
           >
@@ -148,6 +157,16 @@ export const MlopsCenter: React.FC<MlopsCenterProps> = ({ apiUrl, token }) => {
           </button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showRetrainConfirm}
+        title="Relancer le pipeline MLOps ?"
+        description="Ceci réentraîne les modèles de durée et de risque d'échec sur l'ensemble des données collectées, puis remplace les modèles en production. Action irréversible."
+        confirmLabel="Lancer l'entraînement"
+        loading={retraining}
+        onClose={() => setShowRetrainConfirm(false)}
+        onConfirm={retrain}
+      />
 
       {error && (
         <div className="text-xs font-mono text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">{error}</div>
@@ -338,8 +357,9 @@ export const MlopsCenter: React.FC<MlopsCenterProps> = ({ apiUrl, token }) => {
             </div>
 
             {status.note && (
-              <div className="mx-5 mb-5 text-[10px] font-mono text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-                ℹ️ {status.note}
+              <div className="mx-5 mb-5 flex items-start gap-2 text-[10px] font-mono text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                {status.note}
               </div>
             )}
           </div>
