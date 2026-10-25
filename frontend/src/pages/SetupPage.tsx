@@ -17,6 +17,8 @@ import {
   Server,
 } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
+import { apiFetch, API_URL } from "../lib/api";
+import type { AuthStatus } from "../@types/api";
 
 /**
  * Page d'installation : guide l'utilisateur pour créer son propre GitHub OAuth App
@@ -24,7 +26,6 @@ import { FaGithub } from "react-icons/fa6";
  */
 export const SetupPage: React.FC = () => {
   const navigate = useNavigate();
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
   const [status, setStatus] = useState<"checking" | "ready" | "not_configured">(
     "checking",
@@ -35,24 +36,21 @@ export const SetupPage: React.FC = () => {
   const checkConfig = useCallback(async () => {
     setStatus("checking");
     try {
-      const res = await fetch(`${API_URL}/api/auth/status`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.configured) {
-          setStatus("ready");
-        } else {
-          setMissingVars(data.missing_env_vars || []);
-          setStatus("not_configured");
-        }
+      const data = await apiFetch<AuthStatus>("/api/auth/status", {
+        auth: false,
+      });
+      if (data.configured) {
+        setStatus("ready");
       } else {
-        setMissingVars(["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET"]);
+        setMissingVars(data.missing_env_vars || []);
         setStatus("not_configured");
       }
     } catch {
+      // Backend injoignable ou en erreur : on considère l'OAuth non configuré.
       setMissingVars(["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET"]);
       setStatus("not_configured");
     }
-  }, [API_URL]);
+  }, []);
 
   useEffect(() => {
     checkConfig();

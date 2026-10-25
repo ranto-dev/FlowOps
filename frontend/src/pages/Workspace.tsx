@@ -31,20 +31,14 @@ import { Breadcrumbs } from "../components/ui/Breadcrumbs";
 import { Button } from "../components/ui/Button";
 import { EmptyState, LoadingState } from "../components/ui/States";
 import type { FlowOpsWorkflowConfig } from "../@types/workflow";
-
-interface Project {
-  id: string;
-  name: string;
-  description: string;
-  repository: string;
-  has_workflow: boolean;
-  yaml_filename?: string;
-}
-
-interface GitHubRepo {
-  id: number;
-  full_name: string;
-}
+import { apiFetch, errorDetail, getToken, isApiError } from "../lib/api";
+import type {
+  ExecuteResponse,
+  GenerateWorkflowResponse,
+  GitHubRepo,
+  Project,
+  SaveWorkflowResponse,
+} from "../@types/api";
 
 interface StoredConfig {
   filename: string;
@@ -66,8 +60,7 @@ export const Workspace: React.FC = () => {
 
   const username = localStorage.getItem("flowops_user") || "Developer";
   const avatarUrl = localStorage.getItem("flowops_avatar");
-  const token = localStorage.getItem("flowops_token");
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+  const token = getToken();
 
   // --- DATABASE & API STATES ---
   const [projects, setProjects] = useState<Project[]>([]);
@@ -102,36 +95,29 @@ export const Workspace: React.FC = () => {
 
   const fetchProjects = useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/api/projects`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setProjects(data);
-      }
-    } catch {
+      const data = await apiFetch<Project[]>("/api/projects");
+      setProjects(data);
+    } catch (err) {
+      // Un 401 a déjà déclenché la déconnexion centralisée dans apiFetch.
+      if (isApiError(err) && err.status === 401) return;
       toast.error(
         "Impossible de charger les projets",
-        "Le serveur est peut-être arrêté.",
+        errorDetail(err, "Le serveur est peut-être arrêté."),
       );
     } finally {
       setLoadingProjects(false);
     }
-  }, [API_URL, token, toast]);
+  }, [toast]);
 
   const fetchGitHubRepos = useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/api/github/repositories`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setGitRepos(data);
-      }
-    } catch {
-      // silencieux : le sélecteur de repo affichera la liste vide
+      setGitRepos(await apiFetch<GitHubRepo[]>("/api/github/repositories"));
+    } catch (err) {
+      if (isApiError(err) && err.status === 401) return;
+      // Sans dépôt, le sélecteur du formulaire de création affiche une liste vide.
+      console.error("Erreur chargement des dépôts GitHub:", err);
     }
-  }, [API_URL, token]);
+  }, []);
 
   useEffect(() => {
     fetchProjects();
@@ -195,41 +181,26 @@ export const Workspace: React.FC = () => {
     setIsCreating(true);
 
     try {
-      const res = await fetch(`${API_URL}/api/projects`, {
+      const createdProject = await apiFetch<Project>("/api/projects", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+        body: {
           name: newProjName.trim(),
           description: newProjDesc.trim() || "",
           repository: selectedRepo,
-        }),
+        },
       });
 
-      if (res.ok) {
-        const createdProject = await res.json();
-        closeModal();
-        await fetchProjects();
-        toast.success(
-          "Projet créé",
-          `« ${createdProject.name} » est prêt. Configurez son workflow.`,
-        );
-        initWorkflowConfig(createdProject);
-      } else {
-        const errorData = await res.json().catch(() => null);
-        toast.error(
-          "Création refusée",
-          errorData?.detail
-            ? JSON.stringify(errorData.detail)
-            : "Le serveur a rejeté la requête.",
-        );
-      }
-    } catch {
+      closeModal();
+      await fetchProjects();
+      toast.success(
+        "Projet créé",
+        `« ${createdProject.name} » est prêt. Configurez son workflow.`,
+      );
+      initWorkflowConfig(createdProject);
+    } catch (err) {
       toast.error(
-        "Échec de communication",
-        "Impossible de joindre le serveur.",
+        isApiError(err) ? "Création refusée" : "Échec de communication",
+        errorDetail(err, "Impossible de joindre le serveur."),
       );
     } finally {
       setIsCreating(false);
@@ -240,30 +211,19 @@ export const Workspace: React.FC = () => {
     if (!projectToDelete) return;
     setIsDeleting(true);
     try {
-      const res = await fetch(
-        `${API_URL}/api/projects/${projectToDelete.id}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        },
+      await apiFetch<void>(`/api/projects/${projectToDelete.id}`, {
+        method: "DELETE",
+      });
+      toast.success(
+        "Projet supprimé",
+        `« ${projectToDelete.name} » a été retiré de la base.`,
       );
-      if (res.ok) {
-        toast.success(
-          "Projet supprimé",
-          `« ${projectToDelete.name} » a été retiré de la base.`,
-        );
-        setProjectToDelete(null);
-        fetchProjects();
-      } else {
-        toast.error(
-          "Suppression impossible",
-          "Le serveur a refusé la suppression.",
-        );
-      }
-    } catch {
+      setProjectToDelete(null);
+      fetchProjects();
+    } catch (err) {
       toast.error(
-        "Erreur de communication",
-        "Impossible de joindre le serveur pendant la suppression.",
+        isApiError(err) ? "Suppression impossible" : "Erreur de communication",
+        errorDetail(err, "Impossible de joindre le serveur pendant la suppression."),
       );
     } finally {
       setIsDeleting(false);
@@ -285,14 +245,12 @@ export const Workspace: React.FC = () => {
     setExecutingProjectId(projectId);
 
     try {
-      const res = await fetch(`${API_URL}/api/projects/${projectId}/execute`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const data = await apiFetch<ExecuteResponse>(
+        `/api/projects/${projectId}/execute`,
+        { method: "POST" },
+      );
 
-      const data = await res.json();
-
-      if (res.ok && data.status === "success") {
+      if (data.status === "success") {
         toast.success(
           "Workflow déclenché",
           `${projectName} — ${data.message}`,
@@ -301,13 +259,13 @@ export const Workspace: React.FC = () => {
       } else {
         toast.error(
           "Échec du déclenchement",
-          data.detail || "Erreur inconnue.",
+          data.message || "Erreur inconnue.",
         );
       }
-    } catch {
+    } catch (err) {
       toast.error(
         "Workflow non déclenché",
-        "Impossible de joindre le runner d'exécution.",
+        errorDetail(err, "Impossible de joindre le runner d'exécution."),
       );
     } finally {
       setExecutingProjectId(null);
@@ -317,35 +275,21 @@ export const Workspace: React.FC = () => {
   const saveWorkflow = async () => {
     if (!targetProject || !activeConfig) return;
     try {
-      const res = await fetch(
-        `${API_URL}/api/projects/${targetProject.id}/workflow`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(activeConfig),
-        },
+      await apiFetch<SaveWorkflowResponse>(
+        `/api/projects/${targetProject.id}/workflow`,
+        { method: "POST", body: activeConfig },
       );
 
-      if (res.ok) {
-        toast.success(
-          "Workflow enregistré",
-          `Le workflow de « ${targetProject.name} » a été sauvegardé.`,
-        );
-        setIsConfiguringWorkflow(false);
-        fetchProjects();
-      } else {
-        toast.error(
-          "Enregistrement impossible",
-          "Le serveur a refusé de sauvegarder le workflow.",
-        );
-      }
-    } catch {
+      toast.success(
+        "Workflow enregistré",
+        `Le workflow de « ${targetProject.name} » a été sauvegardé.`,
+      );
+      setIsConfiguringWorkflow(false);
+      fetchProjects();
+    } catch (err) {
       toast.error(
-        "Erreur de communication",
-        "Impossible de sauvegarder le workflow.",
+        isApiError(err) ? "Enregistrement impossible" : "Erreur de communication",
+        errorDetail(err, "Impossible de sauvegarder le workflow."),
       );
     }
   };
@@ -354,24 +298,20 @@ export const Workspace: React.FC = () => {
     if (!activeConfig) return;
     setViewState("loading");
     try {
-      const res = await fetch(`${API_URL}/api/generate-workflow`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(activeConfig),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.yaml) {
-        toast.error(
-          "Génération impossible",
-          data.detail || "Le serveur n'a pas pu compiler le workflow.",
-        );
-        setViewState("form");
-        return;
+      const data = await apiFetch<GenerateWorkflowResponse>(
+        "/api/generate-workflow",
+        { method: "POST", body: activeConfig, auth: false },
+      );
+      if (!data.yaml) {
+        throw new Error("Réponse invalide du compilateur.");
       }
       setCompiledYaml(data.yaml);
       setViewState("preview");
-    } catch {
-      toast.error("Erreur de communication", "Génération du workflow échouée.");
+    } catch (err) {
+      toast.error(
+        "Génération impossible",
+        errorDetail(err, "Le serveur n'a pas pu compiler le workflow."),
+      );
       setViewState("form");
     }
   };
@@ -719,7 +659,6 @@ export const Workspace: React.FC = () => {
                 <PredictionPanel
                   config={activeConfig as unknown as Record<string, unknown>}
                   repository={targetProject.repository}
-                  apiUrl={API_URL}
                 />
               </>
             )}
@@ -761,7 +700,7 @@ export const Workspace: React.FC = () => {
 
         {/* TAB MLFLOW */}
         {activeTab === "mlops" && (
-          <MlopsCenter apiUrl={API_URL} token={token} />
+          <MlopsCenter />
         )}
 
         {/* TAB 3: HELP CENTER */}

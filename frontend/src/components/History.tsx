@@ -19,48 +19,19 @@ import {
   Cog,
 } from "lucide-react";
 import { Badge } from "./ui/Badge";
-
-interface Project {
-  id: string;
-  name: string;
-  repository: string;
-}
-
-interface WorkflowRun {
-  id: string;
-  name: string;
-  status: "queued" | "in_progress" | "completed";
-  conclusion: "success" | "failure" | "cancelled" | null;
-  event: string;
-  branch: string;
-  commit_sha: string;
-  created_at: string;
-  updated_at: string;
-  html_url: string;
-}
-
-interface Step {
-  name: string;
-  status: string;
-  conclusion: string | null;
-  number: number;
-  started_at: string;
-  completed_at: string;
-}
-
-interface Job {
-  id: string;
-  name: string;
-  status: string;
-  conclusion: string | null;
-  started_at: string;
-  completed_at: string;
-  steps: Step[];
-}
+import { apiFetch, errorDetail, getToken, isApiError } from "../lib/api";
+import { useToast } from "./ui/useToast";
+import type {
+  JobListResponse,
+  LogsResponse,
+  Project,
+  RunJob as Job,
+  RunListResponse,
+  WorkflowRun,
+} from "../@types/api";
 
 export const History: React.FC = () => {
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-  const token = localStorage.getItem("flowops_token");
+  const toast = useToast();
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
@@ -102,46 +73,53 @@ export const History: React.FC = () => {
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/projects`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setProjects(data);
-          if (data.length > 0) setSelectedProjectId(data[0].id);
-        }
+        const data = await apiFetch<Project[]>("/api/projects");
+        setProjects(data);
+        if (data.length > 0) setSelectedProjectId(data[0].id);
       } catch (err) {
+        // Un 401 a déjà déclenché la déconnexion centralisée dans apiFetch :
+        // on ne remonte pas d'erreur par-dessus la redirection.
+        if (isApiError(err) && err.status === 401) return;
         console.error("Erreur chargement projets:", err);
+        toast.error(
+          "Projets indisponibles",
+          errorDetail(err, "Le serveur est peut-être arrêté."),
+        );
       }
     };
     loadProjects();
-  }, [API_URL, token]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 2. Chargement des Runs
   const fetchRuns = useCallback(
     async (isBackground = false) => {
-      if (!selectedProjectId || !token) return;
+      if (!selectedProjectId || !getToken()) return;
       if (!isBackground) setLoadingRuns(true);
       try {
-        const res = await fetch(
-          `${API_URL}/api/projects/${selectedProjectId}/runs`,
-          { headers: { Authorization: `Bearer ${token}` } },
+        const data = await apiFetch<RunListResponse>(
+          `/api/projects/${selectedProjectId}/runs`,
         );
-        if (res.ok) {
-          const data = await res.json();
-          const fetchedRuns: WorkflowRun[] = data.runs || [];
-          const uniqueRuns = Array.from(
-            new Map(fetchedRuns.map((run) => [String(run.id), run])).values(),
-          );
-          setRuns(uniqueRuns);
-        }
+        const fetchedRuns: WorkflowRun[] = data.runs || [];
+        const uniqueRuns = Array.from(
+          new Map(fetchedRuns.map((run) => [String(run.id), run])).values(),
+        );
+        setRuns(uniqueRuns);
       } catch (err) {
+        if (isApiError(err) && err.status === 401) return;
         console.error("Erreur chargement des runs:", err);
+        if (!isBackground) {
+          toast.error(
+            "Exécutions indisponibles",
+            errorDetail(err, "Le serveur est peut-être arrêté."),
+          );
+        }
       } finally {
         if (!isBackground) setLoadingRuns(false);
       }
     },
-    [API_URL, selectedProjectId, token],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedProjectId],
   );
 
   useEffect(() => {
@@ -155,33 +133,37 @@ export const History: React.FC = () => {
   // 3. Chargement des Jobs
   const fetchJobs = useCallback(
     async (runId: string, isBackground = false) => {
-      if (!selectedProjectId || !token || !runId) return;
+      if (!selectedProjectId || !getToken() || !runId) return;
       if (!isBackground) setLoadingJobs(true);
       try {
-        const res = await fetch(
-          `${API_URL}/api/projects/${selectedProjectId}/runs/${runId}/jobs`,
-          { headers: { Authorization: `Bearer ${token}` } },
+        const data = await apiFetch<JobListResponse>(
+          `/api/projects/${selectedProjectId}/runs/${runId}/jobs`,
         );
-        if (res.ok) {
-          const data = await res.json();
-          const fetchedJobs: Job[] = data.jobs || [];
-          const uniqueJobs = Array.from(
-            new Map(fetchedJobs.map((job) => [String(job.id), job])).values(),
-          );
-          setJobs(uniqueJobs);
+        const fetchedJobs: Job[] = data.jobs || [];
+        const uniqueJobs = Array.from(
+          new Map(fetchedJobs.map((job) => [String(job.id), job])).values(),
+        );
+        setJobs(uniqueJobs);
 
-          if (uniqueJobs.length > 0 && !selectedJobIdRef.current) {
-            const firstJobId = uniqueJobs[0].id;
-            setSelectedJobId(firstJobId);
-          }
+        if (uniqueJobs.length > 0 && !selectedJobIdRef.current) {
+          const firstJobId = uniqueJobs[0].id;
+          setSelectedJobId(firstJobId);
         }
       } catch (err) {
+        if (isApiError(err) && err.status === 401) return;
         console.error("Erreur chargement des jobs:", err);
+        if (!isBackground) {
+          toast.error(
+            "Jobs indisponibles",
+            errorDetail(err, "Le serveur est peut-être arrêté."),
+          );
+        }
       } finally {
         if (!isBackground) setLoadingJobs(false);
       }
     },
-    [API_URL, selectedProjectId, token],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedProjectId],
   );
 
   useEffect(() => {
@@ -196,24 +178,28 @@ export const History: React.FC = () => {
   // 4. Chargement des Logs
   const fetchLogs = useCallback(
     async (runId: string, jobId: string, isBackground = false) => {
-      if (!selectedProjectId || !token || !runId || !jobId) return;
+      if (!selectedProjectId || !getToken() || !runId || !jobId) return;
       if (!isBackground) setLoadingLogs(true);
       try {
-        const res = await fetch(
-          `${API_URL}/api/projects/${selectedProjectId}/runs/${runId}/jobs/${jobId}/logs`,
-          { headers: { Authorization: `Bearer ${token}` } },
+        const data = await apiFetch<LogsResponse>(
+          `/api/projects/${selectedProjectId}/runs/${runId}/jobs/${jobId}/logs`,
         );
-        if (res.ok) {
-          const data = await res.json();
-          setLogs(data.logs || "Aucun log disponible.");
-        }
+        setLogs(data.logs || "Aucun log disponible.");
       } catch (err) {
+        if (isApiError(err) && err.status === 401) return;
         console.error("Erreur chargement des logs:", err);
+        if (!isBackground) {
+          toast.error(
+            "Logs indisponibles",
+            errorDetail(err, "Le serveur est peut-être arrêté."),
+          );
+        }
       } finally {
         if (!isBackground) setLoadingLogs(false);
       }
     },
-    [API_URL, selectedProjectId, token],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedProjectId],
   );
 
   useEffect(() => {
@@ -610,7 +596,7 @@ export const History: React.FC = () => {
                                   <span className="text-slate-400 font-bold text-[11px] flex-none">
                                     #{step.number}
                                   </span>
-                                  <span className="truncate" title={step.name}>
+                                  <span className="truncate" title={step.name ?? undefined}>
                                     {step.name}
                                   </span>
                                 </div>

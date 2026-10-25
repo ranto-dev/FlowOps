@@ -13,44 +13,11 @@ import {
 } from "lucide-react";
 import { useToast } from "./ui/useToast";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
-
-interface ModelCard {
-  deployed: boolean;
-  version?: number;
-  algorithm?: string;
-  training_date?: string;
-  dataset_version?: string;
-  threshold?: number;
-  metrics?: Record<string, number>;
-}
-
-interface LatestPrediction {
-  workflow_name?: string;
-  repository?: string;
-  duration_predicted?: number | string;
-  failure_probability?: number | string;
-  duration_actual?: number | string;
-  risk_level?: string;
-  timestamp?: string;
-}
-
-interface StatusData {
-  models?: { duration?: ModelCard; failure?: ModelCard };
-  evaluations?: Record<string, unknown>;
-  monitoring?: {
-    prediction_count?: number;
-    predictions_with_actual?: number;
-    drift?: { pred_vs_actual_mae_seconds?: number | null };
-    latest_predictions?: LatestPrediction[];
-  };
-  data?: { regression_rows?: number; classification_rows?: number };
-  note?: string;
-}
-
-interface MlopsCenterProps {
-  apiUrl: string;
-  token: string | null;
-}
+import { apiFetch, errorDetail } from "../lib/api";
+import type {
+  MlopsRetrainResponse,
+  MlopsStatus,
+} from "../@types/api";
 
 const formatDate = (iso?: string) =>
   iso ? new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }) : "—";
@@ -65,8 +32,8 @@ const MetricChip: React.FC<{ label: string; value: string }> = ({ label, value }
   </div>
 );
 
-export const MlopsCenter: React.FC<MlopsCenterProps> = ({ apiUrl, token }) => {
-  const [status, setStatus] = useState<StatusData | null>(null);
+export const MlopsCenter: React.FC = () => {
+  const [status, setStatus] = useState<MlopsStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [retraining, setRetraining] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,12 +43,12 @@ export const MlopsCenter: React.FC<MlopsCenterProps> = ({ apiUrl, token }) => {
   const loadStatus = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${apiUrl}/api/mlops/status`);
-      if (!res.ok) throw new Error("status unavailable");
-      setStatus(await res.json());
+      setStatus(await apiFetch<MlopsStatus>("/api/mlops/status", { auth: false }));
       setError(null);
-    } catch {
-      setError("Le service MLOps est indisponible (backend arrêté ?).");
+    } catch (err) {
+      setError(
+        errorDetail(err, "Le service MLOps est indisponible (backend arrêté ?)."),
+      );
     } finally {
       setLoading(false);
     }
@@ -89,7 +56,6 @@ export const MlopsCenter: React.FC<MlopsCenterProps> = ({ apiUrl, token }) => {
 
   useEffect(() => {
     loadStatus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const retrain = async () => {
@@ -97,24 +63,21 @@ export const MlopsCenter: React.FC<MlopsCenterProps> = ({ apiUrl, token }) => {
     setShowRetrainConfirm(false);
     setRetraining(true);
     try {
-      const res = await fetch(`${apiUrl}/api/mlops/retrain`, {
+      const data = await apiFetch<MlopsRetrainResponse>("/api/mlops/retrain", {
         method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success(
-          "Pipeline retrainé",
-          `Duration validé : ${data.summary?.validation?.duration ?? "—"}\nFailure validé : ${data.summary?.validation?.failure ?? "—"}`,
-        );
-      } else {
-        toast.error("Retrain impossible", data.detail || "Le retrain a échoué.");
-      }
-      await loadStatus();
-    } catch {
-      toast.error("Échec de communication pendant le retrain.");
+      toast.success(
+        "Pipeline retrainé",
+        `Duration validé : ${data.summary?.validation?.duration ?? "—"}\nFailure validé : ${data.summary?.validation?.failure ?? "—"}`,
+      );
+    } catch (err) {
+      toast.error(
+        "Retrain impossible",
+        errorDetail(err, "Le retrain a échoué."),
+      );
     } finally {
       setRetraining(false);
+      await loadStatus();
     }
   };
 

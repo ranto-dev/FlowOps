@@ -10,33 +10,12 @@ import {
   Sparkles,
   TrendingUp,
 } from "lucide-react";
-
-interface PredictionResult {
-  duration_seconds: number | null;
-  failure_probability: number | null;
-  failure_percentage: number | null;
-  predicted_failure: boolean | null;
-  risk_level: string | null;
-  risk_level_label: string | null;
-  failure_threshold: number | null;
-  history?: {
-    previous_run_count?: number;
-    previous_success_rate?: number;
-    previous_failure_rate?: number;
-    average_previous_duration?: number | null;
-  };
-  model?: {
-    duration?: { deployed: boolean; version?: number; algorithm?: string; training_date?: string };
-    failure?: { deployed: boolean; version?: number; algorithm?: string; training_date?: string };
-  };
-  duration_error?: string;
-  failure_error?: string;
-}
+import { apiFetch, isApiError } from "../lib/api";
+import type { PredictionResult } from "../@types/api";
 
 interface PredictionPanelProps {
   config: Record<string, unknown>;
   repository: string;
-  apiUrl: string;
 }
 
 const formatDuration = (seconds: number | null): string => {
@@ -65,7 +44,6 @@ const RISK_DOT: Record<string, string> = {
 export const PredictionPanel: React.FC<PredictionPanelProps> = ({
   config,
   repository,
-  apiUrl,
 }) => {
   const [prediction, setPrediction] = useState<PredictionResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -75,21 +53,17 @@ export const PredictionPanel: React.FC<PredictionPanelProps> = ({
     if (!config || !repository) return;
     if (showLoader) setLoading(true);
     try {
-      const res = await fetch(`${apiUrl}/api/mlops/predict`, {
+      const data = await apiFetch<PredictionResult>("/api/mlops/predict", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...config, repository }),
+        body: { ...config, repository },
+        auth: false,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.detail || "Prediction failed");
-        setPrediction(null);
-      } else {
-        setPrediction(data);
-        setError(null);
-      }
-    } catch {
-      setError("Unable to reach the prediction service.");
+      setPrediction(data);
+      setError(null);
+    } catch (err) {
+      setError(
+        isApiError(err) ? err.detail : "Unable to reach the prediction service.",
+      );
       setPrediction(null);
     } finally {
       if (showLoader) setLoading(false);

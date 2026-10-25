@@ -14,14 +14,12 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
-
-interface DeviceCodeInfo {
-  device_code: string;
-  user_code: string;
-  verification_uri: string;
-  expires_in: number;
-  interval: number;
-}
+import { apiFetch, isApiError } from "../lib/api";
+import type {
+  AuthStatus,
+  CheckLoginResponse,
+  DeviceCodeInfo,
+} from "../@types/api";
 
 export const AuthPage: React.FC = () => {
   const navigate = useNavigate();
@@ -33,7 +31,6 @@ export const AuthPage: React.FC = () => {
   const [asking, setAsking] = useState(false);
   const [authState, setAuthState] = useState<"waiting" | "success">("waiting");
   const [pollingMs, setPollingMs] = useState(5000);
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
   const popupRef = useRef<Window | null>(null);
   const deviceInfoRef = useRef<DeviceCodeInfo | null>(null);
@@ -62,12 +59,11 @@ export const AuthPage: React.FC = () => {
     // Si ce n'est pas le cas, on guide l'utilisateur vers la page de setup.
     const checkConfig = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/auth/status`);
-        if (res.ok) {
-          const data = await res.json();
-          if (!data.configured) {
-            navigate("/setup", { replace: true });
-          }
+        const data = await apiFetch<AuthStatus>("/api/auth/status", {
+          auth: false,
+        });
+        if (!data.configured) {
+          navigate("/setup", { replace: true });
         }
       } catch (error) {
         console.error(
@@ -77,7 +73,7 @@ export const AuthPage: React.FC = () => {
       }
     };
     checkConfig();
-  }, [navigate, API_URL]);
+  }, [navigate]);
 
   // Polling : dès que l'utilisateur valide sur GitHub, on le ramène
   // automatiquement : la popup se ferme toute seule et la connexion réussit.
@@ -90,18 +86,20 @@ export const AuthPage: React.FC = () => {
 
       setAsking(true);
       try {
-        const res = await fetch(`${API_URL}/api/auth/check-login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ device_code: info.device_code }),
-        });
-        const data = await res.json();
+        const data = await apiFetch<CheckLoginResponse>(
+          "/api/auth/check-login",
+          {
+            method: "POST",
+            body: { device_code: info.device_code },
+            auth: false,
+          },
+        );
 
         if (data.status === "success") {
-          localStorage.setItem("flowops_token", data.token);
-          localStorage.setItem("flowops_user", data.username);
-          localStorage.setItem("flowops_avatar", data.avatar_url);
-          localStorage.setItem("flowops_github_id", data.github_id);
+          localStorage.setItem("flowops_token", data.token ?? "");
+          localStorage.setItem("flowops_user", data.username ?? "");
+          localStorage.setItem("flowops_avatar", data.avatar_url ?? "");
+          localStorage.setItem("flowops_github_id", data.github_id ?? "");
 
           setAuthState("success");
           closePopup();
@@ -151,7 +149,7 @@ export const AuthPage: React.FC = () => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [phase, pollingMs, API_URL, navigate]);
+  }, [phase, pollingMs, navigate]);
 
   // Nettoyage à la fermeture de la page
   useEffect(() => {
@@ -162,27 +160,32 @@ export const AuthPage: React.FC = () => {
     setLoading(true);
     setErrorMessage(null);
     try {
-      const res = await fetch(`${API_URL}/api/auth/device-code`, {
+      const data = await apiFetch<DeviceCodeInfo>("/api/auth/device-code", {
         method: "POST",
+        auth: false,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        if (
-          data?.detail &&
-          typeof data.detail === "string" &&
-          data.detail.toLowerCase().includes("github oauth app is not configured")
-        ) {
-          navigate("/setup", { replace: true });
-          return;
-        }
-        throw new Error();
-      }
 
       setDeviceInfo(data);
       setPollingMs(Math.max(Number(data.interval) * 1000 || 5000, 5000));
       setPhase("waiting");
       setAuthState("waiting");
     } catch (error) {
+      // Un échec vient souvent d'un backend OAuth non configuré : on interroge
+      // l'état structuré de /api/auth/status plutôt que de chercher une
+      // sous-chaîne dans `detail` (contrat fragile).
+      if (isApiError(error)) {
+        try {
+          const status = await apiFetch<AuthStatus>("/api/auth/status", {
+            auth: false,
+          });
+          if (!status.configured) {
+            navigate("/setup", { replace: true });
+            return;
+          }
+        } catch {
+          // Statut indisponible : on retombe sur le message générique.
+        }
+      }
       console.error("Unable to start GitHub authentication", error);
       setErrorMessage(
         "Impossible de démarrer l'authentification GitHub. Vérifiez la connexion au serveur.",
