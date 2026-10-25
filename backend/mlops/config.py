@@ -9,11 +9,18 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 # ---------------------------------------------------------------------------
 # Chemins
 # ---------------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent          # backend/mlops/
 BACKEND_DIR = BASE_DIR.parent                        # backend/
+
+# Charge backend/.env pour les CLI (`python -m mlops.pipeline`, etc.) :
+# le serveur le fait déjà via app.settings. Idempotent et sans écrasement
+# des variables déjà présentes dans l'environnement.
+load_dotenv(BACKEND_DIR / ".env")
 
 DATA_DIR = BASE_DIR / "data"
 RAW_DIR = DATA_DIR / "raw"

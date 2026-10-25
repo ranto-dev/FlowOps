@@ -1,3 +1,9 @@
+"""API FlowOps — point d'entrée d'exécution (``uvicorn main:app``).
+
+L'objet ``app`` provient de ``app.main.create_app()`` : CORS et routeur MLOps
+y sont montés. Les routes métier déclarées ci-dessous migrent progressivement
+vers ``app/routers/`` (voir AGENTS.md).
+"""
 import base64
 import datetime
 import json
@@ -8,50 +14,31 @@ import httpx
 import yaml
 from bson import ObjectId
 from compiler import compile_flowops_workflow
-from config import setup_cors
-from dotenv import load_dotenv
-from fastapi import FastAPI, Header, HTTPException, Path
+from fastapi import Header, HTTPException, Path
 from helper import format_project
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 from schemas import FlowOpsWorkflowSchema
 
-load_dotenv()
-
-app = FastAPI()
-
-WORKFLOWS_DIR = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "generated_workflows"
+# Importe app.settings (charge backend/.env) puis réexporte l'objet app.
+from app.main import app  # noqa: F401
+from app.settings import (
+    GITHUB_CLIENT_ID,
+    GITHUB_CLIENT_SECRET,
+    GITHUB_CONFIG_MISSING_MSG,
+    GITHUB_CONFIG_READY,
+    MONGO_DB_NAME,
+    MONGO_URI,
+    WORKFLOWS_DIR,
 )
-os.makedirs(WORKFLOWS_DIR, exist_ok=True)
-
-setup_cors(app)
-
-# --- MODULE MLOPS (prédiction, tracking, monitoring) ---
-from mlops.api import router as mlops_router
-
-app.include_router(mlops_router)
 
 # --- INITIALISATION DE MONGODB ---
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
-# On se connecte à la base de données nommée "flowops_db"
 client = AsyncIOMotorClient(MONGO_URI)
-db = client["flowops_db"]
+db = client[MONGO_DB_NAME]
 projects_collection = db["projects"]
 
 # Base de données en mémoire pour FlowOps pour l'utilisateur
 USERS_DB = {}
-
-# --- CONFIGURATION GITHUB OAUTH (issue de l'environnement) ---
-GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "").strip()
-GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET", "").strip()
-
-GITHUB_CONFIG_READY = bool(GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET)
-GITHUB_CONFIG_MISSING_MSG = (
-    "GitHub OAuth App is not configured. "
-    "Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in backend/.env "
-    "(see backend/.env.example)."
-)
 
 
 # --- OUTILS AUTH: EXTRACTION DU TOKEN BEARER ---
@@ -287,8 +274,9 @@ async def create_project(
         "github_id": github_id,
         "created_by": username,
         "has_workflow": False,
-        "created_at": datetime.datetime.utcnow(),
-        "updated_at": datetime.datetime.utcnow(),
+        # Datetimes explicites en UTC (datetime.utcnow() est déprécié depuis 3.12)
+        "created_at": datetime.datetime.now(datetime.timezone.utc),
+        "updated_at": datetime.datetime.now(datetime.timezone.utc),
     }
 
     # Insertion dans MongoDB
