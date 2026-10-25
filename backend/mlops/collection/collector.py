@@ -16,14 +16,13 @@ from __future__ import annotations
 
 import argparse
 import json
-from datetime import timedelta as _td
 
 import pandas as pd
 import yaml
 from github import Github, GithubException
 
 from mlops.config import (
-    ensure_dirs, RAW_DIR, RAW_RUNS_CSV, RAW_WORKFLOWS_CSV,
+    ensure_dirs, RAW_RUNS_CSV, RAW_WORKFLOWS_CSV,
     RAW_JOBS_CSV, RAW_STEPS_CSV, GITHUB_TOKEN, DEFAULT_REPO,
 )
 from mlops.features.engineering import (

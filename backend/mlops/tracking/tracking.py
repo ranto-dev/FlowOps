@@ -12,7 +12,6 @@ from __future__ import annotations
 import os
 
 import mlflow
-from mlflow.entities import Run
 from mlflow.tracking import MlflowClient
 
 from mlops.config import (

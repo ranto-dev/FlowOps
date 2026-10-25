@@ -13,11 +13,9 @@ exécution (``prediction/processed/workflow_dataset.csv``) :
 """
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 
-from mlops.config import ANALYTICS_COLUMNS, INTERNAL_COLUMNS
-from mlops.features.engineering import features_from_normalized
+from mlops.config import INTERNAL_COLUMNS
 
 
 def _parse_time(series: pd.Series) -> pd.Series:

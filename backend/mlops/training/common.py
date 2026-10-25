@@ -18,7 +18,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from mlops.config import (
     CATEGORICAL_FEATURES, NUMERICAL_FEATURES, FEATURE_COLUMNS,
-    MODEL_DIR, RANDOM_STATE, TEST_RATIO, VALIDATION_RATIO,
+    MODEL_DIR, TEST_RATIO, VALIDATION_RATIO,
 )
 
 

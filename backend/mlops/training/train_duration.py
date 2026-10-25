@@ -116,9 +116,7 @@ def train_duration_model(verbose: bool = True) -> dict:
             {"baseline_val_mae": base_metrics["mae"],
              "best_val_mae": best_metric}
         )
-        model_info = mlflow.sklearn.log_model(
-            best_pipeline, artifact_path="model"
-        )
+        mlflow.sklearn.log_model(best_pipeline, artifact_path="model")
         mlflow.log_artifact(str(REGRESSION_DATASET_CSV))
         run_id = run.info.run_id
 

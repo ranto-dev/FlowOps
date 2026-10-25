@@ -147,7 +147,6 @@ def train_failure_model(verbose: bool = True) -> dict:
                 best_cv_auc, best_name, best_pipeline = m["cv_auc"], name, pipeline
 
     if verbose:
-        best_f1 = results[best_name]["f1"]
         print(f"[select] meilleur modèle : {best_name} "
               f"(CV-AUC avg={best_cv_auc:.3f})")
 
@@ -170,7 +169,7 @@ def train_failure_model(verbose: bool = True) -> dict:
         mlflow.log_metrics({f"test_{k}": v for k, v in test_metrics.items() if k != "support_failure"})
         mlflow.log_metric("baseline_val_f1", base_metrics["f1"])
         mlflow.log_metric("best_cv_auc", best_cv_auc)
-        model_info = mlflow.sklearn.log_model(best_pipeline, artifact_path="model")
+        mlflow.sklearn.log_model(best_pipeline, artifact_path="model")
         mlflow.log_artifact(str(CLASSIFICATION_DATASET_CSV))
         run_id = run.info.run_id
 

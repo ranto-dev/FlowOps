@@ -1,7 +1,6 @@
 # github_collector.py
 import os
 import pandas as pd
-from datetime import datetime
 from github import Github, GithubException
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")

@@ -94,13 +94,15 @@ def evaluate_failure(verbose: bool = True) -> dict:
 
         fig, ax = plt.subplots(figsize=(5, 4))
         im = ax.imshow(conf_mat, cmap="Blues")
-        ax.set_xticks([0, 1]); ax.set_yticks([0, 1])
+        ax.set_xticks([0, 1])
+        ax.set_yticks([0, 1])
         ax.set_xticklabels(["succès", "échec"])
         ax.set_yticklabels(["succès", "échec"])
         for i in range(2):
             for j in range(2):
                 ax.text(j, i, conf_mat[i][j], ha="center", va="center", color="black")
-        ax.set_xlabel("prédit"); ax.set_ylabel("réel")
+        ax.set_xlabel("prédit")
+        ax.set_ylabel("réel")
         ax.set_title(f"Confusion matrix (F1={metrics['f1']:.2f})")
         fig.colorbar(im)
         fig.tight_layout()

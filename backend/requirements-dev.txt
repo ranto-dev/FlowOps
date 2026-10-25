@@ -1,0 +1,4 @@
+# Outils de développement du backend (configuration dans pyproject.toml)
+# Instalés dans backend/venv/ — voir AGENTS.md (section Commands).
+pytest==9.1.1
+ruff==0.17.2
