@@ -308,7 +308,7 @@ de modèle exposent déjà tout ce qu'il faut.
 
 ## 7. API REST (`mlops/api.py`)
 
-Monté sur FastAPI dans `main.py`, sous le préfixe **`/api/mlops`** :
+Monté sur FastAPI par `app/main.py` (`create_app()`), sous le préfixe **`/api/mlops`** — `backend/main.py` se contente de réexporter `app` pour `uvicorn main:app` :
 
 | Méthode | Endpoint                           | Description |
 |---------|------------------------------------|-------------|
@@ -387,7 +387,7 @@ venv/bin/python -m mlops.data.sample_data            # génère data/raw (démo)
 venv/bin/python -m mlops.etl.pipeline                # ETL + features
 venv/bin/python -m mlops.training.train_duration     # régression → candidat
 venv/bin/python -m mlops.training.train_failure      # classification → candidat
-venv/bin/python -m mlops.evaluation.evaluate_all     # évaluations + MLflow
+venv/bin/python -m mlops.evaluation.evaluate         # évaluations + MLflow
 venv/bin/python -m mlops.validation.validator        # gates + promotion
 venv/bin/python -m mlops.collection.collector --repo owner/repo --token ghp_xxx
 ```
@@ -401,7 +401,7 @@ GITHUB_TOKEN=ghp_xxx GITHUB_REPO="owner/repo" \
 ```
 
 `GITHUB_TOKEN`/`GITHUB_REPO` peuvent aussi être posés dans `backend/.env`
-(`MLOPS_*` et `FLOWOPS_MLFLOW_TRACKING_URI` sont lus pareil via `load_dotenv`).
+(`mlops/config.py` appelle lui-même `load_dotenv` : le CLI MLOps fonctionne donc sans que l'API soit lancée ; `MLOPS_*` et `FLOWOPS_MLFLOW_TRACKING_URI` se lisent pareil).
 
 ### Où sont les livrables
 
