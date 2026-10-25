@@ -9,6 +9,7 @@ Centralise l'accès à MLflow :
 """
 from __future__ import annotations
 
+import logging
 import os
 
 import mlflow
@@ -19,6 +20,8 @@ from mlops.config import (
     MLFLOW_STAGE_PRODUCTION,
     MLFLOW_TRACKING_URI,
 )
+
+logger = logging.getLogger(__name__)
 
 os.environ.setdefault("MLFLOW_DISABLE_AGENT_HINT", "1")
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
@@ -67,7 +70,7 @@ def log_model_version(kind: str, model, run_id: str, artifact_path: str = "model
             tags=tags or {},
         )
     except Exception as exc:  # pragma: no cover - dépend de la configuration MLflow
-        print(f"[mlflow] Impossible d'enregistrer '{name}' : {exc}")
+        logger.warning("Impossible d'enregistrer '%s' : %s", name, exc)
         return None
     return version.version
 
@@ -78,9 +81,9 @@ def transition_to_production(kind: str, version: int) -> None:
     name = registry_name(kind)
     try:
         client.transition_model_version_stage(name, version, MLFLOW_STAGE_PRODUCTION)
-        print(f"[mlflow] {name} version {version} -> stage Production")
+        logger.info("%s version %s -> stage Production", name, version)
     except Exception as exc:
-        print(f"[mlflow] Transition impossible ({name} v{version}) : {exc}")
+        logger.warning("Transition impossible (%s v%s) : %s", name, version, exc)
 
 
 def get_production_version(kind: str) -> dict | None:
@@ -130,5 +133,5 @@ def log_registered_model(model_info, kind: str) -> int | None:
         )
         return version.version
     except Exception as exc:
-        print(f"[mlflow] Enregistrement échoué : {exc}")
+        logger.warning("Enregistrement échoué : %s", exc)
         return None

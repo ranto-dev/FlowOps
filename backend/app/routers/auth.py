@@ -8,19 +8,18 @@ Routes :
 """
 from __future__ import annotations
 
+import datetime
+
 from fastapi import APIRouter, HTTPException
 
 from app import github_auth
+from app.database import users_collection
 from app.dependencies import CurrentUserDep
 from app.github_client import list_repositories
 from app.schemas import LoginCheckRequest
 from app.settings import GITHUB_CONFIG_MISSING_MSG, GITHUB_CONFIG_READY, GITHUB_MISSING_VARS
 
 router = APIRouter()
-
-# Base de données en mémoire pour l'inscription/connexion FlowOps.
-# À basculer dans MongoDB — voir AGENTS.md (persistance des users).
-USERS_DB: dict[str, dict] = {}
 
 
 @router.get("/api/auth/status")
@@ -59,11 +58,22 @@ async def check_login(req: LoginCheckRequest):
     username = result["username"]
     avatar_url = result["avatar_url"]
 
-    # Gestion Inscription / Connexion en BDD mémoire
-    is_new_user = False
-    if github_id not in USERS_DB:
-        USERS_DB[github_id] = {"username": username, "avatar_url": avatar_url}
-        is_new_user = True
+    # Inscription / connexion : upsert dans la collection ``users`` (index
+    # unique sur github_id). ``upserted_id`` non nul ⇔ utilisateur nouveau.
+    now = datetime.datetime.now(datetime.timezone.utc)
+    outcome = await users_collection.update_one(
+        {"github_id": github_id},
+        {
+            "$set": {
+                "username": username,
+                "avatar_url": avatar_url,
+                "last_login_at": now,
+            },
+            "$setOnInsert": {"created_at": now},
+        },
+        upsert=True,
+    )
+    is_new_user = outcome.upserted_id is not None
 
     return {
         "status": "success",

@@ -11,7 +11,7 @@ Les erreurs GitHub/stockage sont levées en ``ServiceError`` (voire
 """
 from __future__ import annotations
 
-import traceback
+import logging
 
 import yaml
 from bson import ObjectId
@@ -24,6 +24,7 @@ from app.github_client import create_dispatch, normalize_repo_slug, push_workflo
 from compiler import compile_flowops_workflow
 from schemas import FlowOpsWorkflowSchema
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -73,9 +74,9 @@ async def save_project_workflow(
             "yaml_filename": base_name,
         }
 
-    except Exception as e:
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+    except Exception as exc:
+        logger.exception("Échec de sauvegarde du workflow du projet %s", owned.project_id)
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(exc)}")
 
 
 @router.post("/api/projects/{project_id}/execute")
