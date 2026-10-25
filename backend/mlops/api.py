@@ -18,12 +18,17 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict
 
 from mlops.config import (
-    EVALUATION_DIR, MODELS_DIR, CLASSIFICATION_DATASET_CSV,
-    REGRESSION_DATASET_CSV, PROCESSED_DIR,
+    CLASSIFICATION_DATASET_CSV,
+    EVALUATION_DIR,
+    MODELS_DIR,
+    PROCESSED_DIR,
+    REGRESSION_DATASET_CSV,
 )
-from mlops.inference.predictor import get_predictor, ModelNotDeployedError
+from mlops.inference.predictor import ModelNotDeployedError, get_predictor
 from mlops.monitoring.tracker import (
-    log_prediction, log_actual, get_status,
+    get_status,
+    log_actual,
+    log_prediction,
 )
 from mlops.pipeline import run_pipeline
 

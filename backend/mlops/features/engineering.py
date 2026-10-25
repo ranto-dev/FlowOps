@@ -17,8 +17,7 @@ from typing import Iterable
 
 import pandas as pd
 
-from mlops.config import FEATURE_COLUMNS, NUMERICAL_FEATURES, CATEGORICAL_FEATURES
-
+from mlops.config import CATEGORICAL_FEATURES, FEATURE_COLUMNS, NUMERICAL_FEATURES
 
 # ---------------------------------------------------------------------------
 # 1. Normalisation des sources de configuration

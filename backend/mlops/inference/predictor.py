@@ -22,13 +22,17 @@ import joblib
 import pandas as pd
 
 from mlops.config import (
-    MODEL_DIR, RISK_LEVEL_LABELS, PREDICTION_DATASET_CSV,
+    MODEL_DIR,
+    PREDICTION_DATASET_CSV,
+    RISK_LEVEL_LABELS,
+    risk_level,
 )
 from mlops.features.engineering import (
-    build_prediction_row, features_from_normalized, history_features_for,
+    build_prediction_row,
+    features_from_normalized,
+    history_features_for,
     normalize_from_lowcode,
 )
-from mlops.config import risk_level
 
 
 class ModelNotDeployedError(RuntimeError):

@@ -12,13 +12,19 @@ import joblib
 import mlflow
 import pandas as pd
 from sklearn.metrics import (
-    accuracy_score, confusion_matrix, f1_score, precision_score,
-    recall_score, roc_auc_score,
+    accuracy_score,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
 )
 
 from mlops.config import (
-    CLASSIFICATION_DATASET_CSV, EVALUATION_DIR, MODEL_DIR,
+    CLASSIFICATION_DATASET_CSV,
+    EVALUATION_DIR,
     MLFLOW_EXPERIMENT_NAMES,
+    MODEL_DIR,
 )
 from mlops.tracking.tracking import ensure_experiment
 from mlops.training.common import temporal_split

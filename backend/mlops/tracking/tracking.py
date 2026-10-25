@@ -15,8 +15,9 @@ import mlflow
 from mlflow.tracking import MlflowClient
 
 from mlops.config import (
-    MLFLOW_TRACKING_URI, MLFLOW_REGISTRY_MODEL_NAMES,
+    MLFLOW_REGISTRY_MODEL_NAMES,
     MLFLOW_STAGE_PRODUCTION,
+    MLFLOW_TRACKING_URI,
 )
 
 os.environ.setdefault("MLFLOW_DISABLE_AGENT_HINT", "1")

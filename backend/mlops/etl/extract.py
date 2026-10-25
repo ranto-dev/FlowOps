@@ -8,9 +8,12 @@ from __future__ import annotations
 import pandas as pd
 
 from mlops.config import (
-    RAW_RUNS_CSV, RAW_WORKFLOWS_CSV, RAW_JOBS_CSV, RAW_STEPS_CSV,
+    RAW_JOBS_CSV,
+    RAW_RUNS_CSV,
+    RAW_STEPS_CSV,
+    RAW_WORKFLOWS_CSV,
+    ensure_dirs,
 )
-from mlops.config import ensure_dirs
 
 
 def extract() -> dict[str, pd.DataFrame]:

@@ -18,11 +18,15 @@ from pathlib import Path
 import joblib
 
 from mlops.config import (
-    VALIDATION_THRESHOLDS, FEATURE_COLUMNS, MODEL_DIR, MODELS_DIR,
+    FEATURE_COLUMNS,
     MLFLOW_REGISTRY_MODEL_NAMES,
+    MODEL_DIR,
+    MODELS_DIR,
+    VALIDATION_THRESHOLDS,
 )
 from mlops.tracking.tracking import (
-    transition_to_production, log_model_version,
+    log_model_version,
+    transition_to_production,
 )
 
 

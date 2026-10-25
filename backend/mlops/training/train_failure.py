@@ -10,27 +10,39 @@ Usage :
 """
 from __future__ import annotations
 
-import numpy as np
 import mlflow
+import numpy as np
 import pandas as pd
+from sklearn.base import clone
 from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
-    accuracy_score, confusion_matrix, f1_score, precision_score,
-    recall_score, roc_auc_score,
+    accuracy_score,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
 )
 from sklearn.model_selection import StratifiedKFold
-from sklearn.base import clone
 
 from mlops.config import (
-    CLASSIFICATION_DATASET_CSV, MLFLOW_EXPERIMENT_NAMES, FEATURE_COLUMNS,
+    CLASSIFICATION_DATASET_CSV,
+    FEATURE_COLUMNS,
+    MLFLOW_EXPERIMENT_NAMES,
     RANDOM_STATE,
 )
 from mlops.tracking.tracking import ensure_experiment
 from mlops.training.common import (
-    make_pipeline, temporal_split, save_candidate, next_version,
-    dataset_version, now_iso, best_threshold, optimal_threshold,
+    best_threshold,
+    dataset_version,
+    make_pipeline,
+    next_version,
+    now_iso,
+    optimal_threshold,
+    save_candidate,
+    temporal_split,
 )
 
 REGISTRY_KIND = "failure"

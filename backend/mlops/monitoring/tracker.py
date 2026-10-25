@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
-from mlops.config import PREDICTIONS_LOG_CSV, MONITORING_DIR
+from mlops.config import MONITORING_DIR, PREDICTIONS_LOG_CSV
 
 _FIELDS = [
     "timestamp", "workflow_name", "repository",

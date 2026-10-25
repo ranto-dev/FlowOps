@@ -5,13 +5,14 @@ Usage :
 """
 from __future__ import annotations
 
-from mlops.etl.extract import extract
-from mlops.etl.transform import transform
-from mlops.etl.load import load
-from mlops.features.engineering import engineer_training_datasets
 from mlops.config import (
-    REGRESSION_DATASET_CSV, CLASSIFICATION_DATASET_CSV,
+    CLASSIFICATION_DATASET_CSV,
+    REGRESSION_DATASET_CSV,
 )
+from mlops.etl.extract import extract
+from mlops.etl.load import load
+from mlops.etl.transform import transform
+from mlops.features.engineering import engineer_training_datasets
 
 
 def run_etl(verbose: bool = True) -> dict:

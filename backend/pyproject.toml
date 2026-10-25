@@ -9,12 +9,6 @@ line-length = 100
 extend-exclude = ["venv", "mlruns", "generated", "generated_workflows", "mlops/data"]
 
 [tool.ruff.lint]
-# Baseline volontairement minimale (règles par défaut ruff : E4/E7/E9/F).
-# On élargira (I = tri des imports) lors de l'extraction des routers.
-select = ["E4", "E7", "E9", "F"]
-
-[tool.ruff.lint.per-file-ignores]
-# main.py : l'import du routeur MLOps doit suivre load_dotenv()
-# (mlops/config.py lit l'environnement à l'import). Disparaît en Phase 1
-# quand settings.py chargera le .env avant tout import métier.
-"main.py" = ["E402"]
+# E4/E7/E9/F = règles par défaut ruff ; I = tri des imports (activé à la
+# création de app/routers/ : les imports doivent rester reproductibles).
+select = ["E4", "E7", "E9", "F", "I"]

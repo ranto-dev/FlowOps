@@ -17,12 +17,18 @@ from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 from mlops.config import (
-    REGRESSION_DATASET_CSV, MLFLOW_EXPERIMENT_NAMES, FEATURE_COLUMNS,
+    FEATURE_COLUMNS,
+    MLFLOW_EXPERIMENT_NAMES,
+    REGRESSION_DATASET_CSV,
 )
 from mlops.tracking.tracking import ensure_experiment
 from mlops.training.common import (
-    make_pipeline, temporal_split, save_candidate, next_version,
-    dataset_version, now_iso,
+    dataset_version,
+    make_pipeline,
+    next_version,
+    now_iso,
+    save_candidate,
+    temporal_split,
 )
 
 REGISTRY_KIND = "duration"

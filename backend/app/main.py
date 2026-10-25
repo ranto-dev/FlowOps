@@ -2,9 +2,9 @@
 
 ``create_app()`` assemble la partie transverse : middlewares (CORS),
 cycle de vie (index MongoDB, fermeture du client HTTP GitHub), conversion
-des erreurs métier en réponses JSON et routeur MLOps. Les routes métier
-restent déclarées dans ``backend/main.py`` le temps de leur extraction
-vers ``app/routers/`` (voir AGENTS.md).
+des erreurs métier en réponses JSON et les routeurs métier
+(``app.routers``). Le module racine ``backend/main.py`` se contente de
+réexporter l'instance : ``uvicorn main:app`` reste la commande historique.
 
 Ordre d'import critique : ``app.settings`` est importé en premier, il charge
 ``backend/.env`` avant que quiconque lise l'environnement (dont
@@ -23,6 +23,7 @@ from fastapi.responses import JSONResponse
 from app import github_client
 from app.database import ensure_indexes
 from app.exceptions import ServiceError
+from app.routers import auth, logs, projects, workflows
 from app.settings import CORS_ORIGINS, WORKFLOWS_DIR  # noqa: F401  (WORKFLOWS_DIR est créé au import)
 
 # Routeur MLOps : doit être importé après app.settings (lit l'environnement).
@@ -67,6 +68,11 @@ def create_app() -> FastAPI:
     # Erreurs métier (GitHub, stockage) -> même format que HTTPException.
     app.add_exception_handler(ServiceError, service_error_handler)
 
+    # Routeurs métier (URLs exactes portées par chaque module de app/routers/).
+    app.include_router(auth.router)
+    app.include_router(projects.router)
+    app.include_router(workflows.router)
+    app.include_router(logs.router)
     app.include_router(mlops_router)
     return app
 

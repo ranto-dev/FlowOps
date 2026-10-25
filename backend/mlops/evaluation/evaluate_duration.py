@@ -15,8 +15,10 @@ import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 from mlops.config import (
-    REGRESSION_DATASET_CSV, EVALUATION_DIR, MODEL_DIR,
+    EVALUATION_DIR,
     MLFLOW_EXPERIMENT_NAMES,
+    MODEL_DIR,
+    REGRESSION_DATASET_CSV,
 )
 from mlops.tracking.tracking import ensure_experiment
 from mlops.training.common import temporal_split

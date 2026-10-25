@@ -10,7 +10,8 @@ from __future__ import annotations
 import pandas as pd
 
 from mlops.config import (
-    PROCESSED_DATASET_CSV, PREDICTION_DATASET_CSV,
+    PREDICTION_DATASET_CSV,
+    PROCESSED_DATASET_CSV,
 )
 
 CARRIED_PREDICTION_COLUMNS = [

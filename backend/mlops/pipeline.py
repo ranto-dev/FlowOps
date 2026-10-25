@@ -17,7 +17,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from mlops.config import ensure_dirs, GITHUB_TOKEN
+from mlops.config import GITHUB_TOKEN, ensure_dirs
 
 
 def run_pipeline(sample: bool = False, skip_train: bool = False,

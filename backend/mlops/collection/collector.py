@@ -22,11 +22,17 @@ import yaml
 from github import Github, GithubException
 
 from mlops.config import (
-    ensure_dirs, RAW_RUNS_CSV, RAW_WORKFLOWS_CSV,
-    RAW_JOBS_CSV, RAW_STEPS_CSV, GITHUB_TOKEN, DEFAULT_REPO,
+    DEFAULT_REPO,
+    GITHUB_TOKEN,
+    RAW_JOBS_CSV,
+    RAW_RUNS_CSV,
+    RAW_STEPS_CSV,
+    RAW_WORKFLOWS_CSV,
+    ensure_dirs,
 )
 from mlops.features.engineering import (
-    normalize_from_yaml_dict, features_from_normalized,
+    features_from_normalized,
+    normalize_from_yaml_dict,
 )
 
 
