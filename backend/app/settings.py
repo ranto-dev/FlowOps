@@ -34,7 +34,15 @@ GITHUB_CLIENT_SECRET: str = os.getenv("GITHUB_CLIENT_SECRET", "").strip()
 
 # L'application ne peut authentifier personne tant que les deux variables
 # ci-dessus ne sont pas renseignées ; /api/auth/status expose cet état.
-GITHUB_CONFIG_READY: bool = bool(GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET)
+GITHUB_MISSING_VARS: list[str] = [
+    name
+    for name, value in (
+        ("GITHUB_CLIENT_ID", GITHUB_CLIENT_ID),
+        ("GITHUB_CLIENT_SECRET", GITHUB_CLIENT_SECRET),
+    )
+    if not value
+]
+GITHUB_CONFIG_READY: bool = not GITHUB_MISSING_VARS
 GITHUB_CONFIG_MISSING_MSG: str = (
     "GitHub OAuth App is not configured. "
     "Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in backend/.env "
