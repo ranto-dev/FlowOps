@@ -7,7 +7,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FlowOps — Build, automate and optimize CI/CD workflows</title>
   <meta name="description" content="FlowOps is a low-code platform for building, executing and optimizing GitHub Actions CI/CD workflows." />
-  <meta name="theme-color" content="#09090B" />
+  <meta name="theme-color" content="#f8fafc" />
+  <script>
+    try {
+      const theme = localStorage.getItem("flowops_theme");
+      const language = localStorage.getItem("flowops_language");
+      document.documentElement.dataset.theme =
+        theme === "dark" ? "dark" : "light";
+      document.documentElement.lang = language === "fr" ? "fr" : "en";
+    } catch {
+      document.documentElement.dataset.theme = "light";
+      document.documentElement.lang = "en";
+    }
+  </script>
   <meta property="og:type" content="website" />
   <meta property="og:title" content="FlowOps — Build, automate and optimize CI/CD workflows" />
   <meta property="og:description" content="Design, generate, execute and optimize GitHub Actions workflows through a powerful low-code interface." />

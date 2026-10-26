@@ -2,20 +2,12 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from "framer-motion";
 import { Reveal, SectionHeader } from "./Reveal";
+import { usePreferences } from "../../lib/usePreferences";
 
 const COMMANDS = [
-  "flowops workflow generate",
-  "flowops workflow run",
-  "flowops workflow logs",
-  "flowops model train",
+  "cd backend && venv/bin/python -m mlops.pipeline --sample",
+  "cd frontend && pnpm dev",
 ];
-
-const OUTPUT: Record<string, string> = {
-  "flowops workflow generate": "✓ workflow.yml written — 3 jobs, 7 steps",
-  "flowops workflow run": "✓ run #42 started on ubuntu-latest",
-  "flowops workflow logs": "✓ streaming logs for job build (live)",
-  "flowops model train": "✓ training complete — metrics logged to MLflow",
-};
 
 function useCliDemo(active: boolean, reduce: boolean): string[] {
   const [shown, setShown] = useState<string[]>(reduce ? [...COMMANDS, ""] : []);
@@ -39,7 +31,7 @@ function useCliDemo(active: boolean, reduce: boolean): string[] {
       timers.push(
         window.setTimeout(() => {
           if (cancelled) return;
-          setShown((s) => [...s, `$ ${cmd}`, OUTPUT[cmd]]);
+          setShown((s) => [...s, `$ ${cmd}`]);
           cmdIndex += 1;
           next();
         }, 1100),
@@ -56,6 +48,7 @@ function useCliDemo(active: boolean, reduce: boolean): string[] {
 }
 
 export function DeveloperExperience() {
+  const { t } = usePreferences();
   const reduce = useReducedMotion();
   const [inView, setInView] = useState(false);
   const lines = useCliDemo(inView, reduce ?? false);
@@ -64,9 +57,9 @@ export function DeveloperExperience() {
     <section aria-labelledby="dx-title" className="py-24 sm:py-32">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <SectionHeader
-          eyebrow="Developer experience"
-          title={<span id="dx-title">Designed for developers.</span>}
-          description="The same workflows, available from your terminal."
+          eyebrow={t("Local development")}
+          title={<span id="dx-title">{t("Run FlowOps locally.")}</span>}
+          description={t("Start the MLOps pipeline or frontend using the documented repository commands.")}
         />
         <Reveal className="mx-auto mt-12 max-w-2xl">
           <motion.div
@@ -83,12 +76,12 @@ export function DeveloperExperience() {
             </div>
             <div
               className="min-h-56 overflow-x-auto p-5 font-mono text-[13px] leading-7"
-              aria-label="CLI demo"
+              aria-label={t("Local development command examples")}
             >
               {lines.map((line, i) =>
                 line === "done" ? (
                   <p key={`done-${i}`} className="text-[#71717A]">
-                    — ready.
+                    — {t("ready.")}
                   </p>
                 ) : (
                   <p

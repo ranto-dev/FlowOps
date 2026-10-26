@@ -2,25 +2,27 @@ import { motion, useReducedMotion } from "framer-motion";
 import {
   Container,
   Download,
-  FlaskConical,
   GitBranch,
   Package,
-  Rocket,
   Settings2,
+  TerminalSquare,
+  Upload,
 } from "lucide-react";
 import { SectionHeader } from "./Reveal";
+import { usePreferences } from "../../lib/usePreferences";
 
 const NODES = [
   { icon: GitBranch, label: "Trigger" },
-  { icon: Download, label: "Checkout" },
-  { icon: Settings2, label: "Setup Node" },
-  { icon: Package, label: "Install" },
-  { icon: Container, label: "Build" },
-  { icon: FlaskConical, label: "Test" },
-  { icon: Rocket, label: "Deploy" },
+  { icon: Download, label: "Checkout repository" },
+  { icon: Settings2, label: "Set up Node.js" },
+  { icon: Package, label: "Run npm script" },
+  { icon: Container, label: "Build Docker image" },
+  { icon: Upload, label: "Upload artifact" },
+  { icon: TerminalSquare, label: "Custom command" },
 ];
 
 export function WorkflowBuilder() {
+  const { t } = usePreferences();
   const reduce = useReducedMotion();
   return (
     <section
@@ -30,11 +32,11 @@ export function WorkflowBuilder() {
     >
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <SectionHeader
-          eyebrow="Low-code builder"
-          title={<span id="builder-title">Build workflows visually.</span>}
-          description="Configure your pipeline without writing YAML from scratch."
+          eyebrow={t("Low-code builder")}
+          title={<span id="builder-title">{t("Build workflows visually.")}</span>}
+          description={t("Configure your pipeline without writing YAML from scratch.")}
         />
-        <div className="mx-auto mt-12 max-w-md" role="list" aria-label="Pipeline nodes">
+        <div className="mx-auto mt-12 max-w-md" role="list" aria-label={t("Pipeline nodes")}>
           {NODES.map((node, i) => (
             <div key={node.label}>
               <motion.div
@@ -53,7 +55,7 @@ export function WorkflowBuilder() {
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <span className="text-[15px] font-medium text-[#FAFAFA]">
-                    {node.label}
+                    {t(node.label)}
                   </span>
                 </div>
               </motion.div>

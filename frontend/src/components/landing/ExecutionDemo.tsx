@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Check, Circle, Loader2 } from "lucide-react";
 import { Reveal, SectionHeader } from "./Reveal";
 import { cn } from "../../lib/utils";
+import { usePreferences } from "../../lib/usePreferences";
 
 type StepState = "done" | "running" | "pending";
 
@@ -35,6 +36,7 @@ function statesFor(tick: number): StepState[] {
 }
 
 export function ExecutionDemo() {
+  const { t } = usePreferences();
   const reduce = useReducedMotion();
   const [tick, setTick] = useState(reduce ? STEPS.length : 0);
 
@@ -56,9 +58,9 @@ export function ExecutionDemo() {
     <section aria-labelledby="exec-title" className="py-24 sm:py-32">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <SectionHeader
-          eyebrow="Real-time execution"
+          eyebrow={t("Illustrative execution")}
           title={
-            <span id="exec-title">See every workflow as it happens.</span>
+            <span id="exec-title">{t("Example workflow execution states.")}</span>
           }
         />
         <Reveal className="mx-auto mt-12 max-w-2xl">
@@ -73,10 +75,12 @@ export function ExecutionDemo() {
                   aria-hidden="true"
                 />
                 <span className="text-[#A1A1AA]">
-                  {running ? "Workflow running" : "Workflow finished"}
+                  {running ? t("Workflow running") : t("Workflow finished")}
                 </span>
               </p>
-              <p className="font-mono text-[11px] text-[#71717A]">run #42</p>
+              <p className="font-mono text-[11px] text-[#71717A]">
+                {t("Illustrative preview")}
+              </p>
             </div>
 
             <ul className="divide-y divide-[#27272A]">
@@ -90,13 +94,13 @@ export function ExecutionDemo() {
                     transition={{ duration: 0.3 }}
                   >
                     {s === "done" && (
-                      <Check className="size-4 shrink-0 text-emerald-400" aria-label="done" />
+                      <Check className="size-4 shrink-0 text-emerald-400" aria-label={t("Done")} />
                     )}
                     {s === "running" && (
-                      <Loader2 className="size-4 shrink-0 animate-spin text-violet-300" aria-label="running" />
+                      <Loader2 className="size-4 shrink-0 animate-spin text-violet-300" aria-label={t("Running")} />
                     )}
                     {s === "pending" && (
-                      <Circle className="size-4 shrink-0 text-[#3f3f46]" aria-label="pending" />
+                      <Circle className="size-4 shrink-0 text-[#3f3f46]" aria-label={t("Pending")} />
                     )}
                     <span
                       className={cn(
@@ -104,7 +108,7 @@ export function ExecutionDemo() {
                         s === "pending" ? "text-[#71717A]" : "text-[#FAFAFA]",
                       )}
                     >
-                      {step.label}
+                      {t(step.label)}
                     </span>
                   </motion.li>
                 );
@@ -115,7 +119,7 @@ export function ExecutionDemo() {
               {META.map(([k, v]) => (
                 <div key={k} className="bg-[#111113] px-5 py-3.5">
                   <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#71717A]">
-                    {k}
+                    {t(k)}
                   </dt>
                   <dd
                     className={cn(
@@ -127,7 +131,7 @@ export function ExecutionDemo() {
                         : "text-[#FAFAFA]",
                     )}
                   >
-                    {k === "Status" ? (running ? v : "Done") : v}
+                    {k === "Status" ? (running ? v                     : t("Done")) : v}
                   </dd>
                 </div>
               ))}

@@ -109,11 +109,19 @@ async def get_job_logs(owned: OwnedProjectDep, run_id: str, job_id: str):
 
     if status == 404:
         return {
-            "logs": "Les logs ne sont pas encore disponibles sur GitHub (exécution en cours de démarrage...)"
+            "logs": "",
+            "available": False,
+            "message": (
+                "Les logs ne sont pas encore disponibles sur GitHub. "
+                "Réessayez après le démarrage du job."
+            ),
         }
 
     if status != 200:
-        return {"logs": f"Impossible de charger les logs (Statut HTTP {status})"}
+        raise HTTPException(
+            status_code=502,
+            detail=f"GitHub n'a pas pu fournir les logs (statut HTTP {status}).",
+        )
 
     # Nettoyage basique des horodatages ANSI de GitHub
-    return {"logs": raw_logs}
+    return {"logs": raw_logs, "available": True, "message": None}

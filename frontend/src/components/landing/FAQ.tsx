@@ -5,6 +5,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "./ui/accordion";
+import { usePreferences } from "../../lib/usePreferences";
 
 const QA = [
   {
@@ -13,44 +14,45 @@ const QA = [
   },
   {
     q: "Does FlowOps generate GitHub Actions workflows?",
-    a: "Yes. You configure jobs and steps visually, and FlowOps generates a valid workflow.yml you can commit to your repository.",
+    a: "Yes. Configure jobs and steps visually, then preview valid workflow YAML before saving it to your repository.",
   },
   {
     q: "Can I customize generated workflows?",
-    a: "Yes. Every job and step exposes its parameters — runners, Node versions, scripts, Docker images — and the generated YAML stays editable.",
+    a: "Yes. Configure supported job and step parameters, including runners, Node versions, scripts and Docker images.",
   },
   {
     q: "How does the prediction system work?",
-    a: "FlowOps collects execution data, engineers features from it, and trains regression and classification models that estimate duration and failure risk before a run starts.",
+    a: "The local MLOps pipeline trains models on workflow run data to estimate duration and failure risk when compatible models are available.",
   },
   {
     q: "What is MLflow used for?",
-    a: "MLflow tracks every experiment, model version and metric, and serves as the model registry behind the prediction API.",
+    a: "MLflow tracks experiments, metrics and model versions for the local prediction pipeline.",
   },
   {
     q: "Can FlowOps monitor workflow executions?",
-    a: "Yes. Trigger runs from the interface and follow jobs and per-job logs in real time.",
+    a: "FlowOps triggers GitHub Actions runs and refreshes run status. Job logs can be retrieved from GitHub after they are available; this is not live streaming.",
   },
   {
     q: "Is FlowOps open source?",
-    a: "Yes. The source code is publicly available on GitHub under an open-source license.",
+    a: "Review the project repository and its license for current source availability and terms.",
   },
 ];
 
 export function FAQ() {
+  const { t } = usePreferences();
   return (
     <section id="faq" aria-labelledby="faq-title" className="scroll-mt-24 py-24 sm:py-32">
       <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
         <SectionHeader
-          eyebrow="FAQ"
-          title={<span id="faq-title">Questions, answered.</span>}
+          eyebrow={t("FAQ")}
+          title={<span id="faq-title">{t("Questions, answered.")}</span>}
         />
         <Reveal className="mt-10">
           <Accordion type="single" collapsible defaultValue="item-0">
             {QA.map((item, i) => (
               <AccordionItem key={item.q} value={`item-${i}`}>
-                <AccordionTrigger>{item.q}</AccordionTrigger>
-                <AccordionContent>{item.a}</AccordionContent>
+                <AccordionTrigger>{t(item.q)}</AccordionTrigger>
+                <AccordionContent>{t(item.a)}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>

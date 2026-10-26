@@ -6,6 +6,7 @@ import { GITHUB_URL } from "./data";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { EASE } from "./motion";
+import { usePreferences } from "../../lib/usePreferences";
 
 const TECH = [
   "GitHub Actions",
@@ -17,6 +18,7 @@ const TECH = [
 ];
 
 export function Hero() {
+  const { t } = usePreferences();
   const reduce = useReducedMotion();
   const anim = (delay: number) => ({
     initial: { opacity: 0, y: reduce ? 0 : 28 },
@@ -35,7 +37,7 @@ export function Hero() {
         <motion.div {...anim(0)}>
           <Badge variant="accent" className="gap-2">
             <span className="size-1.5 rounded-full bg-violet-400" aria-hidden="true" />
-            Open source CI/CD workflow platform
+            {t("Open-source CI/CD workflow platform")}
           </Badge>
         </motion.div>
 
@@ -44,18 +46,15 @@ export function Hero() {
           {...anim(0.1)}
           className="mt-6 max-w-3xl text-balance text-4xl font-bold leading-[1.05] tracking-tight text-[#FAFAFA] sm:text-6xl lg:text-7xl"
         >
-          Build CI/CD workflows{" "}
-          <span className="text-violet-300">
-            without the YAML complexity.
-          </span>
+          {t("Build CI/CD workflows")}{" "}
+          <span className="text-violet-300">{t("without the YAML complexity.")}</span>
         </motion.h1>
 
         <motion.p
           {...anim(0.2)}
           className="mt-6 max-w-xl text-pretty text-base leading-relaxed text-[#A1A1AA] sm:text-lg"
         >
-          Design, generate, execute and optimize GitHub Actions workflows
-          through a powerful low-code interface.
+          {t("Design, generate, execute and optimize GitHub Actions workflows through a powerful low-code interface.")}
         </motion.p>
 
         <motion.div
@@ -64,7 +63,7 @@ export function Hero() {
         >
           <Button size="lg" className="w-full sm:w-auto" asChild>
             <Link to="/auth">
-              Get Started
+              {t("Get started")}
               <ArrowRight className="size-4" />
             </Link>
           </Button>
@@ -76,7 +75,7 @@ export function Hero() {
           >
             <a href={GITHUB_URL} target="_blank" rel="noreferrer">
               <FaGithub className="size-4" />
-              View on GitHub
+              {t("View on GitHub")}
             </a>
           </Button>
         </motion.div>
@@ -85,7 +84,7 @@ export function Hero() {
           {...anim(0.4)}
           className="mt-5 font-mono text-xs tracking-wide text-[#71717A]"
         >
-          Built for developers{" "}
+          {t("Built for developers")}{" "}
           <span aria-hidden="true" className="mx-1 text-[#3f3f46]">
             •
           </span>{" "}
@@ -94,7 +93,7 @@ export function Hero() {
 
         <motion.div {...anim(0.5)} className="mt-16 w-full sm:mt-20">
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#71717A]">
-            Built for modern development teams
+            {t("Built for modern development teams")}
           </p>
           <ul
             aria-label="Technologies"

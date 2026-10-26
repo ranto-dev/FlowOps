@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { MousePointerClick, PlayCircle, TrendingUp } from "lucide-react";
 import { SectionHeader } from "./Reveal";
 import { staggerChild, staggerParent } from "./motion";
+import { usePreferences } from "../../lib/usePreferences";
 
 const PILLARS = [
   {
@@ -24,7 +25,7 @@ const PILLARS = [
   {
     icon: PlayCircle,
     title: "Execute",
-    text: "Run and monitor GitHub Actions workflows in real time.",
+    text: "Trigger GitHub Actions runs and refresh their execution status.",
     visual: (
       <div className="flex flex-col gap-2 font-mono text-xs" aria-hidden="true">
         {[
@@ -52,7 +53,7 @@ const PILLARS = [
           duration <span className="text-[#FAFAFA]">≈ 128s</span>
         </span>
         <span className="rounded-md border border-[#27272A] bg-[#09090B] px-3 py-2 text-[#A1A1AA]">
-          failure risk <span className="text-emerald-400">23% · low</span>
+          failure risk <span className="text-violet-300">23% · example</span>
         </span>
       </div>
     ),
@@ -60,17 +61,18 @@ const PILLARS = [
 ];
 
 export function Solution() {
+  const { t } = usePreferences();
   const reduce = useReducedMotion();
   return (
     <section aria-labelledby="solution-title" className="py-24 sm:py-32">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <SectionHeader
-          eyebrow="The solution"
+          eyebrow={t("The solution")}
           title={
             <span id="solution-title">
-              One workflow.
+              {t("One workflow.")}
               <br />
-              One interface. Complete visibility.
+              {t("One interface. Complete visibility.")}
             </span>
           }
         />
@@ -89,10 +91,10 @@ export function Solution() {
             >
               <p.icon className="size-5 text-violet-400" aria-hidden="true" />
               <h3 className="mt-4 text-xl font-semibold tracking-tight text-[#FAFAFA]">
-                {p.title}
+                {t(p.title)}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-[#A1A1AA]">
-                {p.text}
+                {t(p.text)}
               </p>
               <div className="mt-6 flex-1">{p.visual}</div>
             </motion.article>

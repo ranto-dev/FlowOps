@@ -11,5 +11,5 @@ export const NAV_LINKS: NavLink[] = [
   { label: "Features", href: "#features" },
   { label: "How it works", href: "#how-it-works" },
   { label: "MLOps", href: "#mlops" },
-  { label: "Documentation", href: "/setup", internal: true },
+  { label: "Documentation", href: "/docs", internal: true },
 ];

@@ -5,6 +5,7 @@ import type {
   LowCodeJob,
   LowCodeStep,
 } from "../@types/workflow";
+import { usePreferences } from "../lib/usePreferences";
 
 interface WorkflowFormProps {
   activeConfig: FlowOpsWorkflowConfig;
@@ -19,6 +20,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
   onGenerate,
   loading,
 }) => {
+  const { t } = usePreferences();
   const [config, setConfig] = useState<FlowOpsWorkflowConfig>(activeConfig);
   const [activeJobId, setActiveJobId] = useState<string>("");
 
@@ -165,13 +167,12 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
       {/* SECTION 1 */}
       <div className="bg-slate-50/70 p-5 rounded-2xl space-y-4 border border-slate-100">
         <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-          <Settings className="w-4 h-4 text-purple-600" /> 1. Configuration
-          Globale du Pipeline
+          <Settings className="w-4 h-4 text-purple-600" /> 1. {t("Pipeline configuration")}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-              Nom de Fichier unique
+              {t("Workflow filename")}
             </label>
             <input
               type="text"
@@ -183,7 +184,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-              Nom d'affichage
+              {t("Display name")}
             </label>
             <input
               type="text"
@@ -197,7 +198,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
 
         <div className="space-y-2">
           <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide block">
-            Événements Déclencheurs
+            {t("Trigger events")}
           </label>
           <div className="flex gap-4 bg-white p-2.5 rounded-xl border border-slate-100">
             {["push", "pull_request", "workflow_dispatch"].map((ev) => (
@@ -220,7 +221,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-              Filtrage des Branches
+              {t("Branch filter")}
             </label>
             <input
               type="text"
@@ -232,7 +233,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-              Variables Globales (`env` KEY=VAL)
+              {t("Global environment variables")} (`env` KEY=VALUE)
             </label>
             <input
               type="text"
@@ -249,15 +250,14 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
       <div className="space-y-3">
         <div className="flex justify-between items-center">
           <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-            <Layers className="w-4 h-4 text-purple-600" /> 2. Orchestration &
-            Graphe de Jobs
+            <Layers className="w-4 h-4 text-purple-600" /> 2. {t("Jobs and orchestration")}
           </h3>
           <button
             type="button"
             onClick={addJob}
             className="px-3 py-1.5 bg-slate-900 text-white font-bold text-[11px] rounded-xl hover:bg-slate-800 transition-all"
           >
-            + Ajouter un Job
+            + {t("Add job")}
           </button>
         </div>
 
@@ -271,14 +271,24 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
                   : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
               }`}
             >
-              <span onClick={() => setActiveJobId(j.id)}>{j.name}</span>
-              <Trash2
-                className={`w-3.5 h-3.5 ${j.id === activeJobId ? "text-purple-200 hover:text-white" : "text-slate-400 hover:text-red-500"}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeJob(j.id);
-                }}
-              />
+              <button
+                type="button"
+                onClick={() => setActiveJobId(j.id)}
+                className="min-w-0 truncate text-left"
+                aria-pressed={j.id === activeJobId}
+              >
+                {j.name}
+              </button>
+              <button
+                type="button"
+                onClick={() => removeJob(j.id)}
+                className="shrink-0"
+                aria-label={`${t("Delete")} ${j.name}`}
+              >
+                <Trash2
+                  className={`w-3.5 h-3.5 ${j.id === activeJobId ? "text-purple-200 hover:text-white" : "text-slate-400 hover:text-red-500"}`}
+                />
+              </button>
             </div>
           ))}
         </div>
@@ -290,7 +300,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                Identifiant unique du Job
+                {t("Job name")}
               </label>
               <input
                 type="text"
@@ -303,7 +313,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
             </div>
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                Runner d'exécution
+                {t("Runner")}
               </label>
               <select
                 value={selectedJob.runs_on}
@@ -319,7 +329,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
             </div>
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                Dépendance séquentielle (`needs`)
+                {t("Dependencies")} (`needs`)
               </label>
               <input
                 type="text"
@@ -335,7 +345,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
                   )
                 }
                 className="w-full p-2 border border-slate-200 rounded-xl text-xs font-mono text-slate-900"
-                placeholder="ex: build"
+                placeholder="e.g. build"
               />
             </div>
           </div>
@@ -343,7 +353,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                Clé Matrice de Test
+                {t("Matrix key")}
               </label>
               <input
                 type="text"
@@ -352,12 +362,12 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
                   updateJobField(selectedJob.id, "matrix_key", e.target.value)
                 }
                 className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-mono"
-                placeholder="ex: node-version"
+                placeholder="e.g. node-version"
               />
             </div>
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                Valeurs Multi-runtime (séparées par des ,)
+                {t("Matrix values (comma-separated)")}
               </label>
               <input
                 type="text"
@@ -370,7 +380,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
                   )
                 }
                 className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-mono"
-                placeholder="ex: 18, 20, 22"
+                placeholder="e.g. 18, 20, 22"
               />
             </div>
           </div>
@@ -378,24 +388,17 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
           <div className="space-y-3 pt-3 border-t border-slate-100">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
               <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                Séquence d'Épingle des Steps
+                {t("Workflow steps")}
               </span>
               <div className="flex flex-wrap gap-1.5">
-                {[
-                  "checkout",
-                  "setup-node",
-                  "npm",
-                  "docker",
-                  "upload-artifact",
-                  "custom-run",
-                ].map((type) => (
+                {STEP_TYPES.map((type) => (
                   <button
                     key={type}
                     type="button"
-                    onClick={() => addStepToActiveJob(type as LowCodeStep["type"])}
+                    onClick={() => addStepToActiveJob(type)}
                     className="px-2.5 py-1 bg-purple-50 text-purple-700 hover:bg-purple-100 text-[10px] font-bold rounded-lg border border-purple-200/40 capitalize transition-all"
                   >
-                    + {type}
+                    + {t(stepTypeLabels[type])}
                   </button>
                 ))}
               </div>
@@ -412,10 +415,14 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
                       <CheckCircle2 className="w-3.5 h-3.5 text-purple-600" />{" "}
                       {idx + 1}. {step.name}
                     </span>
-                    <Trash2
-                      className="w-3.5 h-3.5 text-slate-400 hover:text-red-500 cursor-pointer transition-colors"
+                    <button
+                      type="button"
+                      className="rounded p-1 text-slate-400 transition-colors hover:text-red-500"
+                      aria-label={`${t("Delete")} ${step.name}`}
                       onClick={() => removeStepFromActiveJob(step.id)}
-                    />
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
                   </div>
 
                   {step.type === "setup-node" && (
@@ -441,19 +448,19 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
                       className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-mono text-slate-800"
                     >
                       <option value="install">
-                        npm install (Installation standard)
+                        {t("npm install (standard install)")}
                       </option>
                       <option value="ci">
-                        npm ci (Installation isolée CI de production)
+                        {t("npm ci (clean CI install)")}
                       </option>
                       <option value="run lint">
-                        npm run lint (Analyse statique de propreté)
+                        {t("npm run lint (static analysis)")}
                       </option>
                       <option value="test">
-                        npm test (Validation d'intégration)
+                        {t("npm test (test suite)")}
                       </option>
                       <option value="run build">
-                        npm run build (Transpilation Webpack/Vite)
+                        {t("npm run build (production build)")}
                       </option>
                     </select>
                   )}
@@ -471,7 +478,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
                           )
                         }
                         className="p-2 border border-slate-200 bg-white rounded-lg text-xs font-mono"
-                        placeholder="Image Name"
+                        placeholder={t("Image name")}
                       />
                       <select
                         value={step.docker_registry}
@@ -484,7 +491,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
                         }
                         className="p-2 border border-slate-200 bg-white rounded-lg text-xs font-bold"
                       >
-                        <option value="dockerhub">Docker Hub Central</option>
+                        <option value="dockerhub">Docker Hub</option>
                         <option value="ghcr">GitHub Packages (GHCR)</option>
                       </select>
                     </div>
@@ -502,7 +509,23 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
                         )
                       }
                       className="w-full p-2 border border-slate-200 bg-white rounded-lg text-xs font-mono"
-                      placeholder="Commandes Shell libres..."
+                      placeholder={t("Run a shell command")}
+                    />
+                  )}
+
+                  {step.type === "upload-artifact" && (
+                    <input
+                      type="text"
+                      value={step.artifact_path ?? ""}
+                      onChange={(e) =>
+                        updateStepField(
+                          step.id,
+                          "artifact_path",
+                          e.target.value,
+                        )
+                      }
+                      className="w-full rounded-lg border border-slate-200 bg-white p-2 font-mono text-xs"
+                      placeholder={t("Artifact path (e.g. dist/)")}
                     />
                   )}
                 </div>
@@ -512,7 +535,6 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
         </div>
       )}
 
-      {/* BOUTON ULTRA DESIGN EN LIÉNAIRE PURPLE-BLUE */}
       <button
         type="button"
         onClick={onGenerate}
@@ -521,9 +543,27 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
       >
         <Play className="w-3.5 h-3.5 fill-current" />
         {loading
-          ? "Calcul de la matrice..."
-          : "Générer la configuration YAML"}
+          ? t("Compiling configuration...")
+          : t("Generate workflow YAML")}
       </button>
     </div>
   );
 };
+
+const stepTypeLabels: Record<LowCodeStep["type"], string> = {
+  checkout: "Checkout",
+  "setup-node": "Set up Node.js",
+  npm: "Run npm",
+  docker: "Build Docker image",
+  "upload-artifact": "Upload artifact",
+  "custom-run": "Custom command",
+};
+
+const STEP_TYPES: LowCodeStep["type"][] = [
+  "checkout",
+  "setup-node",
+  "npm",
+  "docker",
+  "upload-artifact",
+  "custom-run",
+];

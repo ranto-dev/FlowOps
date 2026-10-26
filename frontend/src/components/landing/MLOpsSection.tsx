@@ -4,6 +4,7 @@ import { Clock3, ShieldAlert } from "lucide-react";
 import { Reveal, SectionHeader } from "./Reveal";
 import { EASE, staggerChild, staggerParent } from "./motion";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { usePreferences } from "../../lib/usePreferences";
 
 const PIPELINE = [
   "GitHub Actions",
@@ -38,6 +39,7 @@ function useCountUp(target: number, active: boolean, reduce: boolean, duration =
 }
 
 export function MLOpsSection() {
+  const { t } = usePreferences();
   const reduce = useReducedMotion();
   const counterRef = useRef<HTMLDivElement>(null);
   const counterInView = useInView(counterRef, { once: true, amount: 0.4 });
@@ -52,13 +54,13 @@ export function MLOpsSection() {
     >
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <SectionHeader
-          eyebrow="MLOps · AI predictions"
+          eyebrow={t("MLOps · AI predictions")}
           title={
             <span id="mlops-title">
-              Don&apos;t just run pipelines. Predict them.
+              {t("Don't just run pipelines. Predict them.")}
             </span>
           }
-          description="FlowOps uses execution history and Machine Learning to estimate pipeline duration and failure risk before the workflow starts."
+          description={t("FlowOps uses execution history and machine learning to estimate pipeline duration and failure risk before the workflow starts when compatible models are available.")}
         />
 
         <div
@@ -68,42 +70,42 @@ export function MLOpsSection() {
           <Reveal className="rounded-xl border border-[#27272A] bg-[#111113] p-6">
             <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-[#71717A]">
               <Clock3 className="size-4" aria-hidden="true" />
-              Estimated duration
+              {t("Estimated duration")}
             </div>
             <p className="mt-3 text-5xl font-bold tracking-tight text-[#FAFAFA]">
               {duration}
-              <span className="ml-1 text-lg font-medium text-[#71717A]">sec</span>
+              <span className="ml-1 text-lg font-medium text-[#71717A]">{t("sec")}</span>
             </p>
             <p className="mt-2 font-mono text-xs text-[#71717A]">
-              ridge model · test MAE 17.5s
+              {t("Illustrative value")}
             </p>
           </Reveal>
 
           <Reveal delay={0.1} className="rounded-xl border border-[#27272A] bg-[#111113] p-6">
             <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-[#71717A]">
               <ShieldAlert className="size-4" aria-hidden="true" />
-              Failure risk
+              {t("Failure risk")}
             </div>
             <p className="mt-3 text-5xl font-bold tracking-tight text-[#FAFAFA]">
               {risk}
               <span className="ml-1 text-lg font-medium text-[#71717A]">%</span>
             </p>
-            <p className="mt-2 font-mono text-xs text-emerald-400">Low risk</p>
+            <p className="mt-2 font-mono text-xs text-[#71717A]">{t("Illustrative value")}</p>
           </Reveal>
         </div>
 
         <Reveal className="mx-auto mt-4 max-w-3xl rounded-xl border border-[#27272A] bg-[#111113] p-6">
           <div className="flex items-center justify-between font-mono text-xs">
-            <span className="text-[#A1A1AA]">Pipeline prediction</span>
+            <span className="text-[#A1A1AA]">{t("Pipeline prediction")}</span>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="cursor-help text-[#71717A] underline decoration-dotted underline-offset-4">
-                    {risk}% failure probability
+                    {risk}% {t("failure probability")}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
-                  Estimated by the failure classifier before execution starts.
+                  {t("A model estimates failure risk when the failure classifier is available.")}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -114,10 +116,10 @@ export function MLOpsSection() {
             aria-valuenow={risk}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-label="Failure probability"
+            aria-label={t("Failure probability")}
           >
             <motion.div
-              className="h-full rounded-full bg-emerald-400"
+              className="h-full rounded-full bg-violet-400"
               initial={{ width: 0 }}
               whileInView={{ width: `${risk}%` }}
               viewport={{ once: true, amount: 0.4 }}
@@ -125,8 +127,7 @@ export function MLOpsSection() {
             />
           </div>
           <p className="mt-3 font-mono text-[11px] leading-relaxed text-[#71717A]">
-            Example output. Production models are tracked in MLflow and
-            retrained from collected execution data.
+            {t("Illustrative values only. In the workspace, predictions come from available local models.")}
           </p>
         </Reveal>
 
@@ -134,7 +135,7 @@ export function MLOpsSection() {
         <div className="mx-auto mt-16 max-w-2xl">
           <Reveal>
             <h3 className="text-center font-mono text-[11px] uppercase tracking-[0.22em] text-[#71717A]">
-              From execution to prediction
+              {t("From execution to prediction")}
             </h3>
           </Reveal>
           <motion.ol
@@ -157,7 +158,7 @@ export function MLOpsSection() {
                       : "rounded-lg border border-[#27272A] bg-[#111113] px-4 py-2 font-mono text-[13px] text-[#A1A1AA]"
                   }
                 >
-                  {step}
+                  {t(step)}
                 </span>
                 {i < PIPELINE.length - 1 && (
                   <span aria-hidden="true" className="py-1 font-mono text-[#3f3f46]">

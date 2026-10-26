@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { TerminalSquare } from "lucide-react";
 import { GITHUB_URL } from "./data";
 import { Separator } from "./ui/separator";
+import { usePreferences } from "../../lib/usePreferences";
 
 const COLUMNS: Array<{ title: string; links: Array<{ label: string; href: string; external?: boolean }> }> = [
   {
@@ -30,6 +31,7 @@ const COLUMNS: Array<{ title: string; links: Array<{ label: string; href: string
 ];
 
 export function Footer() {
+  const { t } = usePreferences();
   return (
     <footer className="border-t border-[#27272A]">
       <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6">
@@ -44,17 +46,17 @@ export function Footer() {
               </span>
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-[#A1A1AA]">
-              Low-code CI/CD workflow platform.
+              {t("Low-code CI/CD workflow platform.")}
             </p>
           </div>
           <nav
-            aria-label="Footer navigation"
+            aria-label={t("Footer navigation")}
             className="grid grid-cols-2 gap-8 sm:grid-cols-3"
           >
             {COLUMNS.map((col) => (
               <div key={col.title}>
                 <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#71717A]">
-                  {col.title}
+                  {t(col.title)}
                 </h3>
                 <ul className="mt-4 space-y-2.5">
                   {col.links.map((link) => (
@@ -66,21 +68,21 @@ export function Footer() {
                           rel="noreferrer"
                           className="text-sm text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
                         >
-                          {link.label}
+                          {t(link.label)}
                         </a>
                       ) : link.href.startsWith("#") ? (
                         <a
                           href={link.href}
                           className="text-sm text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
                         >
-                          {link.label}
+                          {t(link.label)}
                         </a>
                       ) : (
                         <Link
                           to={link.href}
                           className="text-sm text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
                         >
-                          {link.label}
+                          {t(link.label)}
                         </Link>
                       )}
                     </li>

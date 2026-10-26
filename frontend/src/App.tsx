@@ -1,5 +1,5 @@
 // frontend/src/App.tsx
-import React from "react";
+import { lazy, Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -7,12 +7,27 @@ import {
   Navigate,
   Link,
 } from "react-router-dom";
-import { AuthPage } from "./pages/AuthPage";
-import { Workspace } from "./pages/Workspace";
-import { SetupPage } from "./pages/SetupPage";
 import { ArrowLeft } from "lucide-react";
-import LandingPage from "./pages/LandingPage";
 import { ToastProvider } from "./components/ui/Toast";
+import { usePreferences } from "./lib/usePreferences";
+
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const AuthPage = lazy(() =>
+  import("./pages/AuthPage").then(({ AuthPage: page }) => ({ default: page })),
+);
+const Workspace = lazy(() =>
+  import("./pages/Workspace").then(({ Workspace: page }) => ({
+    default: page,
+  })),
+);
+const SetupPage = lazy(() =>
+  import("./pages/SetupPage").then(({ SetupPage: page }) => ({
+    default: page,
+  })),
+);
+const DocsPage = lazy(() =>
+  import("./pages/DocsPage").then(({ DocsPage: page }) => ({ default: page })),
+);
 
 // Garde-fou 1 : Protège le workspace (Redirige vers /auth si non connecté)
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -27,58 +42,66 @@ const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 function App() {
+  const { t } = usePreferences();
+
   return (
     <Router>
       <ToastProvider>
-        <div className="min-h-screen bg-white flex flex-col font-sans text-slate-900 selection:bg-purple-100">
-          <Routes>
-            {/* La Landing Page est désormais la page d'accueil par défaut */}
-            <Route
-              path="/"
-              element={
-                <PublicOnlyRoute>
-                  <LandingPage />
-                </PublicOnlyRoute>
-              }
-            />
+        <div className="app-root min-h-screen flex flex-col font-sans">
+          <Suspense
+            fallback={
+              <div
+                className="flex min-h-screen items-center justify-center text-sm text-slate-500"
+                role="status"
+              >
+                {t("Loading FlowOps...")}
+              </div>
+            }
+          >
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <PublicOnlyRoute>
+                    <LandingPage />
+                  </PublicOnlyRoute>
+                }
+              />
 
-            {/* Page d'authentification (avec option de retour à la landing page) */}
-            <Route
-              path="/auth"
-              element={
-                <PublicOnlyRoute>
-                  <div className="relative">
-                    {/* Bouton de retour vers la Landing Page */}
-                    <Link
-                      to="/"
-                      className="absolute top-6 left-6 z-50 inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-purple-600 bg-white/80 backdrop-blur border border-slate-200/80 rounded-xl shadow-xs transition-all hover:border-purple-200"
-                    >
-                      <ArrowLeft className="w-3.5 h-3.5" />
-                      <span>Retour à l'accueil</span>
-                    </Link>
+              <Route
+                path="/auth"
+                element={
+                  <PublicOnlyRoute>
+                    <div className="relative">
+                      <Link
+                        to="/"
+                        className="absolute left-6 top-6 z-50 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur transition hover:border-violet-300 hover:text-violet-700 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200"
+                      >
+                        <ArrowLeft className="h-3.5 w-3.5" />
+                        <span>{t("Return home")}</span>
+                      </Link>
 
-                    <AuthPage />
-                  </div>
-                </PublicOnlyRoute>
-              }
-            />
+                      <AuthPage />
+                    </div>
+                  </PublicOnlyRoute>
+                }
+              />
 
-            {/* Espace de travail protégé */}
-            <Route
-              path="/workspace"
-              element={
-                <ProtectedRoute>
-                  <Workspace />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/workspace"
+                element={
+                  <ProtectedRoute>
+                    <Workspace />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* 3.5 Page de configuration GitHub OAuth (accessible à tous) */}
-            <Route path="/setup" element={<SetupPage />} />
+              <Route path="/setup" element={<SetupPage />} />
+              <Route path="/docs" element={<DocsPage />} />
 
-            {/* Redirection pour les routes inconnues */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
         </div>
       </ToastProvider>
     </Router>

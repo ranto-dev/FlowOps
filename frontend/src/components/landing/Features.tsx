@@ -12,6 +12,7 @@ import {
 import { SectionHeader } from "./Reveal";
 import { staggerChild, staggerParent } from "./motion";
 import { Card, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import { usePreferences } from "../../lib/usePreferences";
 
 const FEATURES = [
   {
@@ -26,13 +27,13 @@ const FEATURES = [
   },
   {
     icon: ServerCog,
-    title: "Real-time Execution",
-    text: "Trigger runs and follow every job as it happens.",
+    title: "Execution monitoring",
+    text: "Trigger runs and refresh their status from GitHub Actions.",
   },
   {
     icon: ScrollText,
     title: "Workflow Logs",
-    text: "Stream and inspect per-job logs from a single console.",
+    text: "Retrieve and inspect available per-job logs from one console.",
   },
   {
     icon: Timer,
@@ -57,6 +58,7 @@ const FEATURES = [
 ];
 
 export function Features() {
+  const { t } = usePreferences();
   const reduce = useReducedMotion();
   return (
     <section
@@ -66,10 +68,10 @@ export function Features() {
     >
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <SectionHeader
-          eyebrow="Features"
+          eyebrow={t("Features")}
           title={
             <span id="features-title">
-              Everything a pipeline needs, in one place.
+              {t("Everything a pipeline needs, in one place.")}
             </span>
           }
         />
@@ -85,10 +87,10 @@ export function Features() {
               <Card className="h-full p-6 transition-colors hover:border-zinc-700">
                 <f.icon className="size-5 text-violet-300" aria-hidden="true" />
                 <CardHeader className="p-0 pt-4">
-                  <CardTitle className="text-[15px]">{f.title}</CardTitle>
+                  <CardTitle className="text-[15px]">{t(f.title)}</CardTitle>
                 </CardHeader>
                 <CardDescription className="pt-2 text-[13px]">
-                  {f.text}
+                  {t(f.text)}
                 </CardDescription>
               </Card>
             </motion.div>

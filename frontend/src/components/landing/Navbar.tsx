@@ -6,8 +6,11 @@ import { FaGithub } from "react-icons/fa6";
 import { GITHUB_URL, NAV_LINKS } from "./data";
 import { Button } from "./ui/button";
 import { cn } from "../../lib/utils";
+import { PreferenceControls } from "../ui/PreferenceControls";
+import { usePreferences } from "../../lib/usePreferences";
 
 export function Navbar() {
+  const { t } = usePreferences();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -55,14 +58,14 @@ export function Navbar() {
                   to={link.href}
                   className="rounded-md px-3 py-2 text-sm text-[#A1A1AA] transition-colors hover:bg-[#18181B] hover:text-[#FAFAFA]"
                 >
-                  {link.label}
+                  {t(link.label)}
                 </Link>
               ) : (
                 <a
                   href={link.href}
                   className="rounded-md px-3 py-2 text-sm text-[#A1A1AA] transition-colors hover:bg-[#18181B] hover:text-[#FAFAFA]"
                 >
-                  {link.label}
+                  {t(link.label)}
                 </a>
               )}
             </li>
@@ -70,6 +73,7 @@ export function Navbar() {
         </ul>
 
         <div className="hidden items-center gap-2 lg:flex">
+          <PreferenceControls compact />
           <Button variant="ghost" size="sm" asChild>
             <a
               href={GITHUB_URL}
@@ -82,7 +86,7 @@ export function Navbar() {
             </a>
           </Button>
           <Button size="sm" asChild>
-            <Link to="/auth">Get Started</Link>
+            <Link to="/auth">{t("Get started")}</Link>
           </Button>
         </div>
 
@@ -96,6 +100,9 @@ export function Navbar() {
           {open ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>
       </nav>
+      <div className="absolute right-16 top-3 lg:hidden">
+        <PreferenceControls compact />
+      </div>
 
       <AnimatePresence>
         {open && (
@@ -121,7 +128,7 @@ export function Navbar() {
                       onClick={() => setOpen(false)}
                       className="block rounded-lg px-3 py-2.5 text-[15px] text-[#A1A1AA] transition-colors hover:bg-[#18181B] hover:text-[#FAFAFA]"
                     >
-                      {link.label}
+                      {t(link.label)}
                     </Link>
                   ) : (
                     <a
@@ -129,7 +136,7 @@ export function Navbar() {
                       onClick={() => setOpen(false)}
                       className="block rounded-lg px-3 py-2.5 text-[15px] text-[#A1A1AA] transition-colors hover:bg-[#18181B] hover:text-[#FAFAFA]"
                     >
-                      {link.label}
+                      {t(link.label)}
                     </a>
                   )}
                 </motion.li>
@@ -148,7 +155,7 @@ export function Navbar() {
                 </a>
               </Button>
               <Button className="flex-1" asChild onClick={() => setOpen(false)}>
-                <Link to="/auth">Get Started</Link>
+                <Link to="/auth">{t("Get started")}</Link>
               </Button>
             </div>
           </motion.nav>

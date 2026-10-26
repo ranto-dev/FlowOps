@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   FolderGit2,
   History as HistoryIcon,
@@ -17,6 +17,7 @@ import {
   BookOpen,
   GitBranch,
   BrainCircuit,
+  Search,
 } from "lucide-react";
 import { WorkflowForm } from "../components/WorkflowForm";
 import { YamlPreview } from "../components/YamlPreview";
@@ -30,8 +31,10 @@ import { Modal } from "../components/ui/Modal";
 import { Breadcrumbs } from "../components/ui/Breadcrumbs";
 import { Button } from "../components/ui/Button";
 import { EmptyState, LoadingState } from "../components/ui/States";
+import { PreferenceControls } from "../components/ui/PreferenceControls";
+import { usePreferences } from "../lib/usePreferences";
 import type { FlowOpsWorkflowConfig } from "../@types/workflow";
-import { apiFetch, errorDetail, getToken, isApiError } from "../lib/api";
+import { apiFetch, clearSession, errorDetail, getToken, isApiError } from "../lib/api";
 import type {
   ExecuteResponse,
   GenerateWorkflowResponse,
@@ -52,6 +55,7 @@ interface StoredConfig {
 export const Workspace: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
+  const { t } = usePreferences();
   const [activeTab, setActiveTab] = useState<
     "projects" | "history" | "mlops" | "help"
   >("projects");
@@ -66,6 +70,7 @@ export const Workspace: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [gitRepos, setGitRepos] = useState<GitHubRepo[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
+  const [projectQuery, setProjectQuery] = useState("");
   const [executingProjectId, setExecutingProjectId] = useState<string | null>(
     null,
   );
@@ -114,10 +119,12 @@ export const Workspace: React.FC = () => {
       setGitRepos(await apiFetch<GitHubRepo[]>("/api/github/repositories"));
     } catch (err) {
       if (isApiError(err) && err.status === 401) return;
-      // Sans dépôt, le sélecteur du formulaire de création affiche une liste vide.
-      console.error("Erreur chargement des dépôts GitHub:", err);
+      toast.error(
+        t("Repositories unavailable"),
+        errorDetail(err, t("Could not load your GitHub repositories.")),
+      );
     }
-  }, []);
+  }, [toast, t]);
 
   useEffect(() => {
     fetchProjects();
@@ -134,7 +141,7 @@ export const Workspace: React.FC = () => {
   }, [profileOpen]);
 
   const handleLogout = () => {
-    localStorage.clear();
+    clearSession();
     navigate("/auth", { replace: true });
   };
 
@@ -327,29 +334,41 @@ export const Workspace: React.FC = () => {
     label: string;
     icon: React.ReactNode;
   }[] = [
-    { key: "projects", label: "Projets", icon: <FolderGit2 className="w-4 h-4" /> },
-    { key: "history", label: "Historique", icon: <HistoryIcon className="w-4 h-4" /> },
-    { key: "mlops", label: "MLflow", icon: <BrainCircuit className="w-4 h-4" /> },
-    { key: "help", label: "Aide", icon: <HelpCircle className="w-4 h-4" /> },
+    { key: "projects", label: "Projects", icon: <FolderGit2 className="w-4 h-4" /> },
+    { key: "history", label: "History", icon: <HistoryIcon className="w-4 h-4" /> },
+    { key: "mlops", label: "MLOps", icon: <BrainCircuit className="w-4 h-4" /> },
+    { key: "help", label: "Help", icon: <HelpCircle className="w-4 h-4" /> },
   ];
 
+  const visibleProjects = projects.filter((project) => {
+    const query = projectQuery.trim().toLocaleLowerCase();
+    return (
+      !query ||
+      project.name.toLocaleLowerCase().includes(query) ||
+      project.repository.toLocaleLowerCase().includes(query) ||
+      project.description.toLocaleLowerCase().includes(query)
+    );
+  });
+
   return (
-    <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans text-slate-800">
+    <div className="workspace-shell min-h-screen bg-slate-50/50 flex flex-col font-sans text-slate-800">
       {/* ================= HEADER HORIZONTAL (NAVBAR) ================= */}
       <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <div
+          <button
+            type="button"
             onClick={() => {
               switchTab("projects");
               setProfileOpen(false);
             }}
             className="flex items-center gap-2 cursor-pointer group"
+            aria-label="FlowOps projects"
           >
             <img src={LogoImage} className="h-8 w-auto" alt="FlowOps Logo" />
             <span className="font-black text-lg tracking-tight text-slate-900 group-hover:text-purple-600 transition-colors">
               FlowOps
             </span>
-          </div>
+          </button>
 
           {/* Navigation Tabs (desktop) */}
           <nav className="hidden md:flex items-center gap-6">
@@ -364,7 +383,7 @@ export const Workspace: React.FC = () => {
                 }`}
               >
                 {tab.icon}
-                {tab.label}
+                {t(tab.label)}
                 <span
                   className={`absolute -bottom-0.5 left-0 h-[2px] w-full rounded-full bg-purple-600 origin-left transition-transform duration-300 ${
                     activeTab === tab.key
@@ -377,11 +396,12 @@ export const Workspace: React.FC = () => {
           </nav>
 
           <div className="flex items-center gap-2">
+            <PreferenceControls compact />
             {/* Mobile menu toggle */}
             <button
               onClick={() => setMobileNavOpen((v) => !v)}
               className="md:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors"
-              aria-label={mobileNavOpen ? "Fermer le menu" : "Ouvrir le menu"}
+              aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
             >
               {mobileNavOpen ? (
                 <X className="w-5 h-5" />
@@ -443,7 +463,7 @@ export const Workspace: React.FC = () => {
                         </p>
                         <p className="text-[10px] font-mono font-medium text-emerald-600 flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-                          Connected
+                          {t("Connected")}
                         </p>
                       </div>
                     </div>
@@ -457,7 +477,7 @@ export const Workspace: React.FC = () => {
                         }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold text-red-600 hover:bg-red-50 transition-colors"
                       >
-                        <LogOut className="w-4 h-4" /> Se déconnecter
+                        <LogOut className="w-4 h-4" /> {t("Sign out")}
                       </button>
                     </div>
                   </div>
@@ -482,7 +502,7 @@ export const Workspace: React.FC = () => {
                   }`}
                 >
                   {tab.icon}
-                  {tab.label}
+                  {t(tab.label)}
                 </button>
               ))}
             </nav>
@@ -498,34 +518,51 @@ export const Workspace: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                  Projets
+                  {t("Projects")}
                 </h2>
                 <p className="text-xs text-slate-500 mt-1">
-                  Configurez des pipelines, déclenchez des workflows et suivez
-                  vos dépôts GitHub.
+                  {t("Project overview")}
                 </p>
               </div>
 
               <Button onClick={() => setIsModalOpen(true)}>
-                <Plus className="w-4 h-4" /> Nouveau projet
+                <Plus className="w-4 h-4" /> {t("New project")}
               </Button>
             </div>
 
             {loadingProjects ? (
-              <LoadingState label="Chargement des projets..." />
+              <LoadingState label={`${t("Loading projects")}...`} />
             ) : projects.length === 0 ? (
               <EmptyState
-                title="Aucun projet trouvé"
-                description='Cliquez sur « Nouveau projet » pour relier un dépôt GitHub.'
+                title={t("No projects found")}
+                description={t("Click New project to connect a GitHub repository.")}
                 action={
                   <Button onClick={() => setIsModalOpen(true)} variant="primary">
-                    <Plus className="w-3.5 h-3.5" /> Créer un projet
+                    <Plus className="w-3.5 h-3.5" /> {t("Create project")}
                   </Button>
                 }
               />
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {projects.map((p) => (
+              <>
+                <label className="flex max-w-md items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-500 shadow-sm focus-within:border-violet-400 dark:border-slate-700 dark:bg-slate-900">
+                  <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span className="sr-only">{t("Search projects")}</span>
+                  <input
+                    type="search"
+                    value={projectQuery}
+                    onChange={(event) => setProjectQuery(event.currentTarget.value)}
+                    placeholder={t("Search projects")}
+                    className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100"
+                  />
+                </label>
+                {visibleProjects.length === 0 ? (
+                  <EmptyState
+                    title={t("No projects found")}
+                    description={t("Try another name or repository.")}
+                  />
+                ) : (
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {visibleProjects.map((p) => (
                   <div
                     key={p.id}
                     className="p-5 bg-white border border-slate-200/80 rounded-2xl hover:border-purple-300 hover:shadow-md transition-all duration-200 flex flex-col gap-4 relative overflow-hidden group"
@@ -542,11 +579,11 @@ export const Workspace: React.FC = () => {
                         {p.has_workflow ? (
                           <span className="text-[10px] font-bold bg-purple-50 text-purple-700 px-2 py-0.5 rounded-md border border-purple-100 flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-purple-600 inline-block animate-pulse" />
-                            Pipeline actif
+                            {t("Pipeline active")}
                           </span>
                         ) : (
                           <span className="text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md">
-                            Aucun workflow
+                            {t("No workflow")}
                           </span>
                         )}
                       </div>
@@ -556,12 +593,12 @@ export const Workspace: React.FC = () => {
                       </h3>
 
                       <p className="text-xs text-slate-500 font-medium">
-                        {p.description || "Aucune description fournie."}
+                        {p.description || t("No description provided.")}
                       </p>
 
                       <div className="flex items-center gap-1.5 text-xs text-slate-600 font-mono pt-1">
                         <GitBranch className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Repository:</span>
+                        <span>{t("Repository:")}</span>
                         <span className="text-purple-600 font-bold">
                           {p.repository}
                         </span>
@@ -584,7 +621,7 @@ export const Workspace: React.FC = () => {
                             ) : (
                               <Play className="w-3.5 h-3.5 fill-current" />
                             )}
-                            Run
+                            {t("Run")}
                           </Button>
 
                           <Button
@@ -593,8 +630,7 @@ export const Workspace: React.FC = () => {
                             onClick={() => initWorkflowConfig(p)}
                             disabled={executingProjectId !== null}
                           >
-                            <Sliders className="w-3.5 h-3.5" /> Éditer le
-                            workflow
+                            <Sliders className="w-3.5 h-3.5" />                                                         {t("Edit workflow")}
                           </Button>
                         </>
                       ) : (
@@ -603,7 +639,7 @@ export const Workspace: React.FC = () => {
                           onClick={() => initWorkflowConfig(p)}
                           disabled={executingProjectId !== null}
                         >
-                          <Sliders className="w-3.5 h-3.5" /> Créer un workflow
+                          <Sliders className="w-3.5 h-3.5" /> {t("Create workflow")}
                         </Button>
                       )}
 
@@ -611,15 +647,17 @@ export const Workspace: React.FC = () => {
                         onClick={() => setProjectToDelete(p)}
                         disabled={executingProjectId !== null}
                         className="ml-auto p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all disabled:opacity-40"
-                        title="Supprimer le projet"
-                        aria-label={`Supprimer ${p.name}`}
+                        title={t("Delete project")}
+                        aria-label={`${t("Delete")} ${p.name}`}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
                 ))}
-              </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -631,11 +669,11 @@ export const Workspace: React.FC = () => {
               <Breadcrumbs
                 items={[
                   {
-                    label: "Projets",
+                    label: t("Projects"),
                     onClick: () => setIsConfiguringWorkflow(false),
                   },
                   { label: targetProject.name },
-                  { label: viewState === "preview" ? "Aperçu YAML" : "Configuration" },
+                  { label: viewState === "preview" ? t("YAML preview") : t("Configuration") },
                 ]}
               />
 
@@ -643,7 +681,7 @@ export const Workspace: React.FC = () => {
                 onClick={() => setIsConfiguringWorkflow(false)}
                 className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-purple-600 transition-colors"
               >
-                <ArrowLeft className="w-4 h-4" /> Retour au tableau de bord
+                <ArrowLeft className="w-4 h-4" /> {t("Back to dashboard")}
               </button>
             </div>
 
@@ -667,7 +705,7 @@ export const Workspace: React.FC = () => {
               <div className="py-24 text-center space-y-4 border border-slate-200/80 rounded-2xl bg-white">
                 <Loader2 className="w-8 h-8 text-purple-600 animate-spin mx-auto" />
                 <p className="text-xs font-bold text-slate-600 font-mono tracking-wide">
-                  Compilation de la configuration vers le YAML...
+                  {t("Compiling workflow configuration to YAML...")}
                 </p>
               </div>
             )}
@@ -708,23 +746,26 @@ export const Workspace: React.FC = () => {
           <div className="space-y-4 p-6 border border-slate-200/80 rounded-2xl bg-white shadow-sm">
             <div className="flex items-center gap-2 text-slate-900 font-black text-lg">
               <BookOpen className="w-5 h-5 text-purple-600" />
-              <h3>Documentation & bonnes pratiques</h3>
+              <h3>{t("Documentation and best practices")}</h3>
             </div>
             <div className="text-xs text-slate-600 space-y-3 font-medium leading-relaxed max-w-3xl">
               <p>
-                FlowOps permet de modéliser des pipelines CI/CD en low-code,
-                de les déployer sur un dépôt GitHub et de suivre l'exécution
-                des runners en temps réel.
+                {t("FlowOps helps you model CI/CD workflows in low-code, publish them to a GitHub repository, and inspect runner executions.")}
               </p>
               <div className="p-4 bg-amber-50 border border-amber-200/80 rounded-xl text-amber-800 font-mono text-[11px] leading-relaxed">
-                <span className="font-bold">⚠ Prérequis :</span> une instance
-                MongoDB locale ou distante sur le port{" "}
+                <span className="font-bold">⚠ {t("Prerequisite:")}</span>{" "}
+                {t("A local or remote MongoDB instance on port")}
                 <code className="bg-amber-100 px-1 py-0.5 rounded font-bold">
                   27017
                 </code>{" "}
-                et le service backend accessible avant de déclencher des
-                exécutions.
+                {t("and the backend service must be available before triggering runs.")}
               </div>
+              <Link
+                to="/docs"
+                className="inline-flex items-center gap-2 font-bold text-purple-700 hover:text-purple-900"
+              >
+                {t("View documentation")} <ArrowLeft className="h-3.5 w-3.5 rotate-180" />
+              </Link>
             </div>
           </div>
         )}
@@ -734,8 +775,8 @@ export const Workspace: React.FC = () => {
       <Modal
         open={isModalOpen}
         onClose={closeModal}
-        title="Nouveau projet"
-        description="Reliez un dépôt GitHub pour configurer un pipeline automatisé."
+        title={t("New project")}
+        description={t("Connect a GitHub repository to configure an automated workflow.")}
         icon={
           <div className="p-2 bg-purple-100 text-purple-600 rounded-xl">
             <FolderGit2 className="w-5 h-5" />
@@ -744,7 +785,7 @@ export const Workspace: React.FC = () => {
         footer={
           <>
             <Button variant="secondary" size="sm" onClick={closeModal}>
-              Annuler
+              {t("Cancel")}
             </Button>
             <Button
               size="sm"
@@ -752,9 +793,9 @@ export const Workspace: React.FC = () => {
               type="submit"
               loading={isCreating}
             >
-              {isCreating ? "Création..." : (
+              {isCreating ? t("Creating...") : (
                 <>
-                  <Plus className="w-3.5 h-3.5" /> Initialiser
+                  <Plus className="w-3.5 h-3.5" /> {t("Initialize")}
                 </>
               )}
             </Button>
@@ -764,20 +805,21 @@ export const Workspace: React.FC = () => {
         <form id="create-project-form" onSubmit={createProject} className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
-              Nom du projet <span className="text-red-500">*</span>
+              {t("Project name")} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={newProjName}
               onChange={(e) => setNewProjName(e.target.value)}
               className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-medium text-slate-800"
-              placeholder="Ex : Production API"
+              placeholder="e.g. Production API"
+              required
             />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
-              Dépôt GitHub <span className="text-red-500">*</span>
+              {t("GitHub repository")} <span className="text-red-500">*</span>
             </label>
             <select
               value={selectedRepo}
@@ -786,8 +828,8 @@ export const Workspace: React.FC = () => {
             >
               <option value="">
                 {gitRepos.length === 0
-                  ? "-- Aucun dépôt disponible --"
-                  : "-- Sélectionner un dépôt GitHub --"}
+                  ? `-- ${t("No repositories available")} --`
+                  : `-- ${t("Select a GitHub repository")} --`}
               </option>
               {gitRepos.map((repo) => (
                 <option key={repo.id} value={repo.full_name}>
@@ -799,14 +841,14 @@ export const Workspace: React.FC = () => {
 
           <div className="space-y-1.5">
             <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
-              Description
+              {t("Description")}
             </label>
             <textarea
               rows={3}
               value={newProjDesc}
               onChange={(e) => setNewProjDesc(e.target.value)}
               className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-medium text-slate-800 resize-none"
-              placeholder="Détails optionnels sur ce projet..."
+              placeholder={t("Optional project details...")}
             />
           </div>
         </form>
@@ -821,16 +863,15 @@ export const Workspace: React.FC = () => {
         onConfirm={confirmDeleteProject}
         danger
         loading={isDeleting}
-        title="Supprimer le projet ?"
-        confirmLabel="Supprimer"
+        title={t("Delete this project?")}
+        confirmLabel={t("Delete")}
         description={
           <>
-            Le projet{" "}
+            Le projet            {" "}
             <span className="font-black text-slate-900">
               « {projectToDelete?.name} »
             </span>{" "}
-            et tous ses workflows seront définitivement retirés de la base de
-            données. Cette action est irréversible.
+            {t("and all its workflows will be permanently removed. This action cannot be undone.")}
           </>
         }
       />
@@ -840,9 +881,9 @@ export const Workspace: React.FC = () => {
         open={logoutConfirmOpen}
         onClose={() => setLogoutConfirmOpen(false)}
         onConfirm={handleLogout}
-        title="Se déconnecter ?"
-        confirmLabel="Se déconnecter"
-        description="Vous devrez vous ré-authentifier avec GitHub pour accéder à nouveau au workspace."
+        title={t("Sign out?")}
+        confirmLabel={t("Sign out")}
+        description={t("You will need to authenticate with GitHub again to access your workspace.")}
       />
     </div>
   );

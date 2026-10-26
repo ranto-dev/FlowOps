@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { EyeOff, FileWarning, History } from "lucide-react";
 import { SectionHeader } from "./Reveal";
 import { staggerChild, staggerParent } from "./motion";
+import { usePreferences } from "../../lib/usePreferences";
 
 const PROBLEMS = [
   {
@@ -25,15 +26,16 @@ const PROBLEMS = [
 ];
 
 export function Problem() {
+  const { t } = usePreferences();
   const reduce = useReducedMotion();
   return (
     <section aria-labelledby="problem-title" className="py-24 sm:py-32">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <SectionHeader
-          eyebrow="The problem"
+          eyebrow={t("The problem")}
           title={
             <span id="problem-title">
-              CI/CD shouldn&apos;t feel like configuration management.
+              {t("CI/CD shouldn't feel like configuration management.")}
             </span>
           }
         />
@@ -57,10 +59,10 @@ export function Problem() {
                 </span>
               </div>
               <h3 className="mt-5 text-lg font-semibold tracking-tight text-[#FAFAFA]">
-                {p.title}
+                {t(p.title)}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-[#A1A1AA]">
-                {p.text}
+                {t(p.text)}
               </p>
             </motion.li>
           ))}

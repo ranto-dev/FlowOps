@@ -12,10 +12,11 @@ Montés dans ``main.py`` sous le préfixe ``/api/mlops`` :
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from mlops.config import (
     CLASSIFICATION_DATASET_CSV,
@@ -33,6 +34,7 @@ from mlops.monitoring.tracker import (
 from mlops.pipeline import run_pipeline
 
 router = APIRouter(prefix="/api/mlops", tags=["mlops"])
+logger = logging.getLogger(__name__)
 
 
 # --- MODÈLES DE REQUÊTE ---
@@ -44,9 +46,9 @@ class PredictRequest(BaseModel):
 
     name: str = "workflow"
     repository: str = ""
-    on_events: list[str] = ["push"]
+    on_events: list[str] = Field(default_factory=lambda: ["push"])
     branches: str = "main"
-    jobs: list[dict] = []
+    jobs: list[dict[str, object]] = Field(default_factory=list)
 
 
 class LogActualRequest(BaseModel):
@@ -84,8 +86,32 @@ def _read_evaluation() -> dict:
     for name in ("duration_evaluation.json", "failure_evaluation.json"):
         path = Path(EVALUATION_DIR) / name
         if path.exists():
-            out[name.split("_")[0]] = json.loads(path.read_text(encoding="utf-8"))
+            try:
+                out[name.split("_")[0]] = json.loads(
+                    path.read_text(encoding="utf-8")
+                )
+            except (OSError, json.JSONDecodeError) as exc:
+                logger.exception("Rapport MLOps illisible : %s", path.name)
+                raise HTTPException(
+                    status_code=500,
+                    detail="Un rapport d'évaluation MLOps est illisible.",
+                ) from exc
     return out
+
+
+def _count_dataset_rows(path: Path) -> int:
+    """Compte les lignes de données CSV en excluant l'en-tête."""
+    if not path.exists():
+        return 0
+    try:
+        with path.open(encoding="utf-8") as dataset:
+            return max(sum(1 for _ in dataset) - 1, 0)
+    except OSError as exc:
+        logger.exception("Dataset MLOps illisible : %s", path.name)
+        raise HTTPException(
+            status_code=500,
+            detail="Impossible de lire les datasets MLOps.",
+        ) from exc
 
 
 # --- ENDPOINTS ---
@@ -99,10 +125,8 @@ async def mlops_status():
         "evaluations": eval_reports,
         "monitoring": monitoring,
         "data": {
-            "regression_rows": REGRESSION_DATASET_CSV.exists() and len(
-                open(REGRESSION_DATASET_CSV).readlines()) - 1 or 0,
-            "classification_rows": CLASSIFICATION_DATASET_CSV.exists() and len(
-                open(CLASSIFICATION_DATASET_CSV).readlines()) - 1 or 0,
+            "regression_rows": _count_dataset_rows(REGRESSION_DATASET_CSV),
+            "classification_rows": _count_dataset_rows(CLASSIFICATION_DATASET_CSV),
         },
         "note": (
             "Dataset de démonstration : les modèles ont été entraînés sur des "
@@ -131,7 +155,11 @@ async def predict(req: PredictRequest):
     try:
         result = get_predictor().predict(req.model_dump())
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        logger.exception("Prédiction MLOps échouée.")
+        raise HTTPException(
+            status_code=500,
+            detail="Le service de prédiction MLOps a échoué.",
+        ) from exc
 
     log_prediction(result)
     result["logged"] = True
@@ -147,7 +175,11 @@ async def retrain():
         import asyncio
         summary = await asyncio.to_thread(run_pipeline, False, False, None, None)
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        logger.exception("Réentraînement du pipeline MLOps échoué.")
+        raise HTTPException(
+            status_code=500,
+            detail="Le réentraînement du pipeline MLOps a échoué.",
+        ) from exc
 
     get_predictor().reload()
     return {"status": "success", "summary": summary, "message":

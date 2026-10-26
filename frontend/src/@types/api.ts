@@ -102,6 +102,8 @@ export interface JobListResponse {
 /** `GET .../jobs/{job_id}/logs` — logs bruts d'un job. */
 export interface LogsResponse {
   logs: string;
+  available?: boolean;
+  message?: string | null;
 }
 
 /** `POST /api/generate-workflow` — prévisualisation YAML compilée. */

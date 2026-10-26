@@ -19,6 +19,8 @@ import {
 import { FaGithub } from "react-icons/fa6";
 import { apiFetch, API_URL } from "../lib/api";
 import type { AuthStatus } from "../@types/api";
+import { PreferenceControls } from "../components/ui/PreferenceControls";
+import { usePreferences } from "../lib/usePreferences";
 
 /**
  * Page d'installation : guide l'utilisateur pour créer son propre GitHub OAuth App
@@ -26,12 +28,16 @@ import type { AuthStatus } from "../@types/api";
  */
 export const SetupPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = usePreferences();
 
-  const [status, setStatus] = useState<"checking" | "ready" | "not_configured">(
+  const [status, setStatus] = useState<
+    "checking" | "ready" | "not_configured" | "error"
+  >(
     "checking",
   );
   const [missingVars, setMissingVars] = useState<string[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copyError, setCopyError] = useState(false);
 
   const checkConfig = useCallback(async () => {
     setStatus("checking");
@@ -46,9 +52,7 @@ export const SetupPage: React.FC = () => {
         setStatus("not_configured");
       }
     } catch {
-      // Backend injoignable ou en erreur : on considère l'OAuth non configuré.
-      setMissingVars(["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET"]);
-      setStatus("not_configured");
+      setStatus("error");
     }
   }, []);
 
@@ -56,62 +60,67 @@ export const SetupPage: React.FC = () => {
     checkConfig();
   }, [checkConfig]);
 
-  const handleCopy = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(key);
-    setTimeout(() => setCopiedId(null), 2000);
+  const handleCopy = async (text: string, key: string) => {
+    setCopyError(false);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(key);
+      window.setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      setCopyError(true);
+    }
   };
 
   const steps = [
     {
       icon: <FaGithub className="w-4 h-4" />,
-      title: "Créer un GitHub OAuth App",
+      title: "Create a GitHub OAuth App",
       description:
-        "Ouvrez https://github.com/settings/developers puis cliquez sur « New OAuth App ».",
+        "Open https://github.com/settings/developers and click “New OAuth App”.",
     },
     {
       icon: <Settings className="w-4 h-4" />,
-      title: "Remplir les champs",
+      title: "Fill in the application details",
       description:
-        "Application name : FlowOps — Homepage URL : http://localhost:5173 — Authorization callback URL : http://localhost:5173/auth (obligatoire pour créer l'app, le Device Flow ne l'utilise pas)",
+        "Application name: FlowOps — Homepage URL: http://localhost:5173 — Authorization callback URL: http://localhost:5173/auth (required when creating the app; Device Flow does not use it).",
     },
     {
       icon: <ShieldCheck className="w-4 h-4" />,
-      title: "Copier le Client ID et le Client Secret",
+      title: "Copy the Client ID and Client Secret",
       description:
-        "Après création de l'app, copiez ces deux valeurs qui s'affichent sur la page.",
+        "After creating the app, copy both values shown on the page.",
     },
     {
       icon: <FileText className="w-4 h-4" />,
-      title: "Configurer backend/.env",
+      title: "Configure backend/.env",
       description:
-        "Ouvrez le fichier backend/.env (créez-le depuis backend/.env.example) et collez vos valeurs dans GITHUB_CLIENT_ID et GITHUB_CLIENT_SECRET.",
+        "Open backend/.env (create it from backend/.env.example) and add your values to GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET.",
     },
     {
       icon: <Server className="w-4 h-4" />,
-      title: "Redémarrer le backend",
+      title: "Restart the backend",
       description:
-        "Relancez uvicorn pour que les nouvelles variables d'environnement soient prises en compte.",
+        "Restart uvicorn so the updated environment variables are loaded.",
     },
   ];
 
   const copyBlocks = [
     {
       key: "env_example",
-      label: "Modèle backend/.env.example",
+      label: "backend/.env.example template",
       content: `GITHUB_CLIENT_ID=votre_client_id_github
 GITHUB_CLIENT_SECRET=votre_client_secret_github
 MONGO_URI=mongodb://localhost:27017/`,
     },
     {
       key: "device_uri",
-      label: "Endpoint OAuth (déjà en place)",
+      label: "OAuth endpoint",
       content: `${API_URL}/api/auth/device-code`,
     },
   ];
 
   return (
-    <div className="min-h-screen w-full bg-slate-50 flex flex-col font-sans text-slate-900 antialiased relative overflow-hidden">
+    <div className="setup-shell min-h-screen w-full bg-slate-50 flex flex-col font-sans text-slate-900 antialiased relative overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-purple-100/60 rounded-full blur-3xl pointer-events-none -z-10" />
 
       {/* HEADER */}
@@ -126,17 +135,21 @@ MONGO_URI=mongodb://localhost:27017/`,
               <Sparkles className="w-3.5 h-3.5 text-purple-600" />
             </span>
             <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">
-              One-time Setup
+              {t("One-time setup")}
             </span>
           </div>
         </div>
-        <button
-          onClick={checkConfig}
-          className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-600 hover:text-purple-700 bg-white border border-slate-200/80 rounded-xl shadow-sm transition-all hover:border-purple-200"
-        >
-          <RefreshIcon spinning={status === "checking"} />
-          Recheck
-        </button>
+        <div className="flex items-center gap-2">
+          <PreferenceControls compact />
+          <button
+            type="button"
+            onClick={checkConfig}
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-600 hover:text-purple-700 bg-white border border-slate-200/80 rounded-xl shadow-sm transition-all hover:border-purple-200"
+          >
+            <RefreshIcon spinning={status === "checking"} />
+            {t("Check again")}
+          </button>
+        </div>
       </header>
 
       <main className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 pb-16">
@@ -144,7 +157,7 @@ MONGO_URI=mongodb://localhost:27017/`,
         {status === "checking" && (
           <div className="mb-6 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center gap-3 text-sm text-slate-600">
             <Loader2 className="w-5 h-5 text-purple-600 animate-spin" />
-            Vérification de la configuration GitHub...
+            {t("Checking GitHub configuration...")}
           </div>
         )}
 
@@ -153,19 +166,31 @@ MONGO_URI=mongodb://localhost:27017/`,
             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
             <div className="text-sm">
               <p className="font-bold text-emerald-800">
-                Configuration GitHub valide !
+                {t("GitHub is configured")}
               </p>
               <p className="text-emerald-700">
-                Votre GitHub OAuth App est détectée par le backend. Vous pouvez
-                maintenant vous authentifier.
+                {t("The backend detected your GitHub OAuth App. You can now sign in.")}
               </p>
               <button
                 onClick={() => navigate("/auth")}
                 className="mt-3 inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm"
               >
-                Accéder à la connexion
+                {t("Go to sign in")}
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
+            </div>
+          </div>
+        )}
+
+        {status === "error" && (
+          <div
+            className="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+            role="alert"
+          >
+            <AlertCircle className="mt-0.5 size-5 shrink-0 text-red-600" />
+            <div>
+              <p className="font-bold">{t("Could not check GitHub configuration")}</p>
+              <p className="mt-1">{t("The backend is unavailable. Check that it is running, then try again.")}</p>
             </div>
           </div>
         )}
@@ -175,17 +200,17 @@ MONGO_URI=mongodb://localhost:27017/`,
             <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div className="text-sm">
               <p className="font-bold text-amber-800">
-                GitHub OAuth App non configurée
+                {t("GitHub OAuth App is not configured")}
               </p>
               <p className="text-amber-700">
-                Le backend ne trouve pas les variables environnement suivantes :
+                {t("The backend could not find these environment variables:")}
                 <span className="font-mono font-bold">
                   {" "}
                   {missingVars.length > 0
                     ? missingVars.join(", ")
-                    : "aucune"}{" "}
+                    : t("none")}{" "}
                 </span>
-                . Suivez les étapes ci-dessous pour créer votre propre OAuth App.
+                . {t("Follow the steps below to create your OAuth App.")}
               </p>
             </div>
           </div>
@@ -196,27 +221,18 @@ MONGO_URI=mongodb://localhost:27017/`,
           <div className="space-y-2">
             <div className="inline-flex items-center gap-1.5 text-[10px] font-black tracking-widest text-purple-600 bg-purple-50 px-3 py-1 rounded-full uppercase border border-purple-100">
               <ShieldCheck className="w-3.5 h-3.5" />
-              Configuration requise
+              {t("Configuration required")}
             </div>
             <h1 className="text-2xl font-black tracking-tight">
-              Connectez FlowOps à votre compte GitHub
+              {t("Connect FlowOps to your GitHub account")}
             </h1>
             <p className="text-sm text-slate-500 leading-relaxed max-w-xl">
-              FlowOps utilise le <strong>GitHub OAuth Device Flow</strong> pour se
-              connecter en toute sécurité à vos dépôts : FlowOps affiche un code
-              d'activation à copier, vous cliquez sur « Continue with GitHub »,
-              GitHub s'ouvre au-dessus de la page (aucun changement d'onglet),
-              vous autorisez l'accès puis vous revenez automatiquement dans
-              FlowOps dès la validation.
-              Pour que vous (ou tout autre utilisateur) puissiez vous
-              authentifier, créez un{" "}
-              <strong>GitHub OAuth App personnel</strong> et renseignez ses
-              credentials dans votre configuration locale. Aucune donnée
-              sensible n'est codée en dur dans le code source.
+              {t("FlowOps uses GitHub OAuth Device Flow to securely connect to your repositories. Create your own GitHub OAuth App and add its credentials to your local backend configuration.")}
+              {" "}
+              {t("Credentials are provided through environment variables and are not hard-coded in the source.")}
             </p>
           </div>
 
-          {/* ÉTAPES PAS-À-PAS */}
           <ol className="space-y-3">
             {steps.map((step, i) => (
               <li
@@ -234,20 +250,19 @@ MONGO_URI=mongodb://localhost:27017/`,
                 <div className="pt-0.5">
                   <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
                     <span className="text-purple-600">{step.icon}</span>
-                    {step.title}
+                    {t(step.title)}
                   </div>
                   <p className="text-xs text-slate-500 leading-relaxed mt-1">
-                    {step.description}
+                    {t(step.description)}
                   </p>
                 </div>
               </li>
             ))}
           </ol>
 
-          {/* BLOCS À COPIER */}
           <div className="space-y-4">
             <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
-              Fichiers de référence
+              {t("Reference files")}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {copyBlocks.map((block) => (
@@ -262,7 +277,7 @@ MONGO_URI=mongodb://localhost:27017/`,
                     <button
                       onClick={() => handleCopy(block.content, block.key)}
                       className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
-                      title="Copier"
+                      title={t("Copy")}
                     >
                       {copiedId === block.key ? (
                         <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -279,14 +294,19 @@ MONGO_URI=mongodb://localhost:27017/`,
             </div>
           </div>
 
-          {/* LIEN VERS GITHUB */}
+          {copyError && (
+            <p className="text-sm text-red-600" role="alert">
+              {t("Copy failed. Please check clipboard permissions.")}
+            </p>
+          )}
+
           <div className="flex flex-col sm:flex-row items-stretch justify-between gap-4 bg-purple-50/60 border border-purple-100 rounded-2xl p-5">
             <div className="space-y-1">
               <h3 className="text-sm font-black text-slate-900">
-                Créer mon GitHub OAuth App
+                {t("Create my GitHub OAuth App")}
               </h3>
               <p className="text-xs text-slate-500">
-                C'est gratuit et prend moins de 2 minutes.
+                {t("Creating an OAuth App is free.")}
               </p>
             </div>
             <a
@@ -296,25 +316,24 @@ MONGO_URI=mongodb://localhost:27017/`,
               className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md"
             >
               <ExternalLink className="w-3.5 h-3.5 text-purple-400" />
-              Ouvrir GitHub Developers
+              {t("Open GitHub Developers")}
             </a>
           </div>
         </div>
 
-        {/* BOUTON RETOUR */}
         <div className="mt-8 flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
             className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-purple-600 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            Retour
+            {t("Back")}
           </button>
           <button
             onClick={() => navigate("/auth")}
             className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-purple-600 transition-colors"
           >
-            Aller à la connexion
+            {t("Go to sign in")}
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>

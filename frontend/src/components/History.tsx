@@ -21,6 +21,7 @@ import {
 import { Badge } from "./ui/Badge";
 import { apiFetch, errorDetail, getToken, isApiError } from "../lib/api";
 import { useToast } from "./ui/useToast";
+import { usePreferences } from "../lib/usePreferences";
 import type {
   JobListResponse,
   LogsResponse,
@@ -32,6 +33,7 @@ import type {
 
 export const History: React.FC = () => {
   const toast = useToast();
+  const { t, language } = usePreferences();
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
@@ -43,11 +45,13 @@ export const History: React.FC = () => {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
 
   const [logs, setLogs] = useState<string>("");
+  const [logMessage, setLogMessage] = useState<string | null>(null);
   const [loadingRuns, setLoadingRuns] = useState<boolean>(false);
   const [loadingJobs, setLoadingJobs] = useState<boolean>(false);
   const [loadingLogs, setLoadingLogs] = useState<boolean>(false);
 
   const [copied, setCopied] = useState(false);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
 
   const selectedRunIdRef = useRef<string | null>(null);
   const selectedJobIdRef = useRef<string | null>(null);
@@ -105,6 +109,7 @@ export const History: React.FC = () => {
           new Map(fetchedRuns.map((run) => [String(run.id), run])).values(),
         );
         setRuns(uniqueRuns);
+        setLastUpdatedAt(new Date());
       } catch (err) {
         if (isApiError(err) && err.status === 401) return;
         console.error("Erreur chargement des runs:", err);
@@ -127,6 +132,7 @@ export const History: React.FC = () => {
     setSelectedJobId(null);
     setJobs([]);
     setLogs("");
+    setLogMessage(null);
     fetchRuns();
   }, [selectedProjectId, fetchRuns]);
 
@@ -171,6 +177,7 @@ export const History: React.FC = () => {
       setJobs([]);
       setSelectedJobId(null);
       setLogs("");
+      setLogMessage(null);
       fetchJobs(selectedRunId);
     }
   }, [selectedRunId, fetchJobs]);
@@ -184,7 +191,12 @@ export const History: React.FC = () => {
         const data = await apiFetch<LogsResponse>(
           `/api/projects/${selectedProjectId}/runs/${runId}/jobs/${jobId}/logs`,
         );
-        setLogs(data.logs || "Aucun log disponible.");
+        setLogs(data.logs);
+        setLogMessage(
+          data.available === false
+            ? t("Job logs are not available yet.")
+            : null,
+        );
       } catch (err) {
         if (isApiError(err) && err.status === 401) return;
         console.error("Erreur chargement des logs:", err);
@@ -199,7 +211,7 @@ export const History: React.FC = () => {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [selectedProjectId],
+    [selectedProjectId, t],
   );
 
   useEffect(() => {
@@ -208,7 +220,7 @@ export const History: React.FC = () => {
     }
   }, [selectedRunId, selectedJobId, fetchLogs]);
 
-  // Polling temps réel
+  // Rafraîchit périodiquement les exécutions actives, sans polling en arrière-plan.
   useEffect(() => {
     const currentRun = runs.find((r) => r.id === selectedRunId);
     const isRunning =
@@ -218,25 +230,36 @@ export const History: React.FC = () => {
     if (!isRunning) return;
 
     const interval = setInterval(() => {
-      if (selectedRunIdRef.current) {
+      if (
+        document.visibilityState === "visible" &&
+        selectedRunIdRef.current
+      ) {
         fetchRuns(true);
         fetchJobs(selectedRunIdRef.current, true);
         if (selectedJobIdRef.current) {
           fetchLogs(selectedRunIdRef.current, selectedJobIdRef.current, true);
         }
       }
-    }, 4000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [selectedRunId, runs, fetchRuns, fetchJobs, fetchLogs]);
 
   const selectedRun = runs.find((r) => r.id === selectedRunId);
 
-  const handleCopyLogs = () => {
+  const handleCopyLogs = async () => {
     if (!logs) return;
-    navigator.clipboard.writeText(logs);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(logs);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error("Impossible de copier les logs", error);
+      toast.error(
+        t("Could not copy logs"),
+        t("Your browser did not allow clipboard access."),
+      );
+    }
   };
 
   const scrollToBottom = () => {
@@ -321,21 +344,21 @@ export const History: React.FC = () => {
       return (
         <Badge tone="amber" dot>
           <Loader2 className="w-3 h-3 animate-spin" />
-          {status === "queued" ? "En attente" : "En cours"}
+          {status === "queued" ? t("Queued") : t("Running")}
         </Badge>
       );
     }
     if (conclusion === "success") {
       return (
         <Badge tone="green" dot>
-          <CheckCircle2 className="w-3 h-3" /> Succès
+          <CheckCircle2 className="w-3 h-3" /> {t("Succeeded")}
         </Badge>
       );
     }
     if (conclusion === "failure") {
       return (
         <Badge tone="red" dot>
-          <XCircle className="w-3 h-3" /> Échec
+          <XCircle className="w-3 h-3" /> {t("Failed")}
         </Badge>
       );
     }
@@ -353,10 +376,10 @@ export const History: React.FC = () => {
         <div>
           <h3 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
             <Terminal className="w-5 h-5 text-purple-600" />
-            Historique des exécutions
+            {t("Workflow runs")}
           </h3>
           <p className="text-[11px] text-slate-400">
-            Supervision en temps réel et historique des builds
+            {t("Run history and available job logs")}
           </p>
         </div>
 
@@ -367,7 +390,7 @@ export const History: React.FC = () => {
               value={selectedProjectId}
               onChange={(e) => setSelectedProjectId(e.target.value)}
               className="pl-9 pr-3 py-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-100"
-              aria-label="Sélectionner un projet"
+              aria-label={t("Select a project")}
             >
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -379,17 +402,16 @@ export const History: React.FC = () => {
 
           <button
             onClick={() => {
+              fetchRuns(false);
               if (selectedRunId) {
                 fetchJobs(selectedRunId, false);
                 if (selectedJobId)
                   fetchLogs(selectedRunId, selectedJobId, false);
-              } else {
-                fetchRuns(false);
               }
             }}
-            disabled={loadingRuns || loadingJobs}
+            disabled={loadingRuns || loadingJobs || loadingLogs}
             className="p-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors text-xs font-bold flex items-center gap-1"
-            title="Rafraîchir"
+            title={t("Refresh")}
           >
             <RefreshCw
               className={`w-4 h-4 ${
@@ -399,6 +421,15 @@ export const History: React.FC = () => {
           </button>
         </div>
       </div>
+      {lastUpdatedAt && (
+        <p className="mb-2 text-right text-[10px] text-slate-400" aria-live="polite">
+          {t("Updated")}{" "}
+          {lastUpdatedAt.toLocaleTimeString(language, {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </p>
+      )}
 
       {/* ======================================================== */}
       {/* VUE 1 : LISTE DE TOUS LES RUNS                           */}
@@ -407,7 +438,7 @@ export const History: React.FC = () => {
         <div className="flex-1 flex flex-col min-h-0">
           <div className="flex-none flex items-center justify-between pb-2">
             <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <PlayCircle className="w-4 h-4 text-purple-600" /> Runs Récents (
+              <PlayCircle className="w-4 h-4 text-purple-600" /> {t("Recent runs")} (
               {runs.length})
             </h4>
           </div>
@@ -418,20 +449,21 @@ export const History: React.FC = () => {
                 <div className="text-center">
                   <Loader2 className="w-7 h-7 text-purple-600 animate-spin mx-auto mb-2" />
                   <p className="text-xs text-slate-500 font-medium">
-                    Chargement des runs...
+                    {t("Loading runs...")}
                   </p>
                 </div>
               </div>
             ) : runs.length === 0 ? (
               <div className="h-full flex items-center justify-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                Aucun workflow exécuté.
+                {t("No workflow runs found.")}
               </div>
             ) : (
               runs.map((r) => (
-                <div
+                <button
+                  type="button"
                   key={r.id}
                   onClick={() => setSelectedRunId(r.id)}
-                  className="p-3 rounded-xl border border-slate-200 hover:border-purple-400 bg-white hover:shadow-sm transition-all cursor-pointer group flex items-center justify-between gap-3"
+                  className="w-full p-3 text-left rounded-xl border border-slate-200 hover:border-purple-400 bg-white hover:shadow-sm transition-all cursor-pointer group flex items-center justify-between gap-3"
                 >
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -463,7 +495,7 @@ export const History: React.FC = () => {
                     {renderStatusBadge(r.status, r.conclusion)}
                     <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-purple-600 group-hover:translate-x-0.5 transition-all" />
                   </div>
-                </div>
+                </button>
               ))
             )}
           </div>
@@ -482,11 +514,12 @@ export const History: React.FC = () => {
                   setSelectedJobId(null);
                   setJobs([]);
                   setLogs("");
+                  setLogMessage(null);
                 }}
                 className="flex-none px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-purple-50 text-slate-700 hover:text-purple-700 border border-slate-200 hover:border-purple-200 text-xs font-bold transition-all flex items-center gap-1.5"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                Retour aux runs
+                {t("Back to runs")}
               </button>
 
               <div className="h-5 w-px bg-slate-200 flex-none" />
@@ -501,9 +534,9 @@ export const History: React.FC = () => {
                   </h4>
                 </div>
                 <p className="text-[10px] text-slate-400 font-mono truncate">
-                  Branche:{" "}
+                  {t("Branch")}:{" "}
                   <span className="text-slate-600">{selectedRun?.branch}</span>{" "}
-                  | Commit:{" "}
+                  | {t("Commit")}:{" "}
                   <span className="text-slate-600">
                     {selectedRun?.commit_sha}
                   </span>
@@ -520,7 +553,7 @@ export const History: React.FC = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-1.5 text-slate-400 hover:text-purple-600 rounded-lg hover:bg-slate-50 transition-colors"
-                  title="Voir sur GitHub"
+                  title={t("Open on GitHub")}
                 >
                   <ExternalLink className="w-4 h-4" />
                 </a>
@@ -531,7 +564,7 @@ export const History: React.FC = () => {
           {/* SECTION JOBS : LISTE EN COLONNE (HAUT EN BAS) */}
           <div className="flex-none bg-white border border-slate-200 rounded-xl p-3 flex flex-col gap-2">
             <h5 className="text-[11px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <Layers className="w-3.5 h-3.5 text-purple-600" /> Jobs & Steps (
+              <Layers className="w-3.5 h-3.5 text-purple-600" /> {t("Jobs and steps")} (
               {jobs.length})
             </h5>
 
@@ -540,7 +573,7 @@ export const History: React.FC = () => {
                 <div className="py-4 text-center">
                   <Loader2 className="w-5 h-5 text-purple-600 animate-spin mx-auto mb-1" />
                   <span className="text-[11px] text-slate-400">
-                    Chargement des jobs...
+                    {t("Loading jobs...")}
                   </span>
                 </div>
               ) : (
@@ -557,9 +590,10 @@ export const History: React.FC = () => {
                       }`}
                     >
                       {/* Header du Job */}
-                      <div
+                      <button
+                        type="button"
                         onClick={() => setSelectedJobId(job.id)}
-                        className="flex items-center justify-between cursor-pointer mb-3 pb-2 border-b border-slate-100"
+                        className="w-full text-left flex items-center justify-between cursor-pointer mb-3 pb-2 border-b border-slate-100"
                       >
                         <div className="flex items-center gap-2">
                           <Cog className="w-3.5 h-3.5 text-slate-400" />
@@ -568,7 +602,7 @@ export const History: React.FC = () => {
                           </span>
                         </div>
                         {renderStatusBadge(job.status, job.conclusion)}
-                      </div>
+                      </button>
 
                       {/* ÉTAPES EN COLONNE (De haut en bas) */}
                       {job.steps && job.steps.length > 0 && (
@@ -648,14 +682,14 @@ export const History: React.FC = () => {
               <div className="flex items-center gap-2">
                 {loadingLogs && (
                   <span className="text-[10px] font-mono text-purple-400 flex items-center gap-1 bg-purple-950/50 px-2 py-0.5 rounded border border-purple-800/50">
-                    <Loader2 className="w-3 h-3 animate-spin" /> Streaming...
+                    <Loader2 className="w-3 h-3 animate-spin" /> {t("Loading logs...")}
                   </span>
                 )}
 
                 <button
                   onClick={scrollToBottom}
                   className="p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded transition-colors"
-                  title="Aller tout en bas"
+                  title={t("Scroll to bottom")}
                 >
                   <ArrowDownCircle className="w-3.5 h-3.5" />
                 </button>
@@ -664,17 +698,17 @@ export const History: React.FC = () => {
                   onClick={handleCopyLogs}
                   disabled={!logs}
                   className="p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded transition-colors flex items-center gap-1 text-[10px] font-mono"
-                  title="Copier les logs"
+                  title={t("Copy logs")}
                 >
                   {copied ? (
                     <>
                       <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-emerald-400">Copié</span>
+                      <span className="text-emerald-400">{t("Copied")}</span>
                     </>
                   ) : (
                     <>
                       <Copy className="w-3.5 h-3.5" />
-                      <span>Copier</span>
+                      <span>{t("Copy")}</span>
                     </>
                   )}
                 </button>
@@ -689,7 +723,11 @@ export const History: React.FC = () => {
               {loadingLogs && !logs ? (
                 <div className="h-40 flex items-center justify-center text-slate-500 gap-2">
                   <Loader2 className="w-4 h-4 animate-spin text-purple-500" />
-                  Initialisation du flux de logs...
+                  {t("Loading job logs...")}
+                </div>
+              ) : logMessage ? (
+                <div className="flex min-h-40 items-center justify-center px-6 text-center text-xs text-slate-400">
+                  {logMessage}
                 </div>
               ) : logs ? (
                 <div className="py-1">
@@ -699,8 +737,7 @@ export const History: React.FC = () => {
                 </div>
               ) : (
                 <div className="h-40 flex items-center justify-center text-slate-600 italic text-xs">
-                  Sélectionnez un job ci-dessus pour afficher le journal
-                  d'exécution.
+                  {t("Select a job above to view its logs.")}
                 </div>
               )}
             </div>

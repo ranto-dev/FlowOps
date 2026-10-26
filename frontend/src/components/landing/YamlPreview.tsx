@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ArrowDown, Cpu, Settings2 } from "lucide-react";
 import { EASE } from "./motion";
 import { Reveal, SectionHeader } from "./Reveal";
+import { usePreferences } from "../../lib/usePreferences";
 
 const YAML_TEXT = `name: CI
 
@@ -31,27 +32,28 @@ const CONFIG_ROWS: Array<[string, string]> = [
 ];
 
 export function YamlPreview() {
+  const { t } = usePreferences();
   const reduce = useReducedMotion();
   return (
     <section aria-labelledby="yaml-title" className="py-24 sm:py-32">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <SectionHeader
-          eyebrow="YAML generation"
+          eyebrow={t("YAML generation")}
           title={
             <span id="yaml-title">
-              Visual configuration, valid GitHub Actions YAML.
+              {t("Visual configuration, valid GitHub Actions YAML.")}
             </span>
           }
         />
 
         <Reveal className="mx-auto mt-8 flex max-w-xl flex-col items-center gap-2 font-mono text-xs text-[#71717A]">
           <span className="rounded-md border border-[#27272A] bg-[#111113] px-3 py-1.5">
-            Visual configuration
+            {t("Visual configuration")}
           </span>
           <ArrowDown className="size-4" aria-hidden="true" />
           <span className="flex items-center gap-1.5 rounded-md border border-violet-500/30 bg-violet-500/10 px-3 py-1.5 text-violet-300">
             <Cpu className="size-3.5" aria-hidden="true" />
-            Workflow engine
+            {t("Workflow engine")}
           </span>
           <ArrowDown className="size-4" aria-hidden="true" />
           <span className="rounded-md border border-[#27272A] bg-[#111113] px-3 py-1.5">
@@ -69,12 +71,12 @@ export function YamlPreview() {
           >
             <p className="flex items-center gap-2 border-b border-[#27272A] bg-[#18181B] px-5 py-3 font-mono text-[11px] uppercase tracking-[0.18em] text-[#71717A]">
               <Settings2 className="size-3.5" aria-hidden="true" />
-              Low-code
+              {t("Low-code")}
             </p>
             <dl className="divide-y divide-[#27272A]">
               {CONFIG_ROWS.map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between px-5 py-3.5">
-                  <dt className="text-sm text-[#71717A]">{k}</dt>
+                  <dt className="text-sm text-[#71717A]">{t(k)}</dt>
                   <dd className="font-mono text-sm text-[#FAFAFA]">{v}</dd>
                 </div>
               ))}
