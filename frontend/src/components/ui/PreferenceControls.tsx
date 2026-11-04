@@ -1,6 +1,7 @@
 import { Languages } from "lucide-react";
 import { usePreferences } from "../../lib/usePreferences";
 import { cn } from "../../lib/utils";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface PreferenceControlsProps {
   compact?: boolean;
@@ -34,6 +35,7 @@ export function PreferenceControls({
           <option value="fr">{t("French")}</option>
         </select>
       </label>
+      <ThemeToggle />
     </div>
   );
 }

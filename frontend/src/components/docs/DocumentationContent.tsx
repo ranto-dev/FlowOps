@@ -67,7 +67,7 @@ function BlockView({ block }: { block: Block }) {
       return <Callout tone={block.tone} title={block.title} text={block.text} />;
     case "table":
       return (
-        <div className="my-6 overflow-x-auto rounded-lg border border-line [scrollbar-color:#334155_transparent] [scrollbar-width:thin]">
+        <div className="my-6 overflow-x-auto rounded-lg border border-line [scrollbar-color:var(--color-line-strong)_transparent] [scrollbar-width:thin]">
           <table className="w-full min-w-[28rem] text-left text-sm">
             <thead className="bg-surface text-ink">
               <tr>

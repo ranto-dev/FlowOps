@@ -74,7 +74,7 @@ export function CodeBlock({
           )}
         </button>
       </figcaption>
-      <pre className="overflow-x-auto p-4 font-mono text-[13px] leading-6 text-ink [scrollbar-color:#334155_transparent] [scrollbar-width:thin]">
+      <pre className="overflow-x-auto p-4 font-mono text-[13px] leading-6 text-ink [scrollbar-color:var(--color-line-strong)_transparent] [scrollbar-width:thin]">
         <code>
           {tokenize(code, lang).map((t, i) =>
             t.kind ? (

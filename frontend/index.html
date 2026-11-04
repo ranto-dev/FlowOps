@@ -11,7 +11,9 @@
   <script>
     try {
       const language = localStorage.getItem("flowops_language");
-      document.documentElement.dataset.theme = "dark";
+      // Applique le thème avant le premier rendu (évite le flash).
+      const theme = localStorage.getItem("flowops_theme");
+      document.documentElement.dataset.theme = theme === "light" ? "light" : "dark";
       document.documentElement.lang = language === "fr" ? "fr" : "en";
     } catch {
       document.documentElement.dataset.theme = "dark";

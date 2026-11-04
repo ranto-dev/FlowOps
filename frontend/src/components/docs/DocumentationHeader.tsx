@@ -4,6 +4,7 @@ import logo from "../../assets/flowops.svg";
 import { DOCS_CONFIG, TAB_LABELS } from "../../docs/navigation";
 import type { DocTab } from "../../docs/types";
 import { cn } from "../../lib/utils";
+import { ThemeToggle } from "../ui/ThemeToggle";
 
 interface Props {
   activeTab: DocTab;
@@ -93,6 +94,7 @@ export function DocumentationHeader({
           >
             GitHub <ExternalLink className="h-3.5 w-3.5" aria-hidden />
           </a>
+          <ThemeToggle />
           <Link
             to={DOCS_CONFIG.appUrl}
             className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink"

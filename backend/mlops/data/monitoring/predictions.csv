@@ -29,3 +29,5 @@ timestamp,workflow_name,repository,duration_predicted,failure_probability,risk_l
 2026-11-04T03:54:19Z,cicd de test Pipeline,ranto-dev/Fluxy,237.5,0.1038,low,,,"{""duration"": 42, ""failure"": 39}"
 2026-11-04T14:01:46Z,cicd Pipeline,ranto-dev/mailcraft,63.9,0.1641,low,,,"{""duration"": 42, ""failure"": 39}"
 2026-11-04T14:03:58Z,cicd Pipeline,ranto-dev/mailcraft,63.9,0.1641,low,,,"{""duration"": 42, ""failure"": 39}"
+2026-11-04T14:23:00Z,cicd Pipeline,ranto-dev/mailcraft,63.9,0.1641,low,,,"{""duration"": 42, ""failure"": 39}"
+2026-11-04T14:34:02Z,cicd Pipeline,ranto-dev/mailcraft,63.9,0.1641,low,,,"{""duration"": 42, ""failure"": 39}"

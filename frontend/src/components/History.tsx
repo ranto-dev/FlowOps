@@ -711,7 +711,7 @@ export const History: React.FC = () => {
             {/* Zone de Contenu du Log */}
             <div
               ref={consoleContainerRef}
-              className="max-h-[500px] flex-1 select-text overflow-y-auto bg-code p-2 font-mono text-ink [scrollbar-color:#334155_transparent] [scrollbar-width:thin]"
+              className="max-h-[500px] flex-1 select-text overflow-y-auto bg-code p-2 font-mono text-ink [scrollbar-color:var(--color-line-strong)_transparent] [scrollbar-width:thin]"
             >
               {loadingLogs && !logs ? (
                 <div className="flex h-40 items-center justify-center gap-2 text-sm text-ink-muted">

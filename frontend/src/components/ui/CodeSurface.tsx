@@ -9,7 +9,7 @@ export const CodeSurface = React.forwardRef<
   <pre
     ref={ref}
     className={cn(
-      "overflow-auto rounded-lg border border-line bg-code p-4 font-mono text-[13px] leading-6 text-ink [scrollbar-color:#334155_transparent] [scrollbar-width:thin]",
+      "overflow-auto rounded-lg border border-line bg-code p-4 font-mono text-[13px] leading-6 text-ink [scrollbar-color:var(--color-line-strong)_transparent] [scrollbar-width:thin]",
       className,
     )}
     {...rest}

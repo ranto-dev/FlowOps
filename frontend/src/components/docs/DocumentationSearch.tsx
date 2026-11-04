@@ -106,7 +106,7 @@ export function DocumentationSearch({ onClose }: { onClose: () => void }) {
           id="docs-search-results"
           ref={listRef}
           role="listbox"
-          className="flex-1 overflow-y-auto p-2 [scrollbar-color:#334155_transparent] [scrollbar-width:thin]"
+          className="flex-1 overflow-y-auto p-2 [scrollbar-color:var(--color-line-strong)_transparent] [scrollbar-width:thin]"
         >
           {tokens.length === 0 && (
             <li className="px-3 py-8 text-center text-sm text-ink-subtle">

@@ -29,7 +29,7 @@ export function DocumentationSidebar({
       aria-label="Documentation navigation"
       className={cn(
         "w-72 shrink-0 overflow-y-auto overscroll-contain border-r border-line bg-surface px-3 py-6",
-        "[scrollbar-color:#334155_transparent] [scrollbar-width:thin]",
+        "[scrollbar-color:var(--color-line-strong)_transparent] [scrollbar-width:thin]",
         // < lg : tiroir
         "max-lg:fixed max-lg:bottom-0 max-lg:left-0 max-lg:top-14 max-lg:z-30 max-lg:transition-transform",
         !mobileOpen && "max-lg:invisible max-lg:-translate-x-full",

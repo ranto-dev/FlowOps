@@ -8,6 +8,7 @@ import {
 import {
   PreferencesContext,
   type Language,
+  type Theme,
 } from "./preferences-context";
 
 const messages: Record<Language, Record<string, string>> = {
@@ -36,6 +37,8 @@ const messages: Record<Language, Record<string, string>> = {
     "Configure workflow": "Configure workflow",
     "Run workflow": "Run workflow",
     "Sign out": "Sign out",
+    "Switch to light mode": "Switch to light mode",
+    "Switch to dark mode": "Switch to dark mode",
     "New workflow": "New workflow",
     "Reconfigure": "Reconfigure",
     "Connected": "Connected",
@@ -446,6 +449,8 @@ const messages: Record<Language, Record<string, string>> = {
     "Configure workflow": "Configurer le workflow",
     "Run workflow": "Lancer le workflow",
     "Sign out": "Se déconnecter",
+    "Switch to light mode": "Passer en mode clair",
+    "Switch to dark mode": "Passer en mode sombre",
     "New workflow": "Nouveau workflow",
     "Reconfigure": "Reconfigurer",
     "Connected": "Connecté",
@@ -853,8 +858,23 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     readPreference("flowops_language", ["en", "fr"], "en"),
   );
 
+  const [theme, setThemeState] = useState<Theme>(() =>
+    readPreference("flowops_theme", ["dark", "light"], "dark"),
+  );
+
   useEffect(() => {
-    document.documentElement.dataset.theme = "dark";
+    document.documentElement.dataset.theme = theme;
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", theme === "light" ? "#f8fafc" : "#0b1020");
+    try {
+      localStorage.setItem("flowops_theme", theme);
+    } catch {
+      // Le thème reste appliqué pour la session si le stockage est désactivé.
+    }
+  }, [theme]);
+
+  useEffect(() => {
     document.documentElement.lang = language;
     try {
       localStorage.setItem("flowops_language", language);
@@ -867,13 +887,18 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     (value: Language) => setLanguageState(value),
     [],
   );
+  const setTheme = useCallback((value: Theme) => setThemeState(value), []);
+  const toggleTheme = useCallback(
+    () => setThemeState((current) => (current === "dark" ? "light" : "dark")),
+    [],
+  );
   const t = useCallback(
     (message: string) => messages[language][message] ?? message,
     [language],
   );
   const value = useMemo(
-    () => ({ language, setLanguage, t }),
-    [language, setLanguage, t],
+    () => ({ language, setLanguage, theme, setTheme, toggleTheme, t }),
+    [language, setLanguage, theme, setTheme, toggleTheme, t],
   );
 
   return (

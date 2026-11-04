@@ -40,6 +40,31 @@
   color: var(--color-ink);
 }
 
+/* Thème clair : seuls les tokens changent, aucun composant n'est touché. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-canvas: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-2: #f1f5f9;
+  --color-code: #f1f5f9;
+  --color-line: #e2e8f0;
+  --color-line-strong: #cbd5e1;
+  --color-ink: #0f172a;
+  --color-ink-muted: #475569;
+  --color-ink-subtle: #5b6b82;
+  --color-accent: #7c3aed;
+  --color-accent-hover: #6d28d9;
+  --color-accent-ink: #6d28d9;
+  --color-success: #047857;
+  --color-warning: #92400e;
+  --color-danger: #b91c1c;
+  --color-info: #0369a1;
+}
+
+:root[data-theme="light"] ::selection {
+  background: rgb(124 58 237 / 0.2);
+}
+
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 5rem;
