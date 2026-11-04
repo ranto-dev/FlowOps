@@ -10,6 +10,6 @@ export const NAV_LINKS: NavLink[] = [
   { label: "Product", href: "#product" },
   { label: "Features", href: "#features" },
   { label: "How it works", href: "#how-it-works" },
-  { label: "MLOps", href: "#mlops" },
+  { label: "Predictions", href: "#mlops" },
   { label: "Documentation", href: "/docs", internal: true },
 ];

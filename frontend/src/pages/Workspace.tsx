@@ -14,16 +14,15 @@ import {
   X,
   Play,
   Loader2,
+  AlertCircle,
   BookOpen,
   GitBranch,
-  BrainCircuit,
   Search,
 } from "lucide-react";
 import { WorkflowForm } from "../components/WorkflowForm";
 import { YamlPreview } from "../components/YamlPreview";
 import { History } from "../components/History";
 import { PredictionPanel } from "../components/PredictionPanel";
-import { MlopsCenter } from "../components/MlopsCenter";
 import LogoImage from "../assets/logo-flowOps-transparent.png";
 import { useToast } from "../components/ui/useToast";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
@@ -56,9 +55,9 @@ export const Workspace: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const { t } = usePreferences();
-  const [activeTab, setActiveTab] = useState<
-    "projects" | "history" | "mlops" | "help"
-  >("projects");
+  const [activeTab, setActiveTab] = useState<"projects" | "history" | "help">(
+    "projects",
+  );
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -323,20 +322,19 @@ export const Workspace: React.FC = () => {
     }
   };
 
-  const switchTab = (tab: "projects" | "history" | "mlops" | "help") => {
+  const switchTab = (tab: "projects" | "history" | "help") => {
     setActiveTab(tab);
     setIsConfiguringWorkflow(false);
     setMobileNavOpen(false);
   };
 
   const NAV_TABS: {
-    key: "projects" | "history" | "mlops" | "help";
+    key: "projects" | "history" | "help";
     label: string;
     icon: React.ReactNode;
   }[] = [
     { key: "projects", label: "Projects", icon: <FolderGit2 className="w-4 h-4" /> },
     { key: "history", label: "History", icon: <HistoryIcon className="w-4 h-4" /> },
-    { key: "mlops", label: "MLOps", icon: <BrainCircuit className="w-4 h-4" /> },
     { key: "help", label: "Help", icon: <HelpCircle className="w-4 h-4" /> },
   ];
 
@@ -736,11 +734,6 @@ export const Workspace: React.FC = () => {
           <History />
         )}
 
-        {/* TAB MLFLOW */}
-        {activeTab === "mlops" && (
-          <MlopsCenter />
-        )}
-
         {/* TAB 3: HELP CENTER */}
         {activeTab === "help" && (
           <div className="space-y-4 p-6 border border-slate-200/80 rounded-2xl bg-white shadow-sm">
@@ -752,13 +745,16 @@ export const Workspace: React.FC = () => {
               <p>
                 {t("FlowOps helps you model CI/CD workflows in low-code, publish them to a GitHub repository, and inspect runner executions.")}
               </p>
-              <div className="p-4 bg-amber-50 border border-amber-200/80 rounded-xl text-amber-800 font-mono text-[11px] leading-relaxed">
-                <span className="font-bold">⚠ {t("Prerequisite:")}</span>{" "}
+              <div className="flex items-start gap-2 p-4 bg-amber-50 border border-amber-200/80 rounded-xl text-amber-800 font-mono text-[11px] leading-relaxed">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>
+                  <span className="font-bold">{t("Prerequisite:")}</span>{" "}
                 {t("A local or remote MongoDB instance on port")}
                 <code className="bg-amber-100 px-1 py-0.5 rounded font-bold">
                   27017
                 </code>{" "}
                 {t("and the backend service must be available before triggering runs.")}
+                </span>
               </div>
               <Link
                 to="/docs"

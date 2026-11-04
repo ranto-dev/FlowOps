@@ -88,7 +88,7 @@ def test_generate_workflow_returns_yaml_with_dispatch():
 
 
 def test_mlops_status_shape():
-    """``/api/mlops/status`` : sections lues par ``MlopsCenter``."""
+    """``/api/mlops/status`` : contrat JSON du service MLOps local."""
     res = client.get("/api/mlops/status")
 
     assert res.status_code == 200

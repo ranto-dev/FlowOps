@@ -65,7 +65,7 @@ Run backend commands from `backend/` with the venv interpreter:
 ```bash
 venv/bin/ruff check .                  # lint (E4/E7/E9/F + I, config dans pyproject.toml)
 venv/bin/python -m pytest              # 14 tests: contrat HTTP + compiler
-venv/bin/uvicorn main:app --reload --port 8000
+venv/bin/python -m uvicorn main:app --reload --port 8000
 venv/bin/python -m mlops.pipeline --sample        # full 8-step pipeline
 venv/bin/python -m mlops.pipeline --skip-train    # ETL + features only
 venv/bin/python -m mlops.etl.pipeline             # individual steps
@@ -91,7 +91,7 @@ Verification before finishing changes:
 - frontend → `pnpm lint` && `pnpm exec tsc -b` (both pass; `noUnusedLocals` /
   `noUnusedParameters` / `strict` are on, so dead imports break the build);
 - backend → `venv/bin/ruff check .` && `venv/bin/python -m pytest` (both pass), plus a smoke
-  `uvicorn main:app` + curl on `/api/auth/status`, `/api/projects` (401 without token),
+  `venv/bin/python -m uvicorn main:app` + curl on `/api/auth/status`, `/api/projects` (401 without token),
   `/api/mlops/status`, `/api/generate-workflow`.
 
 ## Gotchas

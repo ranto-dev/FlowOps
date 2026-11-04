@@ -8,6 +8,7 @@ import { Button } from "./ui/button";
 import { cn } from "../../lib/utils";
 import { PreferenceControls } from "../ui/PreferenceControls";
 import { usePreferences } from "../../lib/usePreferences";
+import Logo from "../../assets/logo-flowOps-transparent.png";
 
 export function Navbar() {
   const { t } = usePreferences();
@@ -42,8 +43,8 @@ export function Navbar() {
           className="flex items-center gap-2.5"
           aria-label="FlowOps home"
         >
-          <span className="flex size-8 items-center justify-center rounded-lg border border-[#27272A] bg-[#18181B]">
-            <TerminalSquare className="size-4 text-violet-400" />
+          <span className="flex size-8 items-center justify-center">
+            <img src={Logo} className="w-full" />
           </span>
           <span className="text-[15px] font-bold tracking-tight text-[#FAFAFA]">
             FlowOps

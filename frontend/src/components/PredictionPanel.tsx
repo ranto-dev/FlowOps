@@ -97,10 +97,10 @@ export const PredictionPanel: React.FC<PredictionPanelProps> = ({
           </div>
           <div>
             <h3 className="text-sm font-black text-slate-900 tracking-tight">
-              {t("ML predictions")}
+              {t("Workflow predictions")}
             </h3>
             <p className="text-[10px] text-slate-500 font-medium">
-              {t("Estimates from the local FlowOps MLOps pipeline")}
+              {t("Estimates from available FlowOps models")}
             </p>
           </div>
         </div>
@@ -238,8 +238,10 @@ export const PredictionPanel: React.FC<PredictionPanelProps> = ({
         {!error && prediction && (p?.duration_error || p?.failure_error) && (
           <div className="mt-3 flex items-center gap-2 text-[10px] font-mono text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
             <Radar className="w-3.5 h-3.5" />
-            {p?.duration_error || p?.failure_error} — {t("Run the MLOps pipeline")}{" "}
-            (POST /api/mlops/retrain) {t("to deploy missing models.")}
+            <span>
+              {p?.duration_error || p?.failure_error} —{" "}
+              {t("Predictions are unavailable until compatible models are deployed.")}
+            </span>
           </div>
         )}
 

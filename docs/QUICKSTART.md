@@ -34,8 +34,13 @@ venv/bin/pip install -r requirements.txt
 Start the API:
 
 ```bash
-venv/bin/uvicorn main:app --reload --port 8000
+venv/bin/python -m uvicorn main:app --reload --port 8000
 ```
+
+This explicitly uses the backend virtual environment, which includes
+dependencies such as `motor`. Avoid running `uvicorn main:app` by itself:
+that may start Uvicorn from the system Python, where project dependencies
+are not installed.
 
 The backend entry point is `main:app`. Application routes are mounted by
 `app/main.py`.

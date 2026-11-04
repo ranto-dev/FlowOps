@@ -27,34 +27,34 @@ export function Hero() {
   });
 
   return (
-    <section className="relative overflow-hidden pt-36 sm:pt-44" aria-labelledby="hero-title">
+    <section
+      className="relative overflow-hidden pt-36 sm:pt-44"
+      aria-labelledby="hero-title"
+    >
       {/* subtle grid backdrop, no flashy gradients */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black,transparent)]"
       />
       <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center px-4 text-center sm:px-6">
-        <motion.div {...anim(0)}>
-          <Badge variant="accent" className="gap-2">
-            <span className="size-1.5 rounded-full bg-violet-400" aria-hidden="true" />
-            {t("Open-source CI/CD workflow platform")}
-          </Badge>
-        </motion.div>
-
         <motion.h1
           id="hero-title"
           {...anim(0.1)}
-          className="mt-6 max-w-3xl text-balance text-4xl font-bold leading-[1.05] tracking-tight text-[#FAFAFA] sm:text-6xl lg:text-7xl"
+          className="mt-6 max-w-3xl font-display text-balance text-4xl font-bold leading-[1.05] tracking-tight text-[#FAFAFA] sm:text-6xl lg:text-7xl"
         >
           {t("Build CI/CD workflows")}{" "}
-          <span className="text-violet-300">{t("without the YAML complexity.")}</span>
+          <span className="text-violet-300">
+            {t("without the YAML complexity.")}
+          </span>
         </motion.h1>
 
         <motion.p
           {...anim(0.2)}
           className="mt-6 max-w-xl text-pretty text-base leading-relaxed text-[#A1A1AA] sm:text-lg"
         >
-          {t("Design, generate, execute and optimize GitHub Actions workflows through a powerful low-code interface.")}
+          {t(
+            "Design, generate, execute and optimize GitHub Actions workflows through a powerful low-code interface.",
+          )}
         </motion.p>
 
         <motion.div

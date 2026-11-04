@@ -345,11 +345,11 @@ curl -s -X POST http://localhost:8000/api/mlops/predict \
 Le champ `jobs[].steps[].type` accepte : `checkout`, `setup-node`,
 `npm`, `upload-artifact`, `docker`, `custom-run`.
 
-**UI React** : le panneau « Prediction IA — MLflow » (composant
-`PredictionPanel`) s'affiche dans l'éditeur de workflow et prédit
-automatiquement à chaque modification de la config ; l'onglet **MLflow**
-(composant `MlopsCenter`) présente les modèles actifs, les métriques,
-le monitoring et un bouton « Relancer le pipeline ».
+**Interface FlowOps** : le panneau de prédiction s'affiche pendant la
+configuration du workflow lorsque des modèles compatibles sont disponibles.
+Le workspace ne propose pas d'interface d'administration MLflow : entraînement,
+registre et monitoring restent gérés indépendamment via le pipeline local et
+les endpoints MLOps documentés dans [`API-FR.md`](API-FR.md).
 
 ---
 
@@ -364,7 +364,7 @@ cd backend
 venv/bin/python -m mlops.pipeline --sample
 
 # 2. Lancer l'application (Mongo sur 27017 : mongo-docker.sh)
-venv/bin/uvicorn main:app --reload --port 8000
+venv/bin/python -m uvicorn main:app --reload --port 8000
 
 # 3. Vérifier l'état
 curl -s http://localhost:8000/api/mlops/status

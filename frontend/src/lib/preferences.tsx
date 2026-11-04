@@ -8,7 +8,6 @@ import {
 import {
   PreferencesContext,
   type Language,
-  type Theme,
 } from "./preferences-context";
 
 const messages: Record<Language, Record<string, string>> = {
@@ -20,6 +19,7 @@ const messages: Record<Language, Record<string, string>> = {
     "Projects": "Projects",
     "History": "History",
     "MLOps": "MLOps",
+    "Predictions": "Predictions",
     "Help": "Help",
     "New project": "New project",
     "Search projects": "Search projects",
@@ -37,10 +37,7 @@ const messages: Record<Language, Record<string, string>> = {
     "Run workflow": "Run workflow",
     "Sign out": "Sign out",
     "Connected": "Connected",
-    "Light mode": "Light mode",
-    "Dark mode": "Dark mode",
     "Switch language": "Switch language",
-    "Switch theme": "Switch theme",
     "English": "English",
     "French": "French",
     "Workflow builder": "Workflow builder",
@@ -91,6 +88,9 @@ const messages: Record<Language, Record<string, string>> = {
     "GitHub authorization was denied. You can try again below.": "GitHub authorization was denied. You can try again below.",
     "Could not start GitHub sign-in. Check your connection to the server.": "Could not start GitHub sign-in. Check your connection to the server.",
     "The GitHub window was blocked. Allow pop-ups for FlowOps and try again.": "The GitHub window was blocked. Allow pop-ups for FlowOps and try again.",
+    "Could not copy activation code. Copy it manually.": "Could not copy activation code. Copy it manually.",
+    "By continuing, you authorize FlowOps to access your GitHub repositories and workflows.": "By continuing, you authorize FlowOps to access your GitHub repositories and workflows.",
+    "Configure GitHub OAuth": "Configure GitHub OAuth",
     "1. Sign in": "1. Sign in",
     "Authenticate with GitHub to secure access to your projects.": "Authenticate with GitHub to secure access to your projects.",
     "2. Create a project": "2. Create a project",
@@ -184,7 +184,13 @@ const messages: Record<Language, Record<string, string>> = {
     "Could not copy logs": "Could not copy logs",
     "Your browser did not allow clipboard access.": "Your browser did not allow clipboard access.",
     "ML predictions": "ML predictions",
-    "Estimates from the local FlowOps MLOps pipeline": "Estimates from the local FlowOps MLOps pipeline",
+    "Workflow predictions": "Workflow predictions",
+    "Estimates from available FlowOps models": "Estimates from available FlowOps models",
+    "Predictions are unavailable until compatible models are deployed.": "Predictions are unavailable until compatible models are deployed.",
+    "GitHub-native workflows": "GitHub-native workflows",
+    "From configuration to execution, in one workspace.": "From configuration to execution, in one workspace.",
+    "Connect a repository, compose a pipeline and inspect its GitHub Actions runs.": "Connect a repository, compose a pipeline and inspect its GitHub Actions runs.",
+    "Illustration of a workflow configuration connected to a terminal run": "Illustration of a workflow configuration connected to a terminal run",
     "Refresh prediction": "Refresh prediction",
     "Waiting for a workflow prediction...": "Waiting for a workflow prediction...",
     "Estimated duration": "Estimated duration",
@@ -200,8 +206,6 @@ const messages: Record<Language, Record<string, string>> = {
     "Previous runs": "Previous runs",
     "Success rate": "Success rate",
     "Failure rate": "Failure rate",
-    "Run the MLOps pipeline": "Run the MLOps pipeline",
-    "to deploy missing models.": "to deploy missing models.",
     "Prediction recorded for monitoring (predicted and actual values support drift tracking).": "Prediction recorded for monitoring (predicted and actual values support drift tracking).",
     "Create a GitHub OAuth App": "Create a GitHub OAuth App",
     "Open-source CI/CD workflow platform": "Open-source CI/CD workflow platform",
@@ -220,10 +224,7 @@ const messages: Record<Language, Record<string, string>> = {
     "Workflow Logs": "Workflow Logs",
     "Retrieve and inspect available per-job logs from one console.": "Retrieve and inspect available per-job logs from one console.",
     "Prediction": "Prediction",
-    "Estimate duration and failure risk before a workflow starts.": "Estimate duration and failure risk before a workflow starts.",
-    "Retrain models on your own execution data with one command.": "Retrain models on your own execution data with one command.",
-    "Model Tracking": "Model Tracking",
-    "Every model version, metric and threshold tracked in MLflow.": "Every model version, metric and threshold tracked in MLflow.",
+    "Estimate duration and failure risk before a workflow starts when compatible models are available.": "Estimate duration and failure risk before a workflow starts when compatible models are available.",
     "Project Management": "Project Management",
     "Organize repositories, workflows and runs per project.": "Organize repositories, workflows and runs per project.",
     "Everything a pipeline needs, in one place.": "Everything a pipeline needs, in one place.",
@@ -394,7 +395,15 @@ const messages: Record<Language, Record<string, string>> = {
     "Job logs are not available yet.": "Job logs are not available yet.",
     "Developer reference": "Developer reference",
     "API reference": "API reference",
-    "Project routes require a GitHub bearer token and enforce project ownership. MLOps endpoints are intended for trusted local use.": "Project routes require a GitHub bearer token and enforce project ownership. MLOps endpoints are intended for trusted local use.",
+    "Project routes require a GitHub bearer token and enforce project ownership. Prediction endpoints are independent from project administration.": "Project routes require a GitHub bearer token and enforce project ownership. Prediction endpoints are independent from project administration.",
+    "Check GitHub authorization status": "Check GitHub authorization status",
+    "List repositories accessible to the signed-in user": "List repositories accessible to the signed-in user",
+    "Create a project": "Create a project",
+    "Delete an owned project": "Delete an owned project",
+    "Save a project workflow": "Save a project workflow",
+    "List jobs and steps for a run": "List jobs and steps for a run",
+    "Retrieve available job logs": "Retrieve available job logs",
+    "Start the API and frontend locally using the documented repository commands.": "Start the API and frontend locally using the documented repository commands.",
     "Quick start guide": "Quick start guide",
     "Full API reference": "Full API reference",
     "MLOps guide": "MLOps guide",
@@ -418,6 +427,7 @@ const messages: Record<Language, Record<string, string>> = {
     "Projects": "Projets",
     "History": "Historique",
     "MLOps": "MLOps",
+    "Predictions": "Prédictions",
     "Help": "Aide",
     "New project": "Nouveau projet",
     "Search projects": "Rechercher des projets",
@@ -435,10 +445,7 @@ const messages: Record<Language, Record<string, string>> = {
     "Run workflow": "Lancer le workflow",
     "Sign out": "Se déconnecter",
     "Connected": "Connecté",
-    "Light mode": "Mode clair",
-    "Dark mode": "Mode sombre",
     "Switch language": "Changer de langue",
-    "Switch theme": "Changer de thème",
     "English": "Anglais",
     "French": "Français",
     "Workflow builder": "Constructeur de workflow",
@@ -489,6 +496,9 @@ const messages: Record<Language, Record<string, string>> = {
     "GitHub authorization was denied. You can try again below.": "L’autorisation GitHub a été refusée. Vous pouvez réessayer ci-dessous.",
     "Could not start GitHub sign-in. Check your connection to the server.": "Impossible de démarrer la connexion GitHub. Vérifiez votre connexion au serveur.",
     "The GitHub window was blocked. Allow pop-ups for FlowOps and try again.": "La fenêtre GitHub a été bloquée. Autorisez les fenêtres contextuelles pour FlowOps, puis réessayez.",
+    "Could not copy activation code. Copy it manually.": "Impossible de copier le code d’activation. Copiez-le manuellement.",
+    "By continuing, you authorize FlowOps to access your GitHub repositories and workflows.": "En continuant, vous autorisez FlowOps à accéder à vos dépôts GitHub et à leurs workflows.",
+    "Configure GitHub OAuth": "Configurer OAuth GitHub",
     "1. Sign in": "1. Connectez-vous",
     "Authenticate with GitHub to secure access to your projects.": "Authentifiez-vous avec GitHub pour sécuriser l’accès à vos projets.",
     "2. Create a project": "2. Créez un projet",
@@ -583,7 +593,13 @@ const messages: Record<Language, Record<string, string>> = {
     "Could not copy logs": "Impossible de copier les logs",
     "Your browser did not allow clipboard access.": "Votre navigateur n’a pas autorisé l’accès au presse-papiers.",
     "ML predictions": "Prédictions ML",
-    "Estimates from the local FlowOps MLOps pipeline": "Estimations du pipeline MLOps local FlowOps",
+    "Workflow predictions": "Prédictions du workflow",
+    "Estimates from available FlowOps models": "Estimations des modèles FlowOps disponibles",
+    "Predictions are unavailable until compatible models are deployed.": "Les prédictions ne sont pas disponibles tant qu’aucun modèle compatible n’est déployé.",
+    "GitHub-native workflows": "Workflows intégrés à GitHub",
+    "From configuration to execution, in one workspace.": "De la configuration à l’exécution, dans un seul espace.",
+    "Connect a repository, compose a pipeline and inspect its GitHub Actions runs.": "Connectez un dépôt, composez un pipeline et consultez ses exécutions GitHub Actions.",
+    "Illustration of a workflow configuration connected to a terminal run": "Illustration d’une configuration de workflow reliée à une exécution dans un terminal",
     "Refresh prediction": "Actualiser la prédiction",
     "Waiting for a workflow prediction...": "En attente d’une prédiction du workflow...",
     "Estimated duration": "Durée estimée",
@@ -599,8 +615,6 @@ const messages: Record<Language, Record<string, string>> = {
     "Previous runs": "Exécutions précédentes",
     "Success rate": "Taux de réussite",
     "Failure rate": "Taux d’échec",
-    "Run the MLOps pipeline": "Exécutez le pipeline MLOps",
-    "to deploy missing models.": "pour déployer les modèles manquants.",
     "Prediction recorded for monitoring (predicted and actual values support drift tracking).": "Prédiction enregistrée pour le monitoring (les données prévues et réelles permettent le suivi du drift).",
     "Open-source CI/CD workflow platform": "Plateforme open source de workflows CI/CD",
     "Build CI/CD workflows": "Créez des workflows CI/CD",
@@ -618,10 +632,7 @@ const messages: Record<Language, Record<string, string>> = {
     "Workflow Logs": "Logs des workflows",
     "Retrieve and inspect available per-job logs from one console.": "Récupérez et consultez les logs disponibles par job depuis une seule console.",
     "Prediction": "Prédiction",
-    "Estimate duration and failure risk before a workflow starts.": "Estimez la durée et le risque d’échec avant le démarrage d’un workflow.",
-    "Retrain models on your own execution data with one command.": "Réentraînez les modèles sur vos données d’exécution avec une seule commande.",
-    "Model Tracking": "Suivi des modèles",
-    "Every model version, metric and threshold tracked in MLflow.": "Chaque version de modèle, métrique et seuil est suivi dans MLflow.",
+    "Estimate duration and failure risk before a workflow starts when compatible models are available.": "Estimez la durée et le risque d’échec avant le démarrage d’un workflow lorsqu’un modèle compatible est disponible.",
     "Project Management": "Gestion de projets",
     "Organize repositories, workflows and runs per project.": "Organisez les dépôts, workflows et exécutions par projet.",
     "Everything a pipeline needs, in one place.": "Tout ce dont un pipeline a besoin, au même endroit.",
@@ -797,6 +808,15 @@ const messages: Record<Language, Record<string, string>> = {
     "Quick start guide": "Guide de démarrage",
     "Full API reference": "Référence API complète",
     "MLOps guide": "Guide MLOps",
+    "Project routes require a GitHub bearer token and enforce project ownership. Prediction endpoints are independent from project administration.": "Les routes des projets nécessitent un jeton GitHub et vérifient leur propriété. Les prédictions sont indépendantes de l’administration des projets.",
+    "Check GitHub authorization status": "Vérifier l’état de l’autorisation GitHub",
+    "List repositories accessible to the signed-in user": "Lister les dépôts accessibles à l’utilisateur connecté",
+    "Create a project": "Créer un projet",
+    "Delete an owned project": "Supprimer un projet appartenant à l’utilisateur",
+    "Save a project workflow": "Enregistrer un workflow du projet",
+    "List jobs and steps for a run": "Lister les jobs et étapes d’une exécution",
+    "Retrieve available job logs": "Récupérer les logs de job disponibles",
+    "Start the API and frontend locally using the documented repository commands.": "Lancez l’API et le frontend en local à l’aide des commandes documentées dans le dépôt.",
     "Method": "Méthode",
     "Endpoint": "Point de terminaison",
     "Purpose": "Fonction",
@@ -825,25 +845,20 @@ function readPreference<T extends string>(
 }
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() =>
-    readPreference("flowops_theme", ["light", "dark"], "light"),
-  );
   const [language, setLanguageState] = useState<Language>(() =>
     readPreference("flowops_language", ["en", "fr"], "en"),
   );
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset.theme = "dark";
     document.documentElement.lang = language;
     try {
-      localStorage.setItem("flowops_theme", theme);
       localStorage.setItem("flowops_language", language);
     } catch {
       // Preferences still apply for the current session if storage is disabled.
     }
-  }, [theme, language]);
+  }, [language]);
 
-  const setTheme = useCallback((value: Theme) => setThemeState(value), []);
   const setLanguage = useCallback(
     (value: Language) => setLanguageState(value),
     [],
@@ -853,8 +868,8 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     [language],
   );
   const value = useMemo(
-    () => ({ theme, language, setTheme, setLanguage, t }),
-    [theme, language, setTheme, setLanguage, t],
+    () => ({ language, setLanguage, t }),
+    [language, setLanguage, t],
   );
 
   return (

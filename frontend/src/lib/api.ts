@@ -116,7 +116,7 @@ export interface ApiRequestOptions {
   /**
    * Joindre l'en-tête `Authorization: Bearer <token>` si un jeton existe
    * (défaut : `true`). Passer `false` pour les endpoints publics
-   * (`/api/auth/*`, `/api/generate-workflow`, `/api/mlops/status|predict`).
+   * (`/api/auth/*`, `/api/generate-workflow`, `/api/mlops/predict`).
    */
   auth?: boolean;
   /** En-têtes supplémentaires (le `Content-Type: application/json` est ajouté si `body` présent). */

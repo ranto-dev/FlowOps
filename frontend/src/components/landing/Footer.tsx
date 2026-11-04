@@ -9,7 +9,7 @@ const COLUMNS: Array<{ title: string; links: Array<{ label: string; href: string
     title: "Product",
     links: [
       { label: "Features", href: "#features" },
-      { label: "MLOps", href: "#mlops" },
+      { label: "Predictions", href: "#mlops" },
       { label: "FAQ", href: "#faq" },
       { label: "Get Started", href: "/auth" },
     ],
@@ -17,7 +17,7 @@ const COLUMNS: Array<{ title: string; links: Array<{ label: string; href: string
   {
     title: "Resources",
     links: [
-      { label: "GitHub", href: GITHUB_URL, external: true },
+      { label: "Documentation", href: "/docs" },
       { label: "Setup guide", href: "/setup" },
     ],
   },

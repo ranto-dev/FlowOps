@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Code2,
   Database,
+  ExternalLink,
   GitBranch,
   LayoutDashboard,
   ShieldCheck,
@@ -57,7 +58,7 @@ const sections = [
   },
   {
     icon: <Activity className="h-5 w-5" />,
-    title: "MLOps and prediction",
+    title: "Workflow predictions",
     description:
       "Review locally served duration and failure-risk predictions when a compatible model is deployed.",
   },
@@ -81,10 +82,17 @@ const faq = [
 const apiRoutes = [
   ["GET", "/api/auth/status", "Check GitHub OAuth configuration"],
   ["POST", "/api/auth/device-code", "Start GitHub Device Flow"],
+  ["POST", "/api/auth/check-login", "Check GitHub authorization status"],
+  ["GET", "/api/github/repositories", "List repositories accessible to the signed-in user"],
   ["GET", "/api/projects", "List the signed-in user's projects"],
+  ["POST", "/api/projects", "Create a project"],
+  ["DELETE", "/api/projects/{id}", "Delete an owned project"],
   ["POST", "/api/generate-workflow", "Compile workflow config to YAML"],
+  ["POST", "/api/projects/{id}/workflow", "Save a project workflow"],
   ["POST", "/api/projects/{id}/execute", "Publish and dispatch a workflow"],
   ["GET", "/api/projects/{id}/runs", "List GitHub Actions runs"],
+  ["GET", "/api/projects/{id}/runs/{run_id}/jobs", "List jobs and steps for a run"],
+  ["GET", "/api/projects/{id}/runs/{run_id}/jobs/{job_id}/logs", "Retrieve available job logs"],
   ["POST", "/api/mlops/predict", "Predict duration and failure risk"],
 ];
 
@@ -112,6 +120,14 @@ export const DocsPage: React.FC = () => {
 
         <nav className="hidden items-center gap-6 text-sm text-slate-300 md:flex">
           <Link to="/" className="transition hover:text-white">{t("Home")}</Link>
+          <a
+            href="https://github.com/ranto-dev/FlowOps"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 transition hover:text-white"
+          >
+            GitHub <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+          </a>
           <Link to="/auth" className="transition hover:text-white">{t("Sign in")}</Link>
           <Link to="/workspace" className="transition hover:text-white">{t("Workspace")}</Link>
         </nav>
@@ -155,7 +171,7 @@ export const DocsPage: React.FC = () => {
               <pre className="overflow-x-auto rounded-2xl border border-white/10 bg-slate-950/80 p-4 font-mono text-xs text-slate-200">
 {`# Backend
 cd backend
-venv/bin/uvicorn main:app --reload --port 8000
+venv/bin/python -m uvicorn main:app --reload --port 8000
 
 # Frontend (separate terminal)
 cd frontend
@@ -260,7 +276,7 @@ jobs:
                 {t("API reference")}
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-                {t("Project routes require a GitHub bearer token and enforce project ownership. MLOps endpoints are intended for trusted local use.")}
+                {t("Project routes require a GitHub bearer token and enforce project ownership. Prediction endpoints are independent from project administration.")}
               </p>
             </div>
             <div className="flex flex-wrap gap-3 text-sm font-semibold">

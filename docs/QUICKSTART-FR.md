@@ -33,8 +33,13 @@ venv/bin/pip install -r requirements.txt
 Démarrez l’API :
 
 ```bash
-venv/bin/uvicorn main:app --reload --port 8000
+venv/bin/python -m uvicorn main:app --reload --port 8000
 ```
+
+Cette commande utilise explicitement l’environnement Python du backend, qui
+contient notamment `motor`. Évitez `uvicorn main:app` seul : il peut lancer
+Uvicorn depuis le Python système, où les dépendances du projet ne sont pas
+installées.
 
 ## Configurer et lancer le frontend
 

@@ -1,8 +1,6 @@
 import { motion, useReducedMotion } from "framer-motion";
 import {
-  Boxes,
   FolderKanban,
-  LineChart,
   MousePointerClick,
   ScrollText,
   ServerCog,
@@ -38,17 +36,7 @@ const FEATURES = [
   {
     icon: Timer,
     title: "Prediction",
-    text: "Estimate duration and failure risk before a workflow starts.",
-  },
-  {
-    icon: Boxes,
-    title: "MLOps",
-    text: "Retrain models on your own execution data with one command.",
-  },
-  {
-    icon: LineChart,
-    title: "Model Tracking",
-    text: "Every model version, metric and threshold tracked in MLflow.",
+    text: "Estimate duration and failure risk before a workflow starts when compatible models are available.",
   },
   {
     icon: FolderKanban,
@@ -80,7 +68,7 @@ export function Features() {
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, amount: 0.1 }}
-          className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
         >
           {FEATURES.map((f) => (
             <motion.div key={f.title} variants={reduce ? undefined : staggerChild}>

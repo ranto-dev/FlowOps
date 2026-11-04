@@ -9,7 +9,7 @@ export const LINKS = [
     to: "how-it-works",
   },
   {
-    link: "MLOps",
+    link: "Predictions",
     to: "mlops",
   },
   {

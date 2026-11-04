@@ -5,7 +5,7 @@ import { Reveal, SectionHeader } from "./Reveal";
 import { usePreferences } from "../../lib/usePreferences";
 
 const COMMANDS = [
-  "cd backend && venv/bin/python -m mlops.pipeline --sample",
+  "cd backend && venv/bin/python -m uvicorn main:app --reload --port 8000",
   "cd frontend && pnpm dev",
 ];
 
@@ -59,7 +59,7 @@ export function DeveloperExperience() {
         <SectionHeader
           eyebrow={t("Local development")}
           title={<span id="dx-title">{t("Run FlowOps locally.")}</span>}
-          description={t("Start the MLOps pipeline or frontend using the documented repository commands.")}
+          description={t("Start the API and frontend locally using the documented repository commands.")}
         />
         <Reveal className="mx-auto mt-12 max-w-2xl">
           <motion.div

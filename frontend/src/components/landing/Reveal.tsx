@@ -49,7 +49,7 @@ export function SectionHeader({
       <span className="font-mono text-xs font-medium uppercase tracking-[0.2em] text-violet-400/90">
         {eyebrow}
       </span>
-      <h2 className="text-balance text-3xl font-bold leading-[1.1] tracking-tight text-[#FAFAFA] sm:text-4xl lg:text-[2.75rem]">
+      <h2 className="font-display text-balance text-3xl font-bold leading-[1.1] tracking-tight text-[#FAFAFA] sm:text-4xl lg:text-[2.75rem]">
         {title}
       </h2>
       {description ? (

@@ -125,51 +125,6 @@ export interface ExecuteResponse {
   message: string;
 }
 
-/** Carte d'un modèle actif (registry MLOps). */
-export interface MlopsModelCard {
-  deployed: boolean;
-  version?: number;
-  algorithm?: string;
-  training_date?: string;
-  dataset_version?: string;
-  threshold?: number;
-  metrics?: Record<string, number>;
-}
-
-/** Dernière prédiction enregistrée dans le journal de monitoring. */
-export interface MlopsLatestPrediction {
-  workflow_name?: string;
-  repository?: string;
-  duration_predicted?: number | string;
-  failure_probability?: number | string;
-  duration_actual?: number | string;
-  risk_level?: string;
-  timestamp?: string;
-}
-
-/** `GET /api/mlops/status` — modèles actifs, évaluations et monitoring. */
-export interface MlopsStatus {
-  models?: { duration?: MlopsModelCard; failure?: MlopsModelCard };
-  evaluations?: Record<string, unknown>;
-  monitoring?: {
-    prediction_count?: number;
-    predictions_with_actual?: number;
-    drift?: { pred_vs_actual_mae_seconds?: number | null };
-    latest_predictions?: MlopsLatestPrediction[];
-  };
-  data?: { regression_rows?: number; classification_rows?: number };
-  note?: string;
-}
-
-/** `POST /api/mlops/retrain` — résumé d'une relance du pipeline. */
-export interface MlopsRetrainResponse {
-  status: string;
-  summary?: Record<string, unknown> & {
-    validation?: { duration?: string; failure?: string };
-  };
-  message?: string;
-}
-
 /** `POST /api/mlops/predict` — prédiction durée + risque d'échec. */
 export interface PredictionResult {
   duration_seconds: number | null;

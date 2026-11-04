@@ -28,17 +28,26 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _compile_workflow_yaml(config: FlowOpsWorkflowSchema) -> str:
+    """Compile une configuration FlowOps en YAML GitHub Actions."""
+    workflow = compile_flowops_workflow(config)
+    return yaml.dump(
+        workflow,
+        sort_keys=False,
+        default_flow_style=False,
+        allow_unicode=True,
+    )
+
+
 @router.post("/api/generate-workflow")
 async def generate_workflow(config: FlowOpsWorkflowSchema):
     """Compile le schéma FlowOps en YAML GitHub Actions (prévisualisation)."""
     try:
-        wf_dict = compile_flowops_workflow(config)
-        yaml_content = yaml.dump(
-            wf_dict, sort_keys=False, default_flow_style=False, allow_unicode=True
-        )
+        yaml_content = _compile_workflow_yaml(config)
         return {"filename": config.filename, "yaml": yaml_content}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as exc:
+        logger.exception("Échec de compilation du workflow %s", config.filename)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @router.post("/api/projects/{project_id}/workflow")
@@ -48,11 +57,8 @@ async def save_project_workflow(
 ):
     """Compile et sauvegarde un workflow pour un projet appartenant à l'utilisateur."""
     try:
-        # 1. Compilation du schéma FlowOps vers le dictionnaire au format GitHub Actions
-        wf_dict = compile_flowops_workflow(config)
-        yaml_content = yaml.dump(
-            wf_dict, sort_keys=False, default_flow_style=False, allow_unicode=True
-        )
+        # La prévisualisation et la sauvegarde utilisent le même compilateur.
+        yaml_content = _compile_workflow_yaml(config)
 
         # 2. Écriture locale (YAML compilé + config.json brute) dans le dossier du projet
         base_name = storage.save_workflow(
