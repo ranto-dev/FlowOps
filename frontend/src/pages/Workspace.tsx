@@ -27,7 +27,7 @@ import LogoImage from "../assets/flowops.svg";
 import { useToast } from "../components/ui/useToast";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { Modal } from "../components/ui/Modal";
-import { Breadcrumbs } from "../components/ui/Breadcrumbs";
+import { PageHeader } from "../components/ui/PageHeader";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { Card } from "../components/ui/Card";
@@ -42,6 +42,7 @@ import type {
   ExecuteResponse,
   GenerateWorkflowResponse,
   GitHubRepo,
+  PredictionResult,
   Project,
   SaveWorkflowResponse,
 } from "../@types/api";
@@ -97,9 +98,9 @@ export const Workspace: React.FC = () => {
   const [targetProject, setTargetProject] = useState<Project | null>(null);
   const [activeConfig, setActiveConfig] = useState<StoredConfig | null>(null);
   const [compiledYaml, setCompiledYaml] = useState<string | null>(null);
-  const [viewState, setViewState] = useState<"form" | "loading" | "preview">(
-    "form",
-  );
+  const [prediction, setPrediction] = useState<PredictionResult | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [viewState, setViewState] = useState<"form" | "preview">("form");
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -135,13 +136,16 @@ export const Workspace: React.FC = () => {
   }, [fetchProjects, fetchGitHubRepos]);
 
   useEffect(() => {
-    if (!profileOpen) return;
+    if (!profileOpen && !mobileNavOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setProfileOpen(false);
+      if (e.key === "Escape") {
+        setProfileOpen(false);
+        setMobileNavOpen(false);
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [profileOpen]);
+  }, [profileOpen, mobileNavOpen]);
 
   const handleLogout = () => {
     clearSession();
@@ -174,6 +178,7 @@ export const Workspace: React.FC = () => {
       ],
     });
     setCompiledYaml(null);
+    setPrediction(null);
     setIsConfiguringWorkflow(true);
     setViewState("form");
   };
@@ -305,8 +310,8 @@ export const Workspace: React.FC = () => {
   };
 
   const generateWorkflow = async () => {
-    if (!activeConfig) return;
-    setViewState("loading");
+    if (!activeConfig || isGenerating) return;
+    setIsGenerating(true);
     try {
       const data = await apiFetch<GenerateWorkflowResponse>(
         "/api/generate-workflow",
@@ -323,6 +328,8 @@ export const Workspace: React.FC = () => {
         errorDetail(err, "Le serveur n'a pas pu compiler le workflow."),
       );
       setViewState("form");
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -342,6 +349,28 @@ export const Workspace: React.FC = () => {
     { key: "help", label: "Help", icon: <HelpCircle className="w-4 h-4" /> },
   ];
 
+  const renderNavigation = () => (
+    <nav aria-label={t("Workspace navigation")} className="flex flex-col gap-1">
+      {NAV_TABS.map((tab) => (
+        <button
+          key={tab.key}
+          type="button"
+          onClick={() => switchTab(tab.key)}
+          aria-current={activeTab === tab.key ? "page" : undefined}
+          className={cn(
+            "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors",
+            activeTab === tab.key
+              ? "bg-accent/15 text-accent-ink"
+              : "text-ink-muted hover:bg-surface-2 hover:text-ink",
+          )}
+        >
+          {tab.icon}
+          {t(tab.label)}
+        </button>
+      ))}
+    </nav>
+  );
+
   const visibleProjects = projects.filter((project) => {
     const query = projectQuery.trim().toLocaleLowerCase();
     return (
@@ -354,9 +383,8 @@ export const Workspace: React.FC = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas font-sans text-ink">
-      {/* ================= HEADER ================= */}
-      <header className="sticky top-0 z-30 border-b border-line bg-canvas px-4 py-3 sm:px-6">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+      <header className="sticky top-0 z-30 h-14 border-b border-line bg-canvas px-4 sm:px-6">
+        <div className="flex h-full items-center justify-between gap-4">
           <button
             type="button"
             onClick={() => {
@@ -370,32 +398,14 @@ export const Workspace: React.FC = () => {
             <span className="text-base font-semibold text-ink">FlowOps</span>
           </button>
 
-          {/* Navigation Tabs (desktop) */}
-          <nav className="hidden items-center gap-1 md:flex">
-            {NAV_TABS.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => switchTab(tab.key)}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                  activeTab === tab.key
-                    ? "bg-accent/15 text-accent-ink"
-                    : "text-ink-muted hover:bg-surface-2 hover:text-ink",
-                )}
-              >
-                {tab.icon}
-                {t(tab.label)}
-              </button>
-            ))}
-          </nav>
-
           <div className="flex items-center gap-2">
-            <PreferenceControls compact />
-            {/* Mobile menu toggle */}
             <button
-              onClick={() => setMobileNavOpen((v) => !v)}
-              className="rounded-md p-2 text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink md:hidden"
-              aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
+              type="button"
+              onClick={() => setMobileNavOpen((open) => !open)}
+              className="rounded-md p-2 text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink lg:hidden"
+              aria-label={mobileNavOpen ? t("Close navigation") : t("Open navigation")}
+              aria-expanded={mobileNavOpen}
+              aria-controls="workspace-mobile-navigation"
             >
               {mobileNavOpen ? (
                 <X className="h-5 w-5" />
@@ -408,7 +418,9 @@ export const Workspace: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setProfileOpen((v) => !v)}
-                aria-haspopup="menu"
+                type="button"
+                aria-label={`${t("Profile")}: ${username}`}
+                aria-haspopup="dialog"
                 aria-expanded={profileOpen}
                 className={cn(
                   "overflow-hidden rounded-full ring-2 transition-colors",
@@ -433,10 +445,12 @@ export const Workspace: React.FC = () => {
                   <div
                     className="fixed inset-0 z-40"
                     onClick={() => setProfileOpen(false)}
+                    aria-hidden="true"
                   />
                   <div
-                    role="menu"
-                    className="absolute right-0 top-12 z-50 w-60 rounded-lg border border-line bg-surface p-2 shadow-lg"
+                    role="dialog"
+                    aria-label={t("Profile settings")}
+                    className="absolute right-0 top-12 z-50 w-64 rounded-lg border border-line bg-surface p-2 shadow-lg"
                   >
                     <div className="flex items-center gap-3 border-b border-line px-3 py-2.5">
                       {avatarUrl ? (
@@ -461,9 +475,13 @@ export const Workspace: React.FC = () => {
                       </div>
                     </div>
 
+                    <div className="border-b border-line px-2 py-2">
+                      <PreferenceControls compact />
+                    </div>
+
                     <div className="pt-1.5">
                       <button
-                        role="menuitem"
+                        type="button"
                         onClick={() => {
                           setProfileOpen(false);
                           setLogoutConfirmOpen(true);
@@ -479,61 +497,46 @@ export const Workspace: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Mobile navigation drawer */}
-        {mobileNavOpen && (
-          <div className="mt-3 border-t border-line pb-2 pt-2 md:hidden">
-            <nav className="flex flex-col gap-1">
-              {NAV_TABS.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => switchTab(tab.key)}
-                  className={cn(
-                    "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                    activeTab === tab.key
-                      ? "bg-accent/15 text-accent-ink"
-                      : "text-ink-muted hover:bg-surface-2 hover:text-ink",
-                  )}
-                >
-                  {tab.icon}
-                  {t(tab.label)}
-                </button>
-              ))}
-            </nav>
-          </div>
-        )}
       </header>
 
-      {/* ================= CONTENU PRINCIPAL ================= */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">
+      <div className="flex min-h-0 flex-1">
+        <aside className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-60 shrink-0 border-r border-line bg-surface/50 p-4 lg:block">
+          {renderNavigation()}
+        </aside>
+
+        {mobileNavOpen && (
+          <>
+            <button
+              type="button"
+              className="fixed inset-0 top-14 z-40 bg-black/50 lg:hidden"
+              onClick={() => setMobileNavOpen(false)}
+              aria-label={t("Close navigation")}
+            />
+            <aside
+              id="workspace-mobile-navigation"
+              className="fixed bottom-0 left-0 top-14 z-50 w-72 border-r border-line bg-surface p-4 shadow-xl lg:hidden"
+            >
+              {renderNavigation()}
+            </aside>
+          </>
+        )}
+
+        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
         {/* TAB 1: PROJECTS */}
         {activeTab === "projects" && !isConfiguringWorkflow && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-semibold text-ink">
-                  {t("Projects")}
-                </h2>
-                <p className="mt-1 text-sm text-ink-muted">
-                  {t("Project overview")}
-                </p>
-              </div>
+            <PageHeader
+              title={t("Projects")}
+              description={t("Project overview")}
+              icon={<FolderGit2 className="h-5 w-5" />}
+            />
 
-              <Button onClick={() => setIsModalOpen(true)}>
-                <Plus className="h-4 w-4" /> {t("New project")}
-              </Button>
-            </div>
-
-            {loadingProjects ? (
-              <LoadingState label={`${t("Loading projects")}...`} />
-            ) : projects.length === 0 ? (
-              <EmptyState
-                title={t("No projects found")}
-                description={t("Click New project to connect a GitHub repository.")}
-              />
-            ) : (
-              <>
-                <div className="relative max-w-md">
+            <section
+              aria-label={t("Project filters")}
+              className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4 sm:flex-row sm:items-center sm:justify-between"
+            >
+              {projects.length > 0 ? (
+                <div className="relative w-full sm:max-w-md">
                   <Search
                     className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle"
                     aria-hidden="true"
@@ -547,6 +550,25 @@ export const Workspace: React.FC = () => {
                     className="pl-9"
                   />
                 </div>
+              ) : (
+                <span className="text-sm text-ink-muted">
+                  {t("Connect a GitHub repository to get started.")}
+                </span>
+              )}
+              <Button onClick={() => setIsModalOpen(true)} className="shrink-0">
+                <Plus className="h-4 w-4" /> {t("New project")}
+              </Button>
+            </section>
+
+            {loadingProjects ? (
+              <LoadingState label={`${t("Loading projects")}...`} />
+            ) : projects.length === 0 ? (
+              <EmptyState
+                title={t("No projects found")}
+                description={t("Click New project to connect a GitHub repository.")}
+              />
+            ) : (
+              <>
                 {visibleProjects.length === 0 ? (
                   <EmptyState
                     title={t("No projects found")}
@@ -646,41 +668,36 @@ export const Workspace: React.FC = () => {
         {/* WORKFLOW CONFIGURATION VIEW */}
         {activeTab === "projects" && isConfiguringWorkflow && targetProject && (
           <div className="space-y-4">
-            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-              <Breadcrumbs
-                items={[
-                  {
-                    label: t("Projects"),
-                    onClick: () => setIsConfiguringWorkflow(false),
-                  },
-                  { label: targetProject.name },
-                  { label: viewState === "preview" ? t("YAML preview") : t("Configuration") },
-                ]}
-              />
-
-              <Button variant="ghost" size="sm" onClick={() => setIsConfiguringWorkflow(false)}>
-                <ArrowLeft className="h-4 w-4" /> {t("Back to dashboard")}
-              </Button>
-            </div>
+            <PageHeader
+              title={viewState === "preview" ? t("YAML preview") : t("Configuration")}
+              description={`${targetProject.name} · ${targetProject.repository}`}
+              icon={<Sliders className="h-5 w-5" />}
+              actions={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsConfiguringWorkflow(false)}
+                >
+                  <ArrowLeft className="h-4 w-4" /> {t("Back to dashboard")}
+                </Button>
+              }
+            />
 
             {viewState === "form" && activeConfig && (
-              <>
+              <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(18rem,1fr)]">
                 <WorkflowForm
                   activeConfig={activeConfig}
                   onChangeConfig={setActiveConfig}
                   onGenerate={generateWorkflow}
-                  loading={false}
+                  loading={isGenerating}
                 />
 
                 <PredictionPanel
                   config={activeConfig as unknown as Record<string, unknown>}
                   repository={targetProject.repository}
+                  onPredictionChange={setPrediction}
                 />
-              </>
-            )}
-
-            {viewState === "loading" && (
-              <LoadingState label={t("Compiling workflow configuration to YAML...")} />
+              </div>
             )}
 
             {viewState === "preview" && activeConfig && (
@@ -699,6 +716,7 @@ export const Workspace: React.FC = () => {
                 onReconfigure={() => setViewState("form")}
                 onSaveToServer={saveWorkflow}
                 saveStatus={null}
+                prediction={prediction}
               />
             )}
           </div>
@@ -706,41 +724,52 @@ export const Workspace: React.FC = () => {
 
         {/* TAB 2: HISTORY & LOGS */}
         {activeTab === "history" && (
-          <History />
+          <div className="space-y-6">
+            <PageHeader
+              title={t("History")}
+              description={t("Run history and available job logs")}
+              icon={<HistoryIcon className="h-5 w-5" />}
+            />
+            <History />
+          </div>
         )}
 
         {/* TAB 3: HELP CENTER */}
         {activeTab === "help" && (
-          <Card as="section" className="space-y-4 p-6">
-            <div className="flex items-center gap-2 text-ink">
-              <BookOpen className="h-5 w-5 text-accent-ink" />
-              <h3 className="text-xl font-semibold">{t("Documentation and best practices")}</h3>
-            </div>
-            <div className="max-w-3xl space-y-3 text-sm text-ink-muted">
-              <p>
-                {t("FlowOps helps you model CI/CD workflows in low-code, publish them to a GitHub repository, and inspect runner executions.")}
-              </p>
-              <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-4 text-xs text-warning">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                <span>
-                  <span className="font-semibold">{t("Prerequisite:")}</span>{" "}
-                {t("A local or remote MongoDB instance on port")}
-                <code className="rounded-md bg-warning/10 px-1 py-0.5 font-mono font-semibold">
-                  27017
-                </code>{" "}
-                {t("and the backend service must be available before triggering runs.")}
-                </span>
+          <div className="space-y-6">
+            <PageHeader
+              title={t("Help")}
+              description={t("Documentation and best practices")}
+              icon={<BookOpen className="h-5 w-5" />}
+            />
+            <Card as="section" className="space-y-4 p-6">
+              <div className="max-w-3xl space-y-3 text-sm text-ink-muted">
+                <p>
+                  {t("FlowOps helps you model CI/CD workflows in low-code, publish them to a GitHub repository, and inspect runner executions.")}
+                </p>
+                <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-4 text-xs text-warning">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>
+                    <span className="font-semibold">{t("Prerequisite:")}</span>{" "}
+                    {t("A local or remote MongoDB instance on port")}
+                    <code className="rounded-md bg-warning/10 px-1 py-0.5 font-mono font-semibold">
+                      27017
+                    </code>{" "}
+                    {t("and the backend service must be available before triggering runs.")}
+                  </span>
+                </div>
+                <Link
+                  to="/docs"
+                  className="inline-flex items-center gap-2 font-medium text-accent-ink hover:text-ink"
+                >
+                  {t("View documentation")} <ArrowLeft className="h-3.5 w-3.5 rotate-180" />
+                </Link>
               </div>
-              <Link
-                to="/docs"
-                className="inline-flex items-center gap-2 font-medium text-accent-ink hover:text-ink"
-              >
-                {t("View documentation")} <ArrowLeft className="h-3.5 w-3.5 rotate-180" />
-              </Link>
-            </div>
-          </Card>
+            </Card>
+          </div>
         )}
-      </main>
+        </main>
+      </div>
 
       {/* ================= MODAL DE CRÉATION DE PROJET ================= */}
       <Modal

@@ -173,7 +173,29 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
   const selectedJob = config.jobs.find((j) => j.id === activeJobId);
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6 rounded-lg border border-line bg-surface p-6 text-left">
+    <div
+      aria-busy={loading}
+      className="w-full rounded-lg border border-line bg-surface p-6 text-left"
+    >
+      <fieldset
+        disabled={loading}
+        className="min-w-0 space-y-6 border-0 p-0"
+      >
+      <div className="flex justify-end border-b border-line pb-4">
+        <Button
+          type="button"
+          size="lg"
+          onClick={onGenerate}
+          loading={loading}
+          className="w-full sm:w-auto"
+        >
+          {!loading && <Play className="h-3.5 w-3.5 fill-current" />}
+          {loading
+            ? t("Compiling configuration...")
+            : t("Generate workflow YAML")}
+        </Button>
+      </div>
+
       {/* SECTION 1 */}
       <section className="space-y-4 rounded-lg border border-line bg-surface-2/40 p-4">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-ink">
@@ -546,19 +568,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
           </div>
         </section>
       )}
-
-      <Button
-        type="button"
-        size="lg"
-        onClick={onGenerate}
-        loading={loading}
-        className="w-full"
-      >
-        {!loading && <Play className="h-3.5 w-3.5 fill-current" />}
-        {loading
-          ? t("Compiling configuration...")
-          : t("Generate workflow YAML")}
-      </Button>
+      </fieldset>
     </div>
   );
 };

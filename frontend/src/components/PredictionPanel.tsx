@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   BrainCircuit,
   Clock3,
@@ -19,6 +19,7 @@ import { Button } from "./ui/Button";
 interface PredictionPanelProps {
   config: Record<string, unknown>;
   repository: string;
+  onPredictionChange?: (prediction: PredictionResult | null) => void;
 }
 
 const formatDuration = (seconds: number | null): string => {
@@ -47,14 +48,17 @@ const RISK_BAR: Record<string, string> = {
 export const PredictionPanel: React.FC<PredictionPanelProps> = ({
   config,
   repository,
+  onPredictionChange,
 }) => {
   const { t } = usePreferences();
   const [prediction, setPrediction] = useState<PredictionResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const requestId = useRef(0);
 
   const fetchPrediction = async (showLoader = false) => {
     if (!config || !repository) return;
+    const currentRequestId = ++requestId.current;
     if (showLoader) setLoading(true);
     try {
       const data = await apiFetch<PredictionResult>("/api/mlops/predict", {
@@ -62,24 +66,38 @@ export const PredictionPanel: React.FC<PredictionPanelProps> = ({
         body: { ...config, repository },
         auth: false,
       });
+      if (currentRequestId !== requestId.current) return;
       setPrediction(data);
+      onPredictionChange?.(data);
       setError(null);
     } catch (err) {
+      if (currentRequestId !== requestId.current) return;
       setError(
         isApiError(err) ? err.detail : "Unable to reach the prediction service.",
       );
       setPrediction(null);
+      onPredictionChange?.(null);
     } finally {
-      if (showLoader) setLoading(false);
+      if (showLoader && currentRequestId === requestId.current) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     if (!config) return;
+    requestId.current += 1;
+    setPrediction(null);
+    setLoading(false);
+    setError(null);
+    onPredictionChange?.(null);
     const t = setTimeout(() => fetchPrediction(false), 500);
-    return () => clearTimeout(t);
+    return () => {
+      clearTimeout(t);
+      requestId.current += 1;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config, repository]);
+  }, [config, repository, onPredictionChange]);
 
   if (!repository) return null;
 
@@ -130,13 +148,13 @@ export const PredictionPanel: React.FC<PredictionPanelProps> = ({
         )}
 
         {!error && prediction && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3">
             {/* Durée estimée */}
-            <div className="rounded-lg border border-line bg-surface-2 p-4">
+            <div className="rounded-lg border border-line bg-surface-2 p-3">
               <div className="flex items-center gap-1.5 text-xs font-medium text-ink-muted">
                 <Clock3 className="h-3.5 w-3.5" /> {t("Estimated duration")}
               </div>
-              <div className="mt-2 text-2xl font-semibold text-ink">
+              <div className="mt-2 text-xl font-semibold text-ink">
                 {hasDuration && p ? formatDuration(p.duration_seconds) : "—"}
               </div>
               <div className="mt-1 text-xs text-ink-muted">
@@ -152,12 +170,12 @@ export const PredictionPanel: React.FC<PredictionPanelProps> = ({
             </div>
 
             {/* Risque d'échec */}
-            <div className="rounded-lg border border-line bg-surface-2 p-4">
+            <div className="rounded-lg border border-line bg-surface-2 p-3">
               <div className="flex items-center gap-1.5 text-xs font-medium text-ink-muted">
                 <ShieldAlert className="h-3.5 w-3.5" /> {t("Failure risk")}
               </div>
               <div className="mt-2 flex items-center gap-2">
-                <span className="text-2xl font-semibold text-ink">
+                <span className="text-xl font-semibold text-ink">
                   {hasFailure && p ? `${p.failure_percentage}%` : "—"}
                 </span>
                 {hasFailure && p?.risk_level && (
@@ -205,7 +223,7 @@ export const PredictionPanel: React.FC<PredictionPanelProps> = ({
             </div>
 
             {/* Historique / contexte */}
-            <div className="rounded-lg border border-line bg-surface-2 p-4">
+            <div className="col-span-2 rounded-lg border border-line bg-surface-2 p-3">
               <div className="flex items-center gap-1.5 text-xs font-medium text-ink-muted">
                 <TrendingUp className="h-3.5 w-3.5" /> {t("Historical context")}
               </div>

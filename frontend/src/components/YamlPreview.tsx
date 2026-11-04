@@ -9,6 +9,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import type { VirtualFile } from "../@types/workflow";
+import type { PredictionResult } from "../@types/api";
 import { usePreferences } from "../lib/usePreferences";
 import { Button } from "./ui/Button";
 import { CodeSurface } from "./ui/CodeSurface";
@@ -20,6 +21,7 @@ interface YamlPreviewProps {
   onReconfigure: () => void;
   onSaveToServer: () => void;
   saveStatus: string | null;
+  prediction: PredictionResult | null;
 }
 
 export const YamlPreview: React.FC<YamlPreviewProps> = ({
@@ -29,6 +31,7 @@ export const YamlPreview: React.FC<YamlPreviewProps> = ({
   onReconfigure,
   onSaveToServer,
   saveStatus,
+  prediction,
 }) => {
   const { t } = usePreferences();
   const [copied, setCopied] = React.useState(false);
@@ -87,6 +90,30 @@ export const YamlPreview: React.FC<YamlPreviewProps> = ({
             {t("Save workflow")}
           </Button>
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-line px-4 py-3 text-sm text-ink">
+        <span>
+          {t("Estimated duration")}:{" "}
+          <strong className="font-mono font-semibold">
+            {prediction?.duration_seconds != null &&
+            Number.isFinite(prediction.duration_seconds)
+              ? `${Math.round(prediction.duration_seconds)}s`
+              : "—"}
+          </strong>
+        </span>
+        <span className="text-ink-subtle" aria-hidden="true">
+          |
+        </span>
+        <span>
+          {t("Failure risk")}:{" "}
+          <strong className="font-mono font-semibold">
+            {prediction?.failure_percentage != null &&
+            Number.isFinite(prediction.failure_percentage)
+              ? `${Math.round(prediction.failure_percentage)}%`
+              : "—"}
+          </strong>
+        </span>
       </div>
 
       {/* CODE SOURCE AVEC NUMÉROTATION DE LIGNES */}

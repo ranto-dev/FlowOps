@@ -357,19 +357,12 @@ export const History: React.FC = () => {
   };
 
   return (
-    <div className="flex h-[calc(100vh-5rem)] max-h-screen flex-col overflow-hidden p-1">
+    <div className="flex min-h-[30rem] flex-col overflow-hidden p-1">
       {/* BARRE SUPERIEURE FIXE */}
-      <div className="mb-3 flex flex-none flex-col justify-between gap-3 border-b border-line pb-3 sm:flex-row sm:items-center">
-        <div>
-          <h3 className="flex items-center gap-2 text-xl font-semibold text-ink">
-            <Terminal className="h-5 w-5 text-accent-ink" />
-            {t("Workflow runs")}
-          </h3>
-          <p className="text-xs text-ink-subtle">
-            {t("Run history and available job logs")}
-          </p>
-        </div>
-
+      <section
+        aria-label={t("History filters")}
+        className="mb-3 flex flex-none flex-col justify-end gap-3 rounded-lg border border-line bg-surface p-3 sm:flex-row sm:items-center"
+      >
         <div className="flex items-center gap-2">
           <div className="relative">
             <FolderGit2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle" />
@@ -409,7 +402,7 @@ export const History: React.FC = () => {
             />
           </Button>
         </div>
-      </div>
+      </section>
       {lastUpdatedAt && (
         <p className="mb-2 text-right text-xs text-ink-subtle" aria-live="polite">
           {t("Updated")}{" "}
