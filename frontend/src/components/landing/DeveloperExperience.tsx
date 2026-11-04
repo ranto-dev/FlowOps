@@ -64,38 +64,34 @@ export function DeveloperExperience() {
         <Reveal className="mx-auto mt-12 max-w-2xl">
           <motion.div
             onViewportEnter={() => setInView(true)}
-            className="overflow-hidden rounded-xl border border-[#27272A] bg-[#09090B]"
+            className="overflow-hidden rounded-lg border border-line bg-code"
           >
             <div
-              className="flex items-center gap-2 border-b border-[#27272A] bg-[#18181B] px-4 py-3"
+              className="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3"
               aria-hidden="true"
             >
-              <span className="size-2.5 rounded-full bg-[#3f3f46]" />
-              <span className="size-2.5 rounded-full bg-[#3f3f46]" />
-              <span className="size-2.5 rounded-full bg-[#3f3f46]" />
+              <span className="size-2.5 rounded-full bg-line-strong" />
+              <span className="size-2.5 rounded-full bg-line-strong" />
+              <span className="size-2.5 rounded-full bg-line-strong" />
             </div>
             <div
-              className="min-h-56 overflow-x-auto p-5 font-mono text-[13px] leading-7"
+              className="min-h-56 overflow-x-auto p-5 font-mono text-sm leading-7"
               aria-label={t("Local development command examples")}
             >
               {lines.map((line, i) =>
                 line === "done" ? (
-                  <p key={`done-${i}`} className="text-[#71717A]">
+                  <p key={`done-${i}`} className="text-ink-subtle">
                     — {t("ready.")}
                   </p>
                 ) : (
                   <p
                     key={`${line}-${i}`}
-                    className={line.startsWith("$") ? "whitespace-pre text-[#FAFAFA]" : "whitespace-pre text-emerald-400/90"}
+                    className={line.startsWith("$") ? "whitespace-pre text-ink" : "whitespace-pre text-success"}
                   >
                     {line}
                   </p>
                 ),
               )}
-              <span
-                className="animate-landing-blink inline-block h-4 w-2 translate-y-0.5 bg-violet-400"
-                aria-hidden="true"
-              />
             </div>
           </motion.div>
         </Reveal>

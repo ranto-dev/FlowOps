@@ -13,19 +13,17 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   icon,
   actions,
 }) => (
-  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+  <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
     <div className="flex items-start gap-3">
       {icon && (
-        <div className="p-2.5 bg-gradient-to-br from-purple-600 to-indigo-600 text-white rounded-xl flex-none">
+        <div className="flex-none rounded-md bg-accent/15 p-2.5 text-accent-ink">
           {icon}
         </div>
       )}
       <div>
-        <h2 className="text-xl font-black text-slate-900 tracking-tight">
-          {title}
-        </h2>
+        <h2 className="text-xl font-semibold tracking-tight text-ink">{title}</h2>
         {description && (
-          <p className="text-xs text-slate-500 mt-1">{description}</p>
+          <p className="mt-1 text-sm text-ink-muted">{description}</p>
         )}
       </div>
     </div>

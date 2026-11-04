@@ -14,7 +14,7 @@ const PILLARS = [
         {["push → main", "node 22 · ubuntu", "npm run build"].map((t) => (
           <span
             key={t}
-            className="rounded-md border border-[#27272A] bg-[#09090B] px-3 py-2 text-[#A1A1AA]"
+            className="rounded-md border border-line bg-code px-3 py-2 text-ink-muted"
           >
             {t}
           </span>
@@ -29,13 +29,13 @@ const PILLARS = [
     visual: (
       <div className="flex flex-col gap-2 font-mono text-xs" aria-hidden="true">
         {[
-          ["✓", "Checkout", "text-emerald-400"],
-          ["✓", "Setup Node", "text-emerald-400"],
-          ["◉", "Build — running", "text-violet-300"],
+          ["✓", "Checkout", "text-success"],
+          ["✓", "Setup Node", "text-success"],
+          ["◉", "Build — running", "text-accent-ink"],
         ].map(([mark, label, color]) => (
           <span
             key={label}
-            className="flex items-center gap-2 rounded-md border border-[#27272A] bg-[#09090B] px-3 py-2 text-[#A1A1AA]"
+            className="flex items-center gap-2 rounded-md border border-line bg-code px-3 py-2 text-ink-muted"
           >
             <span className={color}>{mark}</span> {label}
           </span>
@@ -49,11 +49,11 @@ const PILLARS = [
     text: "Use execution data and Machine Learning to predict and optimize your pipelines.",
     visual: (
       <div className="flex flex-col gap-2 font-mono text-xs" aria-hidden="true">
-        <span className="rounded-md border border-[#27272A] bg-[#09090B] px-3 py-2 text-[#A1A1AA]">
-          duration <span className="text-[#FAFAFA]">≈ 128s</span>
+        <span className="rounded-md border border-line bg-code px-3 py-2 text-ink-muted">
+          duration <span className="text-ink">≈ 128s</span>
         </span>
-        <span className="rounded-md border border-[#27272A] bg-[#09090B] px-3 py-2 text-[#A1A1AA]">
-          failure risk <span className="text-violet-300">23% · example</span>
+        <span className="rounded-md border border-line bg-code px-3 py-2 text-ink-muted">
+          failure risk <span className="text-accent-ink">23% · example</span>
         </span>
       </div>
     ),
@@ -87,13 +87,13 @@ export function Solution() {
             <motion.article
               key={p.title}
               variants={reduce ? undefined : staggerChild}
-              className="flex flex-col rounded-xl border border-[#27272A] bg-[#111113] p-6 transition-colors hover:border-zinc-700"
+              className="flex flex-col rounded-lg border border-line bg-surface p-6 transition-colors hover:border-line-strong"
             >
-              <p.icon className="size-5 text-violet-400" aria-hidden="true" />
-              <h3 className="mt-4 text-xl font-semibold tracking-tight text-[#FAFAFA]">
+              <p.icon className="size-5 text-accent-ink" aria-hidden="true" />
+              <h3 className="mt-4 text-xl font-semibold text-ink">
                 {t(p.title)}
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-[#A1A1AA]">
+              <p className="mt-2 text-sm leading-relaxed text-ink-muted">
                 {t(p.text)}
               </p>
               <div className="mt-6 flex-1">{p.visual}</div>

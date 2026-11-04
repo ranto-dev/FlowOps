@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertCircle, Check, CheckCircle2, Copy, Loader2 } from "lucide-react";
+import { Check, CheckCircle2, Copy, Loader2 } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
 import { apiFetch, isApiError } from "../lib/api";
 import type {
@@ -8,10 +8,11 @@ import type {
   CheckLoginResponse,
   DeviceCodeInfo,
 } from "../@types/api";
+import { Button } from "../components/ui/Button";
+import { Card } from "../components/ui/Card";
+import { ErrorState } from "../components/ui/States";
 import { PreferenceControls } from "../components/ui/PreferenceControls";
 import { usePreferences } from "../lib/usePreferences";
-import { motion } from "framer-motion";
-import { Illustration } from "../components/landing/ui/Illustration";
 import Logo from "../assets/logo-flowOps-transparent.png";
 
 export const AuthPage: React.FC = () => {
@@ -220,43 +221,27 @@ export const AuthPage: React.FC = () => {
   const isWaiting =
     phase === "waiting" && deviceInfo && authState === "waiting";
 
+
   return (
-    <div className="auth-shell relative min-h-screen flex flex-col overflow-hidden bg-gradient-to-b from-[#0a0a0c] to-[#0e0e12] px-5 py-5 text-zinc-100 antialiased sm:px-8">
-      <div className="relative pointer-events-none">
-        <Illustration className="absolute inset-0 pointer-events-none" />
-        <motion.div
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
-          className="absolute left-1/2 top-[-15rem] -translate-x-1/2 h-[35rem] w-[45rem] rounded-2xl bg-purple-500/5 blur-xl border border-purple-500/20"
-        />
-      </div>
-      <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between">
-        <button
-          type="button"
-          onClick={() => navigate("/")}
-          className="inline-flex items-center gap-2.5 rounded-xl bg-purple-600 text-white px-4 py-2 text-sm font-medium transition hover:bg-purple-500"
-          aria-label="Go home"
-        >
-          <span className="size-4">←</span>
-          <span>{t("Retour")}</span>
-        </button>
+    <div className="flex min-h-screen flex-col bg-canvas px-4 py-4 text-ink antialiased sm:px-8">
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-end">
         <PreferenceControls compact />
       </header>
 
-      <main className="relative z-10 flex flex-1 items-center justify-center py-12">
-        <section className="auth-card w-full max-w-[400px] rounded-2xl border border-white/[0.07] bg-[#111113]/90 p-6 shadow-lg shadow-black/[0.3] backdrop-blur-xl sm:p-8 sm:rounded-2xl">
-          <div className="mb-8 text-center">
-            <div className="flex justify-center items-center">
-              <img src={Logo} className="w-24" />
+      <main className="flex flex-1 items-center justify-center py-12">
+        <Card as="section" className="w-full max-w-sm p-6 sm:p-8">
+          <div className="mb-6 text-center">
+            <div className="flex items-center justify-center">
+              <img src={Logo} alt="FlowOps" className="w-24" />
             </div>
-            <h1 className="font-display text-3xl font-semibold tracking-tight text-white">
+            <h1 className="mt-2 text-2xl font-semibold text-ink">
               {isWaiting
                 ? t("Authorize on GitHub")
                 : authState === "success"
                   ? t("Sign-in successful!")
                   : t("Sign in to FlowOps")}
             </h1>
-            <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-zinc-400">
+            <p className="mx-auto mt-3 max-w-xs text-sm text-ink-muted">
               {isWaiting
                 ? t(
                     "GitHub opens over this page. You will return here automatically after authorizing.",
@@ -268,99 +253,95 @@ export const AuthPage: React.FC = () => {
           </div>
 
           {errorMessage && (
-            <div
-              className="mb-4 rounded-xl border border-rose-400/20 bg-rose-400/[0.06] p-3.5 text-left text-sm text-rose-200"
-              role="alert"
-            >
-              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-300" />
-              <span>{errorMessage}</span>
+            <div className="mb-4">
+              <ErrorState message={errorMessage} />
             </div>
           )}
 
           {authState === "success" && (
             <div
-              className="mb-4 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] p-3.5 text-sm text-emerald-200"
+              className="mb-4 flex items-center gap-2.5 rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm text-success"
               role="status"
             >
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
               <span>{t("Successfully connected to GitHub.")}</span>
             </div>
           )}
 
           {isWaiting && deviceInfo ? (
             <div className="space-y-4">
-              <div className="rounded-xl border border-white/[0.05] bg-black/15 p-4 text-center">
-                <p className="mb-4 text-xs text-zinc-400">
+              <div className="rounded-lg border border-line bg-surface-2 p-4 text-center">
+                <p className="mb-4 text-xs text-ink-muted">
                   {t(
                     "Copy this code. It is pre-filled on GitHub, but you can also enter it manually.",
                   )}
                 </p>
-                <div className="flex items-center justify-center gap-2.5">
-                  <code className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 font-mono text-2xl font-semibold tracking-[0.18em] text-white">
+                <div className="flex items-center justify-center gap-3">
+                  <code className="rounded-md border border-line bg-code px-4 py-3 font-mono text-2xl font-semibold text-ink">
                     {deviceInfo.user_code}
                   </code>
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
                     onClick={copyCode}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-zinc-300 transition hover:border-purple-300/30 hover:bg-white/[0.08] hover:text-white"
+                    className="w-9 px-0"
                     aria-label={t("Copy activation code")}
                     title={t("Copy activation code")}
                   >
                     {copied ? (
-                      <Check className="h-3.5 w-3.5 text-emerald-300" />
+                      <Check className="h-4 w-4 text-success" />
                     ) : (
-                      <Copy className="h-3.5" />
+                      <Copy className="h-4 w-4" />
                     )}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
-              <button
+              <Button
                 type="button"
+                size="lg"
                 onClick={openGithub}
                 disabled={asking}
-                className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-purple-600 text-white px-5 py-3 text-sm font-medium transition hover:bg-purple-500 disabled:cursor-wait disabled:opacity-70"
+                className="w-full"
               >
-                <FaGithub className="h-3.5 w-3.5 mr-1.5" />
+                <FaGithub className="h-4 w-4" aria-hidden="true" />
                 <span>{t("Continue with GitHub")}</span>
-              </button>
+              </Button>
 
               <p
-                className="flex items-center justify-center gap-2 pt-1 text-xs text-zinc-500"
+                className="flex items-center justify-center gap-2 pt-1 text-xs text-ink-subtle"
                 role="status"
               >
-                <Loader2 className="h-3 w-3.5 animate-spin text-purple-300" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-accent-ink" />
                 {t("Waiting for GitHub authorization…")}
               </p>
             </div>
           ) : (
-            <button
+            <Button
               type="button"
+              size="lg"
               onClick={startDeviceFlow}
-              disabled={loading || authState === "success"}
-              className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-purple-600 text-white px-5 py-3 text-sm font-medium transition hover:bg-purple-500 disabled:cursor-wait disabled:opacity-70"
+              loading={loading}
+              disabled={authState === "success"}
+              className="w-full"
             >
-              {loading ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <FaGithub className="h-3.5 w-3.5" aria-hidden="true" />
-              )}
+              {!loading && <FaGithub className="h-4 w-4" aria-hidden="true" />}
               <span>
                 {loading
                   ? t("Connecting to GitHub...")
                   : t("Continue with GitHub")}
               </span>
-            </button>
+            </Button>
           )}
 
-          <div className="mt-5 border-t border-white/[0.05] pt-4 text-center">
-            <p className="text-xs leading-5 text-zinc-500">
+          <div className="mt-5 border-t border-line pt-4 text-center">
+            <p className="text-xs text-ink-subtle">
               {t(
                 "By continuing, you authorize FlowOps to access your GitHub repositories and workflows.",
               )}
             </p>
           </div>
-        </section>
+        </Card>
       </main>
     </div>
   );

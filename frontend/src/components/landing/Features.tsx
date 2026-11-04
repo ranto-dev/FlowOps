@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { SectionHeader } from "./Reveal";
 import { staggerChild, staggerParent } from "./motion";
-import { Card, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import { Card } from "../ui/Card";
 import { usePreferences } from "../../lib/usePreferences";
 
 const FEATURES = [
@@ -72,14 +72,14 @@ export function Features() {
         >
           {FEATURES.map((f) => (
             <motion.div key={f.title} variants={reduce ? undefined : staggerChild}>
-              <Card className="h-full p-6 transition-colors hover:border-zinc-700">
-                <f.icon className="size-5 text-violet-300" aria-hidden="true" />
-                <CardHeader className="p-0 pt-4">
-                  <CardTitle className="text-[15px]">{t(f.title)}</CardTitle>
-                </CardHeader>
-                <CardDescription className="pt-2 text-[13px]">
+              <Card className="h-full p-6 transition-colors hover:border-line-strong">
+                <f.icon className="size-5 text-accent-ink" aria-hidden="true" />
+                <h3 className="pt-4 text-base font-semibold text-ink">
+                  {t(f.title)}
+                </h3>
+                <p className="pt-2 text-sm leading-relaxed text-ink-muted">
                   {t(f.text)}
-                </CardDescription>
+                </p>
               </Card>
             </motion.div>
           ))}

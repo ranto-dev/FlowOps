@@ -17,10 +17,10 @@ import { Separator } from "../components/landing/ui/separator";
 
 const LandingPage: React.FC = () => {
   return (
-    <div className="landing-dark min-h-screen bg-[#09090B] font-sans text-[#FAFAFA] antialiased">
+    <div className="min-h-screen bg-canvas font-sans text-ink antialiased">
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-[#18181B] focus:px-4 focus:py-2 focus:text-sm focus:text-white"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-surface-2 focus:px-4 focus:py-2 focus:text-sm focus:text-ink"
       >
         Skip to content
       </a>

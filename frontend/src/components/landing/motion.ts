@@ -8,10 +8,10 @@ export const staggerParent = {
 };
 
 export const staggerChild = {
-  hidden: { opacity: 0, y: 18 },
+  hidden: { opacity: 0, y: 8 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: EASE },
+    transition: { duration: 0.3, ease: EASE },
   },
 };

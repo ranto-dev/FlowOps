@@ -64,26 +64,26 @@ export function ExecutionDemo() {
           }
         />
         <Reveal className="mx-auto mt-12 max-w-2xl">
-          <div className="overflow-hidden rounded-xl border border-[#27272A] bg-[#111113]">
-            <div className="flex items-center justify-between border-b border-[#27272A] bg-[#18181B] px-5 py-3.5">
+          <div className="overflow-hidden rounded-lg border border-line bg-surface">
+            <div className="flex items-center justify-between border-b border-line bg-surface-2 px-5 py-3.5">
               <p className="flex items-center gap-2 font-mono text-xs">
                 <span
                   className={cn(
                     "size-2 rounded-full",
-                    running ? "animate-pulse bg-emerald-400" : "bg-[#71717A]",
+                    running ? "bg-success" : "bg-ink-subtle",
                   )}
                   aria-hidden="true"
                 />
-                <span className="text-[#A1A1AA]">
+                <span className="text-ink-muted">
                   {running ? t("Workflow running") : t("Workflow finished")}
                 </span>
               </p>
-              <p className="font-mono text-[11px] text-[#71717A]">
+              <p className="font-mono text-xs text-ink-subtle">
                 {t("Illustrative preview")}
               </p>
             </div>
 
-            <ul className="divide-y divide-[#27272A]">
+            <ul className="divide-y divide-line">
               {STEPS.map((step, i) => {
                 const s = states[i];
                 return (
@@ -94,18 +94,18 @@ export function ExecutionDemo() {
                     transition={{ duration: 0.3 }}
                   >
                     {s === "done" && (
-                      <Check className="size-4 shrink-0 text-emerald-400" aria-label={t("Done")} />
+                      <Check className="size-4 shrink-0 text-success" aria-label={t("Done")} />
                     )}
                     {s === "running" && (
-                      <Loader2 className="size-4 shrink-0 animate-spin text-violet-300" aria-label={t("Running")} />
+                      <Loader2 className="size-4 shrink-0 animate-spin text-accent-ink" aria-label={t("Running")} />
                     )}
                     {s === "pending" && (
-                      <Circle className="size-4 shrink-0 text-[#3f3f46]" aria-label={t("Pending")} />
+                      <Circle className="size-4 shrink-0 text-line-strong" aria-label={t("Pending")} />
                     )}
                     <span
                       className={cn(
                         "font-mono text-sm",
-                        s === "pending" ? "text-[#71717A]" : "text-[#FAFAFA]",
+                        s === "pending" ? "text-ink-subtle" : "text-ink",
                       )}
                     >
                       {t(step.label)}
@@ -115,10 +115,10 @@ export function ExecutionDemo() {
               })}
             </ul>
 
-            <dl className="grid grid-cols-2 gap-px border-t border-[#27272A] bg-[#27272A] sm:grid-cols-4">
+            <dl className="grid grid-cols-2 gap-px border-t border-line bg-line sm:grid-cols-4">
               {META.map(([k, v]) => (
-                <div key={k} className="bg-[#111113] px-5 py-3.5">
-                  <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#71717A]">
+                <div key={k} className="bg-surface px-5 py-3.5">
+                  <dt className="font-mono text-xs text-ink-subtle">
                     {t(k)}
                   </dt>
                   <dd
@@ -126,12 +126,12 @@ export function ExecutionDemo() {
                       "mt-1 font-mono text-sm",
                       k === "Status"
                         ? running
-                          ? "text-violet-300"
-                          : "text-[#A1A1AA]"
-                        : "text-[#FAFAFA]",
+                          ? "text-accent-ink"
+                          : "text-ink-muted"
+                        : "text-ink",
                     )}
                   >
-                    {k === "Status" ? (running ? v                     : t("Done")) : v}
+                    {k === "Status" ? (running ? v : t("Done")) : v}
                   </dd>
                 </div>
               ))}

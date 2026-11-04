@@ -23,12 +23,16 @@ import { WorkflowForm } from "../components/WorkflowForm";
 import { YamlPreview } from "../components/YamlPreview";
 import { History } from "../components/History";
 import { PredictionPanel } from "../components/PredictionPanel";
-import LogoImage from "../assets/logo-flowOps-transparent.png";
+import LogoImage from "../assets/flowops.svg";
 import { useToast } from "../components/ui/useToast";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { Modal } from "../components/ui/Modal";
 import { Breadcrumbs } from "../components/ui/Breadcrumbs";
 import { Button } from "../components/ui/Button";
+import { Badge } from "../components/ui/Badge";
+import { Card } from "../components/ui/Card";
+import { Field, Input, Select, Textarea } from "../components/ui/Field";
+import { cn } from "../lib/utils";
 import { EmptyState, LoadingState } from "../components/ui/States";
 import { PreferenceControls } from "../components/ui/PreferenceControls";
 import { usePreferences } from "../lib/usePreferences";
@@ -349,46 +353,38 @@ export const Workspace: React.FC = () => {
   });
 
   return (
-    <div className="workspace-shell min-h-screen bg-slate-50/50 flex flex-col font-sans text-slate-800">
-      {/* ================= HEADER HORIZONTAL (NAVBAR) ================= */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+    <div className="flex min-h-screen flex-col bg-canvas font-sans text-ink">
+      {/* ================= HEADER ================= */}
+      <header className="sticky top-0 z-30 border-b border-line bg-canvas px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
           <button
             type="button"
             onClick={() => {
               switchTab("projects");
               setProfileOpen(false);
             }}
-            className="flex items-center gap-2 cursor-pointer group"
+            className="flex items-center gap-2 rounded-md"
             aria-label="FlowOps projects"
           >
-            <img src={LogoImage} className="h-8 w-auto" alt="FlowOps Logo" />
-            <span className="font-black text-lg tracking-tight text-slate-900 group-hover:text-purple-600 transition-colors">
-              FlowOps
-            </span>
+            <img src={LogoImage} className="h-7 w-auto" alt="FlowOps Logo" />
+            <span className="text-base font-semibold text-ink">FlowOps</span>
           </button>
 
           {/* Navigation Tabs (desktop) */}
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden items-center gap-1 md:flex">
             {NAV_TABS.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => switchTab(tab.key)}
-                className={`group relative flex items-center gap-1.5 py-2 text-xs font-bold tracking-wide transition-colors duration-200 ${
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
                   activeTab === tab.key
-                    ? "text-purple-700"
-                    : "text-slate-600 hover:text-purple-700"
-                }`}
+                    ? "bg-accent/15 text-accent-ink"
+                    : "text-ink-muted hover:bg-surface-2 hover:text-ink",
+                )}
               >
                 {tab.icon}
                 {t(tab.label)}
-                <span
-                  className={`absolute -bottom-0.5 left-0 h-[2px] w-full rounded-full bg-purple-600 origin-left transition-transform duration-300 ${
-                    activeTab === tab.key
-                      ? "scale-x-100"
-                      : "scale-x-0 group-hover:scale-x-100"
-                  }`}
-                />
               </button>
             ))}
           </nav>
@@ -398,13 +394,13 @@ export const Workspace: React.FC = () => {
             {/* Mobile menu toggle */}
             <button
               onClick={() => setMobileNavOpen((v) => !v)}
-              className="md:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors"
+              className="rounded-md p-2 text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink md:hidden"
               aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
             >
               {mobileNavOpen ? (
-                <X className="w-5 h-5" />
+                <X className="h-5 w-5" />
               ) : (
-                <Menu className="w-5 h-5" />
+                <Menu className="h-5 w-5" />
               )}
             </button>
 
@@ -414,21 +410,20 @@ export const Workspace: React.FC = () => {
                 onClick={() => setProfileOpen((v) => !v)}
                 aria-haspopup="menu"
                 aria-expanded={profileOpen}
-                className={`rounded-full overflow-hidden ring-2 ring-offset-2 ring-offset-white transition-all duration-200 ${
-                  profileOpen
-                    ? "ring-purple-500"
-                    : "ring-transparent hover:ring-purple-300"
-                }`}
+                className={cn(
+                  "overflow-hidden rounded-full ring-2 transition-colors",
+                  profileOpen ? "ring-accent" : "ring-transparent hover:ring-line-strong",
+                )}
               >
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
                     alt={username}
-                    className="w-8 h-8 rounded-full object-cover"
+                    className="h-8 w-8 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-8 h-8 bg-purple-100 text-purple-600 flex items-center justify-center">
-                    <User className="w-4 h-4" />
+                  <div className="flex h-8 w-8 items-center justify-center bg-accent/15 text-accent-ink">
+                    <User className="h-4 w-4" />
                   </div>
                 )}
               </button>
@@ -441,26 +436,26 @@ export const Workspace: React.FC = () => {
                   />
                   <div
                     role="menu"
-                    className="absolute right-0 top-12 z-50 w-60 rounded-2xl bg-white border border-slate-200/80 shadow-xl shadow-slate-200/60 p-2"
+                    className="absolute right-0 top-12 z-50 w-60 rounded-lg border border-line bg-surface p-2 shadow-lg"
                   >
-                    <div className="flex items-center gap-3 px-3 py-2.5 border-b border-slate-100">
+                    <div className="flex items-center gap-3 border-b border-line px-3 py-2.5">
                       {avatarUrl ? (
                         <img
                           src={avatarUrl}
                           alt={username}
-                          className="w-9 h-9 rounded-full border-2 border-purple-200 object-cover"
+                          className="h-9 w-9 rounded-full border border-line-strong object-cover"
                         />
                       ) : (
-                        <div className="w-9 h-9 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center border-2 border-purple-200">
-                          <User className="w-4 h-4" />
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full border border-accent/30 bg-accent/15 text-accent-ink">
+                          <User className="h-4 w-4" />
                         </div>
                       )}
                       <div className="min-w-0">
-                        <p className="text-xs font-black text-slate-900 truncate">
+                        <p className="truncate text-sm font-semibold text-ink">
                           {username}
                         </p>
-                        <p className="text-[10px] font-mono font-medium text-emerald-600 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                        <p className="flex items-center gap-1 text-xs text-success">
+                          <span className="inline-block h-1.5 w-1.5 rounded-full bg-success" />
                           {t("Connected")}
                         </p>
                       </div>
@@ -473,9 +468,9 @@ export const Workspace: React.FC = () => {
                           setProfileOpen(false);
                           setLogoutConfirmOpen(true);
                         }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold text-red-600 hover:bg-red-50 transition-colors"
+                        className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-danger transition-colors hover:bg-danger/10"
                       >
-                        <LogOut className="w-4 h-4" /> {t("Sign out")}
+                        <LogOut className="h-4 w-4" /> {t("Sign out")}
                       </button>
                     </div>
                   </div>
@@ -487,17 +482,18 @@ export const Workspace: React.FC = () => {
 
         {/* Mobile navigation drawer */}
         {mobileNavOpen && (
-          <div className="md:hidden pt-2 pb-4 border-t border-slate-100 mt-3">
+          <div className="mt-3 border-t border-line pb-2 pt-2 md:hidden">
             <nav className="flex flex-col gap-1">
               {NAV_TABS.map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => switchTab(tab.key)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors ${
+                  className={cn(
+                    "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                     activeTab === tab.key
-                      ? "bg-purple-50 text-purple-700"
-                      : "text-slate-600 hover:bg-slate-50"
-                  }`}
+                      ? "bg-accent/15 text-accent-ink"
+                      : "text-ink-muted hover:bg-surface-2 hover:text-ink",
+                  )}
                 >
                   {tab.icon}
                   {t(tab.label)}
@@ -509,22 +505,22 @@ export const Workspace: React.FC = () => {
       </header>
 
       {/* ================= CONTENU PRINCIPAL ================= */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">
         {/* TAB 1: PROJECTS */}
         {activeTab === "projects" && !isConfiguringWorkflow && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                <h2 className="text-2xl font-semibold text-ink">
                   {t("Projects")}
                 </h2>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="mt-1 text-sm text-ink-muted">
                   {t("Project overview")}
                 </p>
               </div>
 
               <Button onClick={() => setIsModalOpen(true)}>
-                <Plus className="w-4 h-4" /> {t("New project")}
+                <Plus className="h-4 w-4" /> {t("New project")}
               </Button>
             </div>
 
@@ -534,25 +530,23 @@ export const Workspace: React.FC = () => {
               <EmptyState
                 title={t("No projects found")}
                 description={t("Click New project to connect a GitHub repository.")}
-                action={
-                  <Button onClick={() => setIsModalOpen(true)} variant="primary">
-                    <Plus className="w-3.5 h-3.5" /> {t("Create project")}
-                  </Button>
-                }
               />
             ) : (
               <>
-                <label className="flex max-w-md items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-500 shadow-sm focus-within:border-violet-400 dark:border-slate-700 dark:bg-slate-900">
-                  <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  <span className="sr-only">{t("Search projects")}</span>
-                  <input
+                <div className="relative max-w-md">
+                  <Search
+                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle"
+                    aria-hidden="true"
+                  />
+                  <Input
                     type="search"
                     value={projectQuery}
                     onChange={(event) => setProjectQuery(event.currentTarget.value)}
                     placeholder={t("Search projects")}
-                    className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100"
+                    aria-label={t("Search projects")}
+                    className="pl-9"
                   />
-                </label>
+                </div>
                 {visibleProjects.length === 0 ? (
                   <EmptyState
                     title={t("No projects found")}
@@ -560,99 +554,88 @@ export const Workspace: React.FC = () => {
                   />
                 ) : (
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {visibleProjects.map((p) => (
-                  <div
-                    key={p.id}
-                    className="p-5 bg-white border border-slate-200/80 rounded-2xl hover:border-purple-300 hover:shadow-md transition-all duration-200 flex flex-col gap-4 relative overflow-hidden group"
-                  >
-                    {p.has_workflow && (
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-600" />
-                    )}
-
-                    <div className="space-y-1.5 pl-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-bold">
-                          ID: {p.id.slice(-6)}
-                        </span>
-                        {p.has_workflow ? (
-                          <span className="text-[10px] font-bold bg-purple-50 text-purple-700 px-2 py-0.5 rounded-md border border-purple-100 flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-purple-600 inline-block animate-pulse" />
-                            {t("Pipeline active")}
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md">
-                            {t("No workflow")}
-                          </span>
-                        )}
-                      </div>
-
-                      <h3 className="text-lg font-black text-slate-900 tracking-tight">
-                        {p.name}
-                      </h3>
-
-                      <p className="text-xs text-slate-500 font-medium">
-                        {p.description || t("No description provided.")}
-                      </p>
-
-                      <div className="flex items-center gap-1.5 text-xs text-slate-600 font-mono pt-1">
-                        <GitBranch className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{t("Repository:")}</span>
-                        <span className="text-purple-600 font-bold">
-                          {p.repository}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      {p.has_workflow ? (
-                        <>
-                          <Button
-                            variant="success"
-                            size="sm"
-                            onClick={() =>
-                              triggerWorkflowExecution(p.id, p.name)
-                            }
-                            disabled={executingProjectId !== null}
-                          >
-                            {executingProjectId === p.id ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    {visibleProjects.map((p) => (
+                      <Card key={p.id} className="flex flex-col gap-4 p-5">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Badge className="font-mono">ID: {p.id.slice(-6)}</Badge>
+                            {p.has_workflow ? (
+                              <Badge tone="purple" dot>
+                                {t("Pipeline active")}
+                              </Badge>
                             ) : (
-                              <Play className="w-3.5 h-3.5 fill-current" />
+                              <Badge>{t("No workflow")}</Badge>
                             )}
-                            {t("Run")}
-                          </Button>
+                          </div>
+
+                          <h3 className="text-base font-semibold text-ink">
+                            {p.name}
+                          </h3>
+
+                          <p className="text-sm text-ink-muted">
+                            {p.description || t("No description provided.")}
+                          </p>
+
+                          <div className="flex items-center gap-1.5 pt-1 font-mono text-xs text-ink-muted">
+                            <GitBranch className="h-3.5 w-3.5 text-ink-subtle" />
+                            <span>{t("Repository:")}</span>
+                            <span className="text-accent-ink">{p.repository}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex shrink-0 items-center gap-2">
+                          {p.has_workflow ? (
+                            <>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() =>
+                                  triggerWorkflowExecution(p.id, p.name)
+                                }
+                                disabled={executingProjectId !== null}
+                              >
+                                {executingProjectId === p.id ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Play className="h-3.5 w-3.5" />
+                                )}
+                                {t("Run")}
+                              </Button>
+
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => initWorkflowConfig(p)}
+                                disabled={executingProjectId !== null}
+                              >
+                                <Sliders className="h-3.5 w-3.5" /> {t("Edit workflow")}
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => initWorkflowConfig(p)}
+                              disabled={executingProjectId !== null}
+                            >
+                              <Sliders className="h-3.5 w-3.5" /> {t("Create workflow")}
+                            </Button>
+                          )}
 
                           <Button
-                            variant="secondary"
+                            variant="ghost"
                             size="sm"
-                            onClick={() => initWorkflowConfig(p)}
+                            onClick={() => setProjectToDelete(p)}
                             disabled={executingProjectId !== null}
+                            className="ml-auto hover:text-danger"
+                            title={t("Delete project")}
+                            aria-label={`${t("Delete")} ${p.name}`}
                           >
-                            <Sliders className="w-3.5 h-3.5" />                                                         {t("Edit workflow")}
+                            <Trash2 className="h-4 w-4" />
                           </Button>
-                        </>
-                      ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => initWorkflowConfig(p)}
-                          disabled={executingProjectId !== null}
-                        >
-                          <Sliders className="w-3.5 h-3.5" /> {t("Create workflow")}
-                        </Button>
-                      )}
-
-                      <button
-                        onClick={() => setProjectToDelete(p)}
-                        disabled={executingProjectId !== null}
-                        className="ml-auto p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all disabled:opacity-40"
-                        title={t("Delete project")}
-                        aria-label={`${t("Delete")} ${p.name}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                        </div>
+                      </Card>
+                    ))}
                   </div>
                 )}
               </>
@@ -663,7 +646,7 @@ export const Workspace: React.FC = () => {
         {/* WORKFLOW CONFIGURATION VIEW */}
         {activeTab === "projects" && isConfiguringWorkflow && targetProject && (
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
               <Breadcrumbs
                 items={[
                   {
@@ -675,12 +658,9 @@ export const Workspace: React.FC = () => {
                 ]}
               />
 
-              <button
-                onClick={() => setIsConfiguringWorkflow(false)}
-                className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-purple-600 transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" /> {t("Back to dashboard")}
-              </button>
+              <Button variant="ghost" size="sm" onClick={() => setIsConfiguringWorkflow(false)}>
+                <ArrowLeft className="h-4 w-4" /> {t("Back to dashboard")}
+              </Button>
             </div>
 
             {viewState === "form" && activeConfig && (
@@ -700,12 +680,7 @@ export const Workspace: React.FC = () => {
             )}
 
             {viewState === "loading" && (
-              <div className="py-24 text-center space-y-4 border border-slate-200/80 rounded-2xl bg-white">
-                <Loader2 className="w-8 h-8 text-purple-600 animate-spin mx-auto" />
-                <p className="text-xs font-bold text-slate-600 font-mono tracking-wide">
-                  {t("Compiling workflow configuration to YAML...")}
-                </p>
-              </div>
+              <LoadingState label={t("Compiling workflow configuration to YAML...")} />
             )}
 
             {viewState === "preview" && activeConfig && (
@@ -736,21 +711,21 @@ export const Workspace: React.FC = () => {
 
         {/* TAB 3: HELP CENTER */}
         {activeTab === "help" && (
-          <div className="space-y-4 p-6 border border-slate-200/80 rounded-2xl bg-white shadow-sm">
-            <div className="flex items-center gap-2 text-slate-900 font-black text-lg">
-              <BookOpen className="w-5 h-5 text-purple-600" />
-              <h3>{t("Documentation and best practices")}</h3>
+          <Card as="section" className="space-y-4 p-6">
+            <div className="flex items-center gap-2 text-ink">
+              <BookOpen className="h-5 w-5 text-accent-ink" />
+              <h3 className="text-xl font-semibold">{t("Documentation and best practices")}</h3>
             </div>
-            <div className="text-xs text-slate-600 space-y-3 font-medium leading-relaxed max-w-3xl">
+            <div className="max-w-3xl space-y-3 text-sm text-ink-muted">
               <p>
                 {t("FlowOps helps you model CI/CD workflows in low-code, publish them to a GitHub repository, and inspect runner executions.")}
               </p>
-              <div className="flex items-start gap-2 p-4 bg-amber-50 border border-amber-200/80 rounded-xl text-amber-800 font-mono text-[11px] leading-relaxed">
+              <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-4 text-xs text-warning">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                 <span>
-                  <span className="font-bold">{t("Prerequisite:")}</span>{" "}
+                  <span className="font-semibold">{t("Prerequisite:")}</span>{" "}
                 {t("A local or remote MongoDB instance on port")}
-                <code className="bg-amber-100 px-1 py-0.5 rounded font-bold">
+                <code className="rounded-md bg-warning/10 px-1 py-0.5 font-mono font-semibold">
                   27017
                 </code>{" "}
                 {t("and the backend service must be available before triggering runs.")}
@@ -758,12 +733,12 @@ export const Workspace: React.FC = () => {
               </div>
               <Link
                 to="/docs"
-                className="inline-flex items-center gap-2 font-bold text-purple-700 hover:text-purple-900"
+                className="inline-flex items-center gap-2 font-medium text-accent-ink hover:text-ink"
               >
                 {t("View documentation")} <ArrowLeft className="h-3.5 w-3.5 rotate-180" />
               </Link>
             </div>
-          </div>
+          </Card>
         )}
       </main>
 
@@ -774,8 +749,8 @@ export const Workspace: React.FC = () => {
         title={t("New project")}
         description={t("Connect a GitHub repository to configure an automated workflow.")}
         icon={
-          <div className="p-2 bg-purple-100 text-purple-600 rounded-xl">
-            <FolderGit2 className="w-5 h-5" />
+          <div className="rounded-md bg-accent/15 p-2 text-accent-ink">
+            <FolderGit2 className="h-5 w-5" />
           </div>
         }
         footer={
@@ -791,7 +766,7 @@ export const Workspace: React.FC = () => {
             >
               {isCreating ? t("Creating...") : (
                 <>
-                  <Plus className="w-3.5 h-3.5" /> {t("Initialize")}
+                  <Plus className="h-3.5 w-3.5" /> {t("Initialize")}
                 </>
               )}
             </Button>
@@ -799,54 +774,53 @@ export const Workspace: React.FC = () => {
         }
       >
         <form id="create-project-form" onSubmit={createProject} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
-              {t("Project name")} <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={newProjName}
-              onChange={(e) => setNewProjName(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-medium text-slate-800"
-              placeholder="e.g. Production API"
-              required
-            />
-          </div>
+          <Field label={`${t("Project name")} *`}>
+            {(id) => (
+              <Input
+                id={id}
+                type="text"
+                value={newProjName}
+                onChange={(e) => setNewProjName(e.target.value)}
+                placeholder="e.g. Production API"
+                required
+              />
+            )}
+          </Field>
 
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
-              {t("GitHub repository")} <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={selectedRepo}
-              onChange={(e) => setSelectedRepo(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-mono text-slate-700"
-            >
-              <option value="">
-                {gitRepos.length === 0
-                  ? `-- ${t("No repositories available")} --`
-                  : `-- ${t("Select a GitHub repository")} --`}
-              </option>
-              {gitRepos.map((repo) => (
-                <option key={repo.id} value={repo.full_name}>
-                  {repo.full_name}
+          <Field label={`${t("GitHub repository")} *`}>
+            {(id) => (
+              <Select
+                id={id}
+                value={selectedRepo}
+                onChange={(e) => setSelectedRepo(e.target.value)}
+                className="font-mono"
+              >
+                <option value="">
+                  {gitRepos.length === 0
+                    ? `-- ${t("No repositories available")} --`
+                    : `-- ${t("Select a GitHub repository")} --`}
                 </option>
-              ))}
-            </select>
-          </div>
+                {gitRepos.map((repo) => (
+                  <option key={repo.id} value={repo.full_name}>
+                    {repo.full_name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
 
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
-              {t("Description")}
-            </label>
-            <textarea
-              rows={3}
-              value={newProjDesc}
-              onChange={(e) => setNewProjDesc(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all font-medium text-slate-800 resize-none"
-              placeholder={t("Optional project details...")}
-            />
-          </div>
+          <Field label={t("Description")}>
+            {(id) => (
+              <Textarea
+                id={id}
+                rows={3}
+                value={newProjDesc}
+                onChange={(e) => setNewProjDesc(e.target.value)}
+                className="resize-none"
+                placeholder={t("Optional project details...")}
+              />
+            )}
+          </Field>
         </form>
       </Modal>
 
@@ -863,8 +837,8 @@ export const Workspace: React.FC = () => {
         confirmLabel={t("Delete")}
         description={
           <>
-            Le projet            {" "}
-            <span className="font-black text-slate-900">
+            Le projet{" "}
+            <span className="font-semibold text-ink">
               « {projectToDelete?.name} »
             </span>{" "}
             {t("and all its workflows will be permanently removed. This action cannot be undone.")}

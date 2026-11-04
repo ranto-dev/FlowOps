@@ -1,24 +1,25 @@
 import React from "react";
 import { Loader2 } from "lucide-react";
+import { cn } from "../../lib/utils";
 
 type Variant = "primary" | "secondary" | "dark" | "danger" | "success" | "ghost";
 type Size = "sm" | "md" | "lg";
 
+/** `dark` et `success` sont conservés pour compatibilité : ils rendent comme `secondary` / `primary`. */
 const VARIANTS: Record<Variant, string> = {
-  primary:
-    "bg-purple-600 text-white hover:bg-purple-700 shadow-sm hover:shadow-purple-200",
+  primary: "bg-accent text-white hover:bg-accent-hover",
   secondary:
-    "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300",
-  dark: "bg-slate-900 text-white hover:bg-slate-800 border border-slate-800",
-  danger: "bg-red-600 text-white hover:bg-red-700 shadow-sm",
-  success: "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm",
-  ghost: "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+    "border border-line-strong bg-surface text-ink hover:bg-surface-2",
+  dark: "border border-line-strong bg-surface text-ink hover:bg-surface-2",
+  danger: "bg-danger/15 text-danger border border-danger/30 hover:bg-danger/25",
+  success: "bg-accent text-white hover:bg-accent-hover",
+  ghost: "text-ink-muted hover:bg-surface-2 hover:text-ink",
 };
 
 const SIZES: Record<Size, string> = {
-  sm: "px-3 py-1.5 text-[11px]",
-  md: "px-4 py-2.5 text-xs",
-  lg: "px-6 py-3.5 text-sm",
+  sm: "h-8 px-3 text-xs",
+  md: "h-9 px-4 text-sm",
+  lg: "h-11 px-6 text-sm",
 };
 
 export interface ButtonProps
@@ -36,15 +37,19 @@ export const Button: React.FC<ButtonProps> = ({
   className = "",
   children,
   ...rest
-}) => {
-  return (
-    <button
-      disabled={disabled || loading}
-      className={`inline-flex items-center justify-center gap-2 font-bold rounded-xl uppercase tracking-wider transition-all duration-200 active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 ${VARIANTS[variant]} ${SIZES[size]} ${className}`}
-      {...rest}
-    >
-      {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-      {children}
-    </button>
-  );
-};
+}) => (
+  <button
+    disabled={disabled || loading}
+    className={cn(
+      "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors duration-150",
+      "disabled:pointer-events-none disabled:opacity-50",
+      VARIANTS[variant],
+      SIZES[size],
+      className,
+    )}
+    {...rest}
+  >
+    {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+    {children}
+  </button>
+);

@@ -50,18 +50,18 @@ export function Problem() {
             <motion.li
               key={p.n}
               variants={reduce ? undefined : staggerChild}
-              className="rounded-xl border border-[#27272A] bg-[#111113] p-6"
+              className="rounded-lg border border-line bg-surface p-6"
             >
               <div className="flex items-center justify-between">
-                <p.icon className="size-5 text-[#71717A]" aria-hidden="true" />
-                <span className="font-mono text-xs text-[#3f3f46]">
+                <p.icon className="size-5 text-ink-subtle" aria-hidden="true" />
+                <span className="font-mono text-xs text-line-strong">
                   {p.n}
                 </span>
               </div>
-              <h3 className="mt-5 text-lg font-semibold tracking-tight text-[#FAFAFA]">
+              <h3 className="mt-5 text-base font-semibold text-ink">
                 {t(p.title)}
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-[#A1A1AA]">
+              <p className="mt-2 text-sm leading-relaxed text-ink-muted">
                 {t(p.text)}
               </p>
             </motion.li>

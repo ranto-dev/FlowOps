@@ -3,7 +3,6 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
 import { GITHUB_URL } from "./data";
-import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { EASE } from "./motion";
 import { usePreferences } from "../../lib/usePreferences";
@@ -21,36 +20,31 @@ export function Hero() {
   const { t } = usePreferences();
   const reduce = useReducedMotion();
   const anim = (delay: number) => ({
-    initial: { opacity: 0, y: reduce ? 0 : 28 },
+    initial: { opacity: 0, y: reduce ? 0 : 12 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.7, delay, ease: EASE },
+    transition: { duration: 0.4, delay, ease: EASE },
   });
 
   return (
     <section
-      className="relative overflow-hidden pt-36 sm:pt-44"
+      className="pt-36 sm:pt-44"
       aria-labelledby="hero-title"
     >
-      {/* subtle grid backdrop, no flashy gradients */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black,transparent)]"
-      />
       <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center px-4 text-center sm:px-6">
         <motion.h1
           id="hero-title"
           {...anim(0.1)}
-          className="mt-6 max-w-3xl font-display text-balance text-4xl font-bold leading-[1.05] tracking-tight text-[#FAFAFA] sm:text-6xl lg:text-7xl"
+          className="mt-6 max-w-3xl text-balance text-3xl font-semibold leading-tight text-ink sm:text-3xl"
         >
           {t("Build CI/CD workflows")}{" "}
-          <span className="text-violet-300">
+          <span className="text-accent-ink">
             {t("without the YAML complexity.")}
           </span>
         </motion.h1>
 
         <motion.p
           {...anim(0.2)}
-          className="mt-6 max-w-xl text-pretty text-base leading-relaxed text-[#A1A1AA] sm:text-lg"
+          className="mt-6 max-w-xl text-pretty text-base leading-relaxed text-ink-muted sm:text-base"
         >
           {t(
             "Design, generate, execute and optimize GitHub Actions workflows through a powerful low-code interface.",
@@ -82,17 +76,17 @@ export function Hero() {
 
         <motion.p
           {...anim(0.4)}
-          className="mt-5 font-mono text-xs tracking-wide text-[#71717A]"
+          className="mt-5 font-mono text-xs text-ink-subtle"
         >
           {t("Built for developers")}{" "}
-          <span aria-hidden="true" className="mx-1 text-[#3f3f46]">
+          <span aria-hidden="true" className="mx-1 text-line-strong">
             •
           </span>{" "}
           Powered by GitHub Actions
         </motion.p>
 
         <motion.div {...anim(0.5)} className="mt-16 w-full sm:mt-20">
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#71717A]">
+          <p className="font-mono text-xs text-ink-subtle">
             {t("Built for modern development teams")}
           </p>
           <ul
@@ -102,7 +96,7 @@ export function Hero() {
             {TECH.map((t) => (
               <li
                 key={t}
-                className="font-mono text-sm text-[#71717A] transition-colors hover:text-[#A1A1AA]"
+                className="font-mono text-sm text-ink-subtle transition-colors hover:text-ink-muted"
               >
                 {t}
               </li>

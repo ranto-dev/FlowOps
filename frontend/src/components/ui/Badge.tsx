@@ -1,14 +1,16 @@
 import React from "react";
+import { cn } from "../../lib/utils";
 
+/** Noms conservés (`purple`, `green`, `red`, `amber`, `sky`) ; ils pointent vers les tokens. */
 export type BadgeTone = "neutral" | "purple" | "green" | "red" | "amber" | "sky";
 
-const TONES: Record<BadgeTone, string> = {
-  neutral: "bg-slate-100 text-slate-600 border-slate-200",
-  purple: "bg-purple-50 text-purple-700 border-purple-200",
-  green: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  red: "bg-rose-50 text-rose-700 border-rose-200",
-  amber: "bg-amber-50 text-amber-700 border-amber-200",
-  sky: "bg-sky-50 text-sky-700 border-sky-200",
+const TONES: Record<BadgeTone, { box: string; dot: string }> = {
+  neutral: { box: "bg-surface-2 text-ink-muted border-line-strong", dot: "bg-ink-subtle" },
+  purple: { box: "bg-accent/15 text-accent-ink border-accent/30", dot: "bg-accent-ink" },
+  green: { box: "bg-success/10 text-success border-success/30", dot: "bg-success" },
+  red: { box: "bg-danger/10 text-danger border-danger/30", dot: "bg-danger" },
+  amber: { box: "bg-warning/10 text-warning border-warning/30", dot: "bg-warning" },
+  sky: { box: "bg-info/10 text-info border-info/30", dot: "bg-info" },
 };
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
@@ -22,15 +24,16 @@ export const Badge: React.FC<BadgeProps> = ({
   className = "",
   children,
   ...rest
-}) => {
-  const dotColor = TONES[tone].split(" ")[1];
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${TONES[tone]} ${className}`}
-      {...rest}
-    >
-      {dot && <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />}
-      {children}
-    </span>
-  );
-};
+}) => (
+  <span
+    className={cn(
+      "inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium",
+      TONES[tone].box,
+      className,
+    )}
+    {...rest}
+  >
+    {dot && <span className={cn("h-1.5 w-1.5 rounded-full", TONES[tone].dot)} />}
+    {children}
+  </span>
+);

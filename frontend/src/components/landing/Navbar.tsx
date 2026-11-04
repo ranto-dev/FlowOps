@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, TerminalSquare, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
 import { GITHUB_URL, NAV_LINKS } from "./data";
 import { Button } from "./ui/button";
@@ -24,13 +24,13 @@ export function Navbar() {
 
   return (
     <motion.header
-      initial={{ y: -64, opacity: 0 }}
+      initial={{ y: -16, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
-        "fixed inset-x-0 top-0 z-50 transition-colors duration-300",
+        "fixed inset-x-0 top-0 z-50 transition-colors duration-150",
         scrolled || open
-          ? "border-b border-[#27272A] bg-[#09090B]/85 backdrop-blur-md"
+          ? "border-b border-line bg-canvas"
           : "border-b border-transparent bg-transparent",
       )}
     >
@@ -46,7 +46,7 @@ export function Navbar() {
           <span className="flex size-8 items-center justify-center">
             <img src={Logo} className="w-full" />
           </span>
-          <span className="text-[15px] font-bold tracking-tight text-[#FAFAFA]">
+          <span className="text-sm font-semibold text-ink">
             FlowOps
           </span>
         </Link>
@@ -57,14 +57,14 @@ export function Navbar() {
               {link.internal ? (
                 <Link
                   to={link.href}
-                  className="rounded-md px-3 py-2 text-sm text-[#A1A1AA] transition-colors hover:bg-[#18181B] hover:text-[#FAFAFA]"
+                  className="rounded-md px-3 py-2 text-sm text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink"
                 >
                   {t(link.label)}
                 </Link>
               ) : (
                 <a
                   href={link.href}
-                  className="rounded-md px-3 py-2 text-sm text-[#A1A1AA] transition-colors hover:bg-[#18181B] hover:text-[#FAFAFA]"
+                  className="rounded-md px-3 py-2 text-sm text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink"
                 >
                   {t(link.label)}
                 </a>
@@ -96,7 +96,7 @@ export function Navbar() {
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-label={open ? "Close menu" : "Open menu"}
-          className="flex size-10 items-center justify-center rounded-lg border border-[#27272A] bg-[#111113] text-[#FAFAFA] lg:hidden"
+          className="flex size-10 items-center justify-center rounded-md border border-line bg-surface text-ink lg:hidden"
         >
           {open ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>
@@ -113,13 +113,13 @@ export function Navbar() {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden border-t border-[#27272A] bg-[#09090B]/95 backdrop-blur-md lg:hidden"
+            className="overflow-hidden border-t border-line bg-canvas lg:hidden"
           >
             <ul className="space-y-1 px-4 py-4">
               {NAV_LINKS.map((link, i) => (
                 <motion.li
                   key={link.label}
-                  initial={{ opacity: 0, x: -12 }}
+                  initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.05 * i, duration: 0.25 }}
                 >
@@ -127,7 +127,7 @@ export function Navbar() {
                     <Link
                       to={link.href}
                       onClick={() => setOpen(false)}
-                      className="block rounded-lg px-3 py-2.5 text-[15px] text-[#A1A1AA] transition-colors hover:bg-[#18181B] hover:text-[#FAFAFA]"
+                      className="block rounded-md px-3 py-2.5 text-sm text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink"
                     >
                       {t(link.label)}
                     </Link>
@@ -135,7 +135,7 @@ export function Navbar() {
                     <a
                       href={link.href}
                       onClick={() => setOpen(false)}
-                      className="block rounded-lg px-3 py-2.5 text-[15px] text-[#A1A1AA] transition-colors hover:bg-[#18181B] hover:text-[#FAFAFA]"
+                      className="block rounded-md px-3 py-2.5 text-sm text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink"
                     >
                       {t(link.label)}
                     </a>
@@ -143,7 +143,7 @@ export function Navbar() {
                 </motion.li>
               ))}
             </ul>
-            <div className="flex gap-2 border-t border-[#27272A] px-4 py-4">
+            <div className="flex gap-2 border-t border-line px-4 py-4">
               <Button
                 variant="secondary"
                 className="flex-1"

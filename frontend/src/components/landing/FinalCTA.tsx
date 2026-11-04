@@ -11,14 +11,14 @@ export function FinalCTA() {
   return (
     <section aria-labelledby="cta-title" className="py-24 sm:py-32">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-        <Reveal className="overflow-hidden rounded-2xl border border-[#27272A] bg-[#111113] px-6 py-16 text-center sm:px-12 sm:py-20">
+        <Reveal className="overflow-hidden rounded-lg border border-line bg-surface px-6 py-16 text-center sm:px-12 sm:py-20">
           <h2
             id="cta-title"
-            className="mx-auto max-w-2xl text-balance text-3xl font-bold tracking-tight text-[#FAFAFA] sm:text-5xl"
+            className="mx-auto max-w-2xl text-balance text-2xl font-semibold text-ink sm:text-3xl"
           >
             {t("Build your next pipeline differently.")}
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-pretty text-base leading-relaxed text-[#A1A1AA]">
+          <p className="mx-auto mt-4 max-w-xl text-pretty text-base leading-relaxed text-ink-muted">
             {t("Design your CI/CD workflows visually, execute them confidently and optimize them with data.")}
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">

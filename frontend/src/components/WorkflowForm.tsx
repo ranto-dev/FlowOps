@@ -1,11 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { Trash2, Settings, Layers, Play, CheckCircle2 } from "lucide-react";
+import {
+  Trash2,
+  Settings,
+  Layers,
+  Play,
+  Plus,
+  CheckCircle2,
+} from "lucide-react";
 import type {
   FlowOpsWorkflowConfig,
   LowCodeJob,
   LowCodeStep,
 } from "../@types/workflow";
 import { usePreferences } from "../lib/usePreferences";
+import { cn } from "../lib/utils";
+import { Button } from "./ui/Button";
+import { Field, Input, Select, Textarea } from "./ui/Field";
 
 interface WorkflowFormProps {
   activeConfig: FlowOpsWorkflowConfig;
@@ -163,54 +173,54 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
   const selectedJob = config.jobs.find((j) => j.id === activeJobId);
 
   return (
-    <div className="w-full max-w-3xl mx-auto bg-white p-8 rounded-3xl border border-slate-100 shadow-xl space-y-6 text-left">
+    <div className="mx-auto w-full max-w-3xl space-y-6 rounded-lg border border-line bg-surface p-6 text-left">
       {/* SECTION 1 */}
-      <div className="bg-slate-50/70 p-5 rounded-2xl space-y-4 border border-slate-100">
-        <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-          <Settings className="w-4 h-4 text-purple-600" /> 1. {t("Pipeline configuration")}
+      <section className="space-y-4 rounded-lg border border-line bg-surface-2/40 p-4">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-ink">
+          <Settings className="h-4 w-4 text-accent-ink" /> 1.{" "}
+          {t("Pipeline configuration")}
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-              {t("Workflow filename")}
-            </label>
-            <input
-              type="text"
-              value={config.filename}
-              onChange={(e) => updateGlobal("filename", e.target.value)}
-              className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:border-purple-500"
-              placeholder="production-pipeline.yaml"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-              {t("Display name")}
-            </label>
-            <input
-              type="text"
-              value={config.name}
-              onChange={(e) => updateGlobal("name", e.target.value)}
-              className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-purple-500"
-              placeholder="Workflow Name"
-            />
-          </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label={t("Workflow filename")}>
+            {(id) => (
+              <Input
+                id={id}
+                type="text"
+                value={config.filename}
+                onChange={(e) => updateGlobal("filename", e.target.value)}
+                className="font-mono"
+                placeholder="production-pipeline.yaml"
+              />
+            )}
+          </Field>
+          <Field label={t("Display name")}>
+            {(id) => (
+              <Input
+                id={id}
+                type="text"
+                value={config.name}
+                onChange={(e) => updateGlobal("name", e.target.value)}
+                placeholder="Workflow Name"
+              />
+            )}
+          </Field>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide block">
+        <div className="space-y-1.5">
+          <span className="block text-sm font-medium text-ink">
             {t("Trigger events")}
-          </label>
-          <div className="flex gap-4 bg-white p-2.5 rounded-xl border border-slate-100">
+          </span>
+          <div className="flex flex-wrap gap-4 rounded-md border border-line bg-surface p-3">
             {["push", "pull_request", "workflow_dispatch"].map((ev) => (
               <label
                 key={ev}
-                className="flex items-center gap-2 text-xs text-slate-900 font-bold cursor-pointer select-none"
+                className="flex cursor-pointer select-none items-center gap-2 text-sm text-ink"
               >
                 <input
                   type="checkbox"
                   checked={config.on_events.includes(ev)}
                   onChange={() => handleEventToggle(ev)}
-                  className="rounded border-slate-300 text-purple-600 focus:ring-purple-500 w-4 h-4"
+                  className="h-4 w-4 rounded accent-accent"
                 />
                 {ev}
               </label>
@@ -218,58 +228,56 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-              {t("Branch filter")}
-            </label>
-            <input
-              type="text"
-              value={config.branches}
-              onChange={(e) => updateGlobal("branches", e.target.value)}
-              className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:border-purple-500"
-              placeholder="main, develop"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-              {t("Global environment variables")} (`env` KEY=VALUE)
-            </label>
-            <input
-              type="text"
-              value={config.global_env}
-              onChange={(e) => updateGlobal("global_env", e.target.value)}
-              className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:border-purple-500"
-              placeholder="NODE_ENV=production"
-            />
-          </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label={t("Branch filter")}>
+            {(id) => (
+              <Input
+                id={id}
+                type="text"
+                value={config.branches}
+                onChange={(e) => updateGlobal("branches", e.target.value)}
+                className="font-mono"
+                placeholder="main, develop"
+              />
+            )}
+          </Field>
+          <Field label={`${t("Global environment variables")} (\`env\` KEY=VALUE)`}>
+            {(id) => (
+              <Input
+                id={id}
+                type="text"
+                value={config.global_env}
+                onChange={(e) => updateGlobal("global_env", e.target.value)}
+                className="font-mono"
+                placeholder="NODE_ENV=production"
+              />
+            )}
+          </Field>
         </div>
-      </div>
+      </section>
 
       {/* SECTION 2 */}
-      <div className="space-y-3">
-        <div className="flex justify-between items-center">
-          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-            <Layers className="w-4 h-4 text-purple-600" /> 2. {t("Jobs and orchestration")}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-ink">
+            <Layers className="h-4 w-4 text-accent-ink" /> 2.{" "}
+            {t("Jobs and orchestration")}
           </h3>
-          <button
-            type="button"
-            onClick={addJob}
-            className="px-3 py-1.5 bg-slate-900 text-white font-bold text-[11px] rounded-xl hover:bg-slate-800 transition-all"
-          >
-            + {t("Add job")}
-          </button>
+          <Button type="button" size="sm" variant="secondary" onClick={addJob}>
+            <Plus className="h-3.5 w-3.5" /> {t("Add job")}
+          </Button>
         </div>
 
-        <div className="flex flex-wrap gap-2 border-b border-slate-100 pb-3">
+        <div className="flex flex-wrap gap-2 border-b border-line pb-3">
           {config.jobs.map((j) => (
             <div
               key={j.id}
-              className={`flex items-center gap-2.5 p-2 px-4 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+              className={cn(
+                "flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
                 j.id === activeJobId
-                  ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white border-transparent shadow-md shadow-purple-500/10"
-                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-              }`}
+                  ? "border-accent/30 bg-accent/15 text-accent-ink"
+                  : "border-line-strong bg-surface text-ink-muted hover:bg-surface-2 hover:text-ink",
+              )}
             >
               <button
                 type="button"
@@ -282,170 +290,171 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
               <button
                 type="button"
                 onClick={() => removeJob(j.id)}
-                className="shrink-0"
+                className="shrink-0 rounded text-ink-subtle transition-colors hover:text-danger"
                 aria-label={`${t("Delete")} ${j.name}`}
               >
-                <Trash2
-                  className={`w-3.5 h-3.5 ${j.id === activeJobId ? "text-purple-200 hover:text-white" : "text-slate-400 hover:text-red-500"}`}
-                />
+                <Trash2 className="h-3.5 w-3.5" />
               </button>
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* SECTION 3 */}
       {selectedJob && (
-        <div className="border border-slate-200 rounded-2xl p-5 bg-white space-y-4 shadow-inner/5">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                {t("Job name")}
-              </label>
-              <input
-                type="text"
-                value={selectedJob.name}
-                onChange={(e) =>
-                  updateJobField(selectedJob.id, "name", e.target.value)
-                }
-                className="w-full p-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                {t("Runner")}
-              </label>
-              <select
-                value={selectedJob.runs_on}
-                onChange={(e) =>
-                  updateJobField(selectedJob.id, "runs_on", e.target.value)
-                }
-                className="w-full p-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 bg-white"
-              >
-                <option value="ubuntu-latest">ubuntu-latest (Linux)</option>
-                <option value="windows-latest">windows-latest (Windows)</option>
-                <option value="macos-latest">macos-latest (Mac)</option>
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                {t("Dependencies")} (`needs`)
-              </label>
-              <input
-                type="text"
-                value={selectedJob.needs.join(", ")}
-                onChange={(e) =>
-                  updateJobField(
-                    selectedJob.id,
-                    "needs",
-                    e.target.value
-                      .split(",")
-                      .map((n) => n.trim())
-                      .filter(Boolean),
-                  )
-                }
-                className="w-full p-2 border border-slate-200 rounded-xl text-xs font-mono text-slate-900"
-                placeholder="e.g. build"
-              />
-            </div>
+        <section className="space-y-4 rounded-lg border border-line bg-surface p-4">
+          <h4 className="text-sm font-semibold text-ink">{selectedJob.name}</h4>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Field label={t("Job name")}>
+              {(id) => (
+                <Input
+                  id={id}
+                  type="text"
+                  value={selectedJob.name}
+                  onChange={(e) =>
+                    updateJobField(selectedJob.id, "name", e.target.value)
+                  }
+                />
+              )}
+            </Field>
+            <Field label={t("Runner")}>
+              {(id) => (
+                <Select
+                  id={id}
+                  value={selectedJob.runs_on}
+                  onChange={(e) =>
+                    updateJobField(selectedJob.id, "runs_on", e.target.value)
+                  }
+                >
+                  <option value="ubuntu-latest">ubuntu-latest (Linux)</option>
+                  <option value="windows-latest">windows-latest (Windows)</option>
+                  <option value="macos-latest">macos-latest (Mac)</option>
+                </Select>
+              )}
+            </Field>
+            <Field label={`${t("Dependencies")} (\`needs\`)`}>
+              {(id) => (
+                <Input
+                  id={id}
+                  type="text"
+                  value={selectedJob.needs.join(", ")}
+                  onChange={(e) =>
+                    updateJobField(
+                      selectedJob.id,
+                      "needs",
+                      e.target.value
+                        .split(",")
+                        .map((n) => n.trim())
+                        .filter(Boolean),
+                    )
+                  }
+                  className="font-mono"
+                  placeholder="e.g. build"
+                />
+              )}
+            </Field>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                {t("Matrix key")}
-              </label>
-              <input
-                type="text"
-                value={selectedJob.matrix_key || ""}
-                onChange={(e) =>
-                  updateJobField(selectedJob.id, "matrix_key", e.target.value)
-                }
-                className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-mono"
-                placeholder="e.g. node-version"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                {t("Matrix values (comma-separated)")}
-              </label>
-              <input
-                type="text"
-                value={selectedJob.matrix_values || ""}
-                onChange={(e) =>
-                  updateJobField(
-                    selectedJob.id,
-                    "matrix_values",
-                    e.target.value,
-                  )
-                }
-                className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-mono"
-                placeholder="e.g. 18, 20, 22"
-              />
-            </div>
+          <div className="grid grid-cols-1 gap-4 rounded-md border border-line bg-surface-2/40 p-3 sm:grid-cols-2">
+            <Field label={t("Matrix key")}>
+              {(id) => (
+                <Input
+                  id={id}
+                  type="text"
+                  value={selectedJob.matrix_key || ""}
+                  onChange={(e) =>
+                    updateJobField(selectedJob.id, "matrix_key", e.target.value)
+                  }
+                  className="font-mono"
+                  placeholder="e.g. node-version"
+                />
+              )}
+            </Field>
+            <Field label={t("Matrix values (comma-separated)")}>
+              {(id) => (
+                <Input
+                  id={id}
+                  type="text"
+                  value={selectedJob.matrix_values || ""}
+                  onChange={(e) =>
+                    updateJobField(
+                      selectedJob.id,
+                      "matrix_values",
+                      e.target.value,
+                    )
+                  }
+                  className="font-mono"
+                  placeholder="e.g. 18, 20, 22"
+                />
+              )}
+            </Field>
           </div>
 
-          <div className="space-y-3 pt-3 border-t border-slate-100">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-              <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+          <div className="space-y-3 border-t border-line pt-4">
+            <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
+              <span className="text-sm font-semibold text-ink">
                 {t("Workflow steps")}
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {STEP_TYPES.map((type) => (
-                  <button
+                  <Button
                     key={type}
                     type="button"
+                    size="sm"
+                    variant="secondary"
                     onClick={() => addStepToActiveJob(type)}
-                    className="px-2.5 py-1 bg-purple-50 text-purple-700 hover:bg-purple-100 text-[10px] font-bold rounded-lg border border-purple-200/40 capitalize transition-all"
                   >
-                    + {t(stepTypeLabels[type])}
-                  </button>
+                    <Plus className="h-3.5 w-3.5" /> {t(stepTypeLabels[type])}
+                  </Button>
                 ))}
               </div>
             </div>
 
-            <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
+            <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
               {selectedJob.steps.map((step, idx) => (
                 <div
                   key={step.id}
-                  className="p-3.5 border border-slate-150 rounded-xl bg-slate-50/30 space-y-2"
+                  className="space-y-2 rounded-md border border-line bg-surface-2/50 p-3"
                 >
-                  <div className="flex justify-between items-center text-xs font-bold text-slate-900">
+                  <div className="flex items-center justify-between text-sm font-medium text-ink">
                     <span className="flex items-center gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-purple-600" />{" "}
+                      <CheckCircle2 className="h-3.5 w-3.5 text-accent-ink" />{" "}
                       {idx + 1}. {step.name}
                     </span>
-                    <button
+                    <Button
                       type="button"
-                      className="rounded p-1 text-slate-400 transition-colors hover:text-red-500"
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2"
                       aria-label={`${t("Delete")} ${step.name}`}
                       onClick={() => removeStepFromActiveJob(step.id)}
                     >
                       <Trash2 className="size-3.5" />
-                    </button>
+                    </Button>
                   </div>
 
                   {step.type === "setup-node" && (
-                    <select
+                    <Select
+                      aria-label={t("Set up Node.js")}
                       value={step.node_version}
                       onChange={(e) =>
                         updateStepField(step.id, "node_version", e.target.value)
                       }
-                      className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800"
                     >
                       <option value="18">Node Runtime v18.x</option>
                       <option value="20">Node Runtime v20.x</option>
                       <option value="22">Node Runtime v22.x</option>
-                    </select>
+                    </Select>
                   )}
 
                   {step.type === "npm" && (
-                    <select
+                    <Select
+                      aria-label={t("Run npm")}
                       value={step.npm_command}
                       onChange={(e) =>
                         updateStepField(step.id, "npm_command", e.target.value)
                       }
-                      className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-mono text-slate-800"
+                      className="font-mono"
                     >
                       <option value="install">
                         {t("npm install (standard install)")}
@@ -462,13 +471,14 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
                       <option value="run build">
                         {t("npm run build (production build)")}
                       </option>
-                    </select>
+                    </Select>
                   )}
 
                   {step.type === "docker" && (
                     <div className="grid grid-cols-2 gap-2">
-                      <input
+                      <Input
                         type="text"
+                        aria-label={t("Image name")}
                         value={step.docker_image}
                         onChange={(e) =>
                           updateStepField(
@@ -477,10 +487,11 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
                             e.target.value,
                           )
                         }
-                        className="p-2 border border-slate-200 bg-white rounded-lg text-xs font-mono"
+                        className="font-mono"
                         placeholder={t("Image name")}
                       />
-                      <select
+                      <Select
+                        aria-label={t("Build Docker image")}
                         value={step.docker_registry}
                         onChange={(e) =>
                           updateStepField(
@@ -489,17 +500,17 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
                             e.target.value,
                           )
                         }
-                        className="p-2 border border-slate-200 bg-white rounded-lg text-xs font-bold"
                       >
                         <option value="dockerhub">Docker Hub</option>
                         <option value="ghcr">GitHub Packages (GHCR)</option>
-                      </select>
+                      </Select>
                     </div>
                   )}
 
                   {step.type === "custom-run" && (
-                    <textarea
+                    <Textarea
                       rows={2}
+                      aria-label={t("Run a shell command")}
                       value={step.custom_script}
                       onChange={(e) =>
                         updateStepField(
@@ -508,14 +519,15 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
                           e.target.value,
                         )
                       }
-                      className="w-full p-2 border border-slate-200 bg-white rounded-lg text-xs font-mono"
+                      className="font-mono"
                       placeholder={t("Run a shell command")}
                     />
                   )}
 
                   {step.type === "upload-artifact" && (
-                    <input
+                    <Input
                       type="text"
+                      aria-label={t("Artifact path (e.g. dist/)")}
                       value={step.artifact_path ?? ""}
                       onChange={(e) =>
                         updateStepField(
@@ -524,7 +536,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
                           e.target.value,
                         )
                       }
-                      className="w-full rounded-lg border border-slate-200 bg-white p-2 font-mono text-xs"
+                      className="font-mono"
                       placeholder={t("Artifact path (e.g. dist/)")}
                     />
                   )}
@@ -532,20 +544,21 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
               ))}
             </div>
           </div>
-        </div>
+        </section>
       )}
 
-      <button
+      <Button
         type="button"
+        size="lg"
         onClick={onGenerate}
-        disabled={loading}
-        className="w-full py-4 bg-gradient-to-r from-violet-600 via-purple-600 to-blue-500 hover:opacity-95 text-white font-extrabold text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-purple-600/10 transition-all flex items-center justify-center gap-2"
+        loading={loading}
+        className="w-full"
       >
-        <Play className="w-3.5 h-3.5 fill-current" />
+        {!loading && <Play className="h-3.5 w-3.5 fill-current" />}
         {loading
           ? t("Compiling configuration...")
           : t("Generate workflow YAML")}
-      </button>
+      </Button>
     </div>
   );
 };

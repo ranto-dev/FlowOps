@@ -41,20 +41,20 @@ export function WorkflowBuilder() {
             <div key={node.label}>
               <motion.div
                 role="listitem"
-                initial={{ opacity: 0, y: reduce ? 0 : 20 }}
+                initial={{ opacity: 0, y: reduce ? 0 : 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.6 }}
-                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className="flex items-center gap-4 rounded-xl border border-[#27272A] bg-[#111113] px-5 py-4 transition-colors hover:border-zinc-700"
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                className="flex items-center gap-4 rounded-lg border border-line bg-surface px-5 py-4 transition-colors hover:border-line-strong"
               >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-[#27272A] bg-[#18181B]">
-                  <node.icon className="size-4 text-violet-300" aria-hidden="true" />
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-md border border-line bg-surface-2">
+                  <node.icon className="size-4 text-accent-ink" aria-hidden="true" />
                 </span>
                 <div className="flex items-center gap-3">
-                  <span className="font-mono text-[11px] text-[#71717A]">
+                  <span className="font-mono text-xs text-ink-subtle">
                     {String(i + 1).padStart(2, "0")}
                   </span>
-                  <span className="text-[15px] font-medium text-[#FAFAFA]">
+                  <span className="text-sm font-medium text-ink">
                     {t(node.label)}
                   </span>
                 </div>
@@ -64,17 +64,7 @@ export function WorkflowBuilder() {
                   className="flex justify-center py-1"
                   aria-hidden="true"
                 >
-                  <svg width="2" height="26" className="overflow-visible">
-                    <line
-                      x1="1"
-                      y1="0"
-                      x2="1"
-                      y2="26"
-                      stroke="#3f3f46"
-                      strokeWidth="2"
-                      className={reduce ? undefined : "landing-flow-line"}
-                    />
-                  </svg>
+                  <span className="block h-6 w-px bg-line-strong" />
                 </div>
               )}
             </div>

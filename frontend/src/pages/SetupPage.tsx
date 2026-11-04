@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
+  AlertCircle,
   ArrowRight,
   CheckCircle2,
   Copy,
@@ -9,16 +10,19 @@ import {
   FileText,
   Settings,
   ShieldCheck,
-  Sparkles,
   Terminal,
   Loader2,
-  AlertCircle,
   RefreshCw,
   Server,
 } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
 import { apiFetch, API_URL } from "../lib/api";
 import type { AuthStatus } from "../@types/api";
+import { Badge } from "../components/ui/Badge";
+import { Button } from "../components/ui/Button";
+import { Card } from "../components/ui/Card";
+import { CodeSurface } from "../components/ui/CodeSurface";
+import { ErrorState } from "../components/ui/States";
 import { PreferenceControls } from "../components/ui/PreferenceControls";
 import { usePreferences } from "../lib/usePreferences";
 
@@ -119,92 +123,81 @@ MONGO_URI=mongodb://localhost:27017/`,
     },
   ];
 
-  return (
-    <div className="setup-shell min-h-screen w-full bg-slate-50 flex flex-col font-sans text-slate-900 antialiased relative overflow-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-purple-100/60 rounded-full blur-3xl pointer-events-none -z-10" />
 
+  return (
+    <div className="flex min-h-screen w-full flex-col bg-canvas text-ink antialiased">
       {/* HEADER */}
-      <header className="w-full max-w-4xl mx-auto flex items-center justify-between py-4 px-4 sm:px-6">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-md shadow-purple-600/20">
-            <Terminal className="w-5 h-5" />
+      <header className="mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-accent text-white">
+            <Terminal className="h-5 w-5" />
           </div>
           <div>
-            <span className="text-base font-black tracking-tight flex items-center gap-1.5">
-              FlowOps
-              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-            </span>
-            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">
+            <span className="block text-base font-semibold">FlowOps</span>
+            <span className="block text-xs text-ink-subtle">
               {t("One-time setup")}
             </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <PreferenceControls compact />
-          <button
-            type="button"
-            onClick={checkConfig}
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-600 hover:text-purple-700 bg-white border border-slate-200/80 rounded-xl shadow-sm transition-all hover:border-purple-200"
-          >
+          <Button type="button" variant="secondary" size="sm" onClick={checkConfig}>
             <RefreshIcon spinning={status === "checking"} />
             {t("Check again")}
-          </button>
+          </Button>
         </div>
       </header>
 
-      <main className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 pb-16">
+      <main className="mx-auto w-full max-w-4xl px-4 py-6 pb-16 sm:px-6">
         {/* BANNER DE STATUT */}
         {status === "checking" && (
-          <div className="mb-6 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center gap-3 text-sm text-slate-600">
-            <Loader2 className="w-5 h-5 text-purple-600 animate-spin" />
+          <Card className="mb-6 flex items-center gap-3 p-4 text-sm text-ink-muted">
+            <Loader2 className="h-5 w-5 animate-spin text-accent-ink" />
             {t("Checking GitHub configuration...")}
-          </div>
+          </Card>
         )}
 
         {status === "ready" && (
-          <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+          <div className="mb-6 flex items-start gap-3 rounded-lg border border-success/30 bg-success/10 p-4">
+            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" />
             <div className="text-sm">
-              <p className="font-bold text-emerald-800">
+              <p className="font-medium text-success">
                 {t("GitHub is configured")}
               </p>
-              <p className="text-emerald-700">
+              <p className="text-ink-muted">
                 {t("The backend detected your GitHub OAuth App. You can now sign in.")}
               </p>
-              <button
+              <Button
+                type="button"
+                size="sm"
+                className="mt-3"
                 onClick={() => navigate("/auth")}
-                className="mt-3 inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm"
               >
                 {t("Go to sign in")}
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
             </div>
           </div>
         )}
 
         {status === "error" && (
-          <div
-            className="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
-            role="alert"
-          >
-            <AlertCircle className="mt-0.5 size-5 shrink-0 text-red-600" />
-            <div>
-              <p className="font-bold">{t("Could not check GitHub configuration")}</p>
-              <p className="mt-1">{t("The backend is unavailable. Check that it is running, then try again.")}</p>
-            </div>
+          <div className="mb-6">
+            <ErrorState
+              message={`${t("Could not check GitHub configuration")}. ${t("The backend is unavailable. Check that it is running, then try again.")}`}
+            />
           </div>
         )}
 
         {status === "not_configured" && (
-          <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="mb-6 flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 p-4">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
             <div className="text-sm">
-              <p className="font-bold text-amber-800">
+              <p className="font-medium text-warning">
                 {t("GitHub OAuth App is not configured")}
               </p>
-              <p className="text-amber-700">
+              <p className="text-ink-muted">
                 {t("The backend could not find these environment variables:")}
-                <span className="font-mono font-bold">
+                <span className="font-mono font-medium text-ink">
                   {" "}
                   {missingVars.length > 0
                     ? missingVars.join(", ")
@@ -217,16 +210,16 @@ MONGO_URI=mongodb://localhost:27017/`,
         )}
 
         {/* CARTE EXPLICATIVE */}
-        <div className="bg-white border border-slate-200/80 rounded-3xl shadow-xl shadow-slate-200/60 p-8 sm:p-10 space-y-8">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 text-[10px] font-black tracking-widest text-purple-600 bg-purple-50 px-3 py-1 rounded-full uppercase border border-purple-100">
-              <ShieldCheck className="w-3.5 h-3.5" />
+        <Card className="space-y-8 p-6 sm:p-8">
+          <div className="space-y-3">
+            <Badge tone="purple">
+              <ShieldCheck className="h-3.5 w-3.5" />
               {t("Configuration required")}
-            </div>
-            <h1 className="text-2xl font-black tracking-tight">
+            </Badge>
+            <h1 className="text-2xl font-semibold">
               {t("Connect FlowOps to your GitHub account")}
             </h1>
-            <p className="text-sm text-slate-500 leading-relaxed max-w-xl">
+            <p className="max-w-xl text-sm text-ink-muted">
               {t("FlowOps uses GitHub OAuth Device Flow to securely connect to your repositories. Create your own GitHub OAuth App and add its credentials to your local backend configuration.")}
               {" "}
               {t("Credentials are provided through environment variables and are not hard-coded in the source.")}
@@ -237,22 +230,17 @@ MONGO_URI=mongodb://localhost:27017/`,
             {steps.map((step, i) => (
               <li
                 key={step.title}
-                className="flex items-start gap-3.5 bg-slate-50/80 border border-slate-100 rounded-2xl p-4"
+                className="flex items-start gap-4 rounded-lg border border-line bg-surface-2 p-4"
               >
-                <div className="flex flex-col items-center shrink-0">
-                  <span className="w-7 h-7 rounded-full bg-purple-600 text-white text-xs font-black flex items-center justify-center shadow-sm">
-                    {i + 1}
-                  </span>
-                  {i < steps.length - 1 && (
-                    <span className="w-px flex-1 bg-purple-200 my-1" />
-                  )}
-                </div>
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-white">
+                  {i + 1}
+                </span>
                 <div className="pt-0.5">
-                  <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
-                    <span className="text-purple-600">{step.icon}</span>
+                  <div className="flex items-center gap-2 text-sm font-medium text-ink">
+                    <span className="text-accent-ink">{step.icon}</span>
                     {t(step.title)}
                   </div>
-                  <p className="text-xs text-slate-500 leading-relaxed mt-1">
+                  <p className="mt-1 text-xs text-ink-muted">
                     {t(step.description)}
                   </p>
                 </div>
@@ -261,51 +249,51 @@ MONGO_URI=mongodb://localhost:27017/`,
           </ol>
 
           <div className="space-y-4">
-            <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+            <h2 className="text-base font-semibold text-ink">
               {t("Reference files")}
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {copyBlocks.map((block) => (
-                <div
-                  key={block.key}
-                  className="bg-slate-900 rounded-2xl p-4 space-y-3"
-                >
+                <div key={block.key} className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    <span className="text-xs text-ink-muted">
                       {block.label}
                     </span>
-                    <button
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
                       onClick={() => handleCopy(block.content, block.key)}
-                      className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
                       title={t("Copy")}
+                      aria-label={t("Copy")}
                     >
                       {copiedId === block.key ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        <CheckCircle2 className="h-4 w-4 text-success" />
                       ) : (
-                        <Copy className="w-4 h-4" />
+                        <Copy className="h-4 w-4" />
                       )}
-                    </button>
+                    </Button>
                   </div>
-                  <pre className="font-mono text-[11px] text-emerald-300 whitespace-pre-wrap break-all leading-relaxed">
+                  <CodeSurface className="whitespace-pre-wrap break-all">
                     {block.content}
-                  </pre>
+                  </CodeSurface>
                 </div>
               ))}
             </div>
           </div>
 
           {copyError && (
-            <p className="text-sm text-red-600" role="alert">
+            <p className="text-sm text-danger" role="alert">
               {t("Copy failed. Please check clipboard permissions.")}
             </p>
           )}
 
-          <div className="flex flex-col sm:flex-row items-stretch justify-between gap-4 bg-purple-50/60 border border-purple-100 rounded-2xl p-5">
+          <div className="flex flex-col items-stretch justify-between gap-4 rounded-lg border border-accent/30 bg-accent/15 p-4 sm:flex-row sm:items-center">
             <div className="space-y-1">
-              <h3 className="text-sm font-black text-slate-900">
+              <h3 className="text-sm font-semibold text-ink">
                 {t("Create my GitHub OAuth App")}
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-ink-muted">
                 {t("Creating an OAuth App is free.")}
               </p>
             </div>
@@ -313,29 +301,23 @@ MONGO_URI=mongodb://localhost:27017/`,
               href="https://github.com/settings/developers"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover"
             >
-              <ExternalLink className="w-3.5 h-3.5 text-purple-400" />
+              <ExternalLink className="h-3.5 w-3.5" />
               {t("Open GitHub Developers")}
             </a>
           </div>
-        </div>
+        </Card>
 
         <div className="mt-8 flex items-center justify-between">
-          <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-purple-600 transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
+          <Button type="button" variant="ghost" size="sm" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-3.5 w-3.5" />
             {t("Back")}
-          </button>
-          <button
-            onClick={() => navigate("/auth")}
-            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-purple-600 transition-colors"
-          >
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => navigate("/auth")}>
             {t("Go to sign in")}
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
         </div>
       </main>
     </div>
@@ -344,7 +326,7 @@ MONGO_URI=mongodb://localhost:27017/`,
 
 const RefreshIcon: React.FC<{ spinning: boolean }> = ({ spinning }) =>
   spinning ? (
-    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+    <Loader2 className="h-3.5 w-3.5 animate-spin" />
   ) : (
-    <RefreshCw className="w-3.5 h-3.5" />
+    <RefreshCw className="h-3.5 w-3.5" />
   );

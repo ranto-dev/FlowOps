@@ -68,8 +68,17 @@ docker container needs (see `mongo-docker.sh`).
 `ApiError`, auto-logout on 401) with types in `src/@types/api.ts`; don't use raw `fetch`. Routes and the
 `ProtectedRoute`/`PublicOnlyRoute` guards are in `src/App.tsx` (token in localStorage `flowops_token`); new routes must
 use them. Two component trees: `components/ui/*` (PascalCase app UI) and `components/landing/*` (marketing, used only by
-`pages/LandingPage.tsx`). Dark mode is `data-theme="dark"` on an ancestor (Tailwind `dark:` variant defined in `main.css`).
+`pages/LandingPage.tsx`). Design system: **dark theme only**, one violet accent, no gradients. Colours come from the semantic tokens declared in
+`src/main.css` (`@theme`): `bg-canvas|surface|surface-2|code`, `border-line|line-strong`, `text-ink|ink-muted|ink-subtle`,
+`bg-accent` / `text-accent-ink`, and `success|warning|danger|info` for states only. Never use raw palette colours
+(`slate-*`, `purple-*`, `bg-white`…), `dark:` variants, `rounded-xl+`, or hex values in classes. Reuse `components/ui/*`
+(`Button`, `Card`, `Badge`, `Input`/`Select`/`Textarea`/`Field`, `StatusBadge`, `CodeSurface`, `Modal`, `Toast`…) instead of
+hand-styling. Fonts (Inter + JetBrains Mono) are self-hosted via `@fontsource-variable/*`.
 `lucide-react` v1 has no brand icons (no `Github`) — use inline SVG.
+
+**Documentation (`/docs`).** Data-driven: sidebar in `src/docs/navigation.ts` (two tabs: `guides` = end-user usage,
+`developers` = technical), pages in `src/docs/content/*.ts` (typed blocks, helpers in `blocks.ts`), UI in
+`src/components/docs/*`. Guides must describe the real UI labels (check `WorkflowForm.tsx` / `Workspace.tsx` / `History.tsx`).
 
 ## Gotchas
 

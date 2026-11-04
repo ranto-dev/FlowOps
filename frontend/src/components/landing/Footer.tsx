@@ -33,19 +33,19 @@ const COLUMNS: Array<{ title: string; links: Array<{ label: string; href: string
 export function Footer() {
   const { t } = usePreferences();
   return (
-    <footer className="border-t border-[#27272A]">
+    <footer className="border-t border-line">
       <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6">
         <div className="grid gap-10 md:grid-cols-[1.2fr_2fr]">
           <div>
             <Link to="/" className="flex items-center gap-2.5" aria-label="FlowOps home">
-              <span className="flex size-8 items-center justify-center rounded-lg border border-[#27272A] bg-[#18181B]">
-                <TerminalSquare className="size-4 text-violet-400" />
+              <span className="flex size-8 items-center justify-center rounded-md border border-line bg-surface-2">
+                <TerminalSquare className="size-4 text-accent-ink" />
               </span>
-              <span className="text-[15px] font-bold tracking-tight text-[#FAFAFA]">
+              <span className="text-sm font-semibold text-ink">
                 FlowOps
               </span>
             </Link>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-[#A1A1AA]">
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-ink-muted">
               {t("Low-code CI/CD workflow platform.")}
             </p>
           </div>
@@ -55,7 +55,7 @@ export function Footer() {
           >
             {COLUMNS.map((col) => (
               <div key={col.title}>
-                <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#71717A]">
+                <h3 className="font-mono text-xs text-ink-subtle">
                   {t(col.title)}
                 </h3>
                 <ul className="mt-4 space-y-2.5">
@@ -66,21 +66,21 @@ export function Footer() {
                           href={link.href}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-sm text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
+                          className="text-sm text-ink-muted transition-colors hover:text-ink"
                         >
                           {t(link.label)}
                         </a>
                       ) : link.href.startsWith("#") ? (
                         <a
                           href={link.href}
-                          className="text-sm text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
+                          className="text-sm text-ink-muted transition-colors hover:text-ink"
                         >
                           {t(link.label)}
                         </a>
                       ) : (
                         <Link
                           to={link.href}
-                          className="text-sm text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
+                          className="text-sm text-ink-muted transition-colors hover:text-ink"
                         >
                           {t(link.label)}
                         </Link>
@@ -93,7 +93,7 @@ export function Footer() {
           </nav>
         </div>
         <Separator className="my-8" />
-        <p className="font-mono text-xs text-[#71717A]">© 2026 FlowOps</p>
+        <p className="font-mono text-xs text-ink-subtle">© 2026 FlowOps</p>
       </div>
     </footer>
   );

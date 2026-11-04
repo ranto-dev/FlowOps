@@ -11,7 +11,7 @@ interface RevealProps {
 }
 
 /** Fade + slide-up on scroll, once. Honors prefers-reduced-motion. */
-export function Reveal({ children, className, delay = 0, y = 24 }: RevealProps) {
+export function Reveal({ children, className, delay = 0, y = 12 }: RevealProps) {
   const reduce = useReducedMotion();
   return (
     <motion.div
@@ -19,7 +19,7 @@ export function Reveal({ children, className, delay = 0, y = 24 }: RevealProps) 
       initial={{ opacity: 0, y: reduce ? 0 : y }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: 0.7, delay, ease: EASE }}
+      transition={{ duration: 0.4, delay, ease: EASE }}
     >
       {children}
     </motion.div>
@@ -46,14 +46,14 @@ export function SectionHeader({
         align === "center" ? "mx-auto items-center text-center" : "items-start text-left",
       )}
     >
-      <span className="font-mono text-xs font-medium uppercase tracking-[0.2em] text-violet-400/90">
+      <span className="text-xs font-medium text-accent-ink">
         {eyebrow}
       </span>
-      <h2 className="font-display text-balance text-3xl font-bold leading-[1.1] tracking-tight text-[#FAFAFA] sm:text-4xl lg:text-[2.75rem]">
+      <h2 className="text-balance text-2xl font-semibold leading-tight text-ink sm:text-3xl">
         {title}
       </h2>
       {description ? (
-        <p className="text-pretty text-base leading-relaxed text-[#A1A1AA]">
+        <p className="text-pretty text-base leading-relaxed text-ink-muted">
           {description}
         </p>
       ) : null}

@@ -3,11 +3,11 @@ import { Loader2, Inbox, AlertCircle, RotateCw } from "lucide-react";
 import { Button } from "./Button";
 
 export const LoadingState: React.FC<{ label?: string }> = ({
-  label = "Chargement...",
+  label = "Loading...",
 }) => (
-  <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-slate-200/80">
-    <Loader2 className="w-7 h-7 text-purple-600 animate-spin mb-2" />
-    <span className="text-xs font-semibold text-slate-500">{label}</span>
+  <div className="flex flex-col items-center justify-center rounded-lg border border-line bg-surface py-16">
+    <Loader2 className="mb-2 h-6 w-6 animate-spin text-accent-ink" />
+    <span className="text-sm text-ink-muted">{label}</span>
   </div>
 );
 
@@ -16,11 +16,11 @@ export const EmptyState: React.FC<{
   description?: string;
   action?: React.ReactNode;
 }> = ({ title, description, action }) => (
-  <div className="text-center py-14 text-slate-400 text-xs border border-dashed border-slate-200 rounded-2xl bg-white space-y-3">
-    <Inbox className="w-8 h-8 text-slate-300 mx-auto" />
-    <p className="font-medium text-slate-600">{title}</p>
-    {description && <p className="text-[11px] text-slate-400">{description}</p>}
-    {action && <div className="pt-2 flex justify-center">{action}</div>}
+  <div className="space-y-3 rounded-lg border border-dashed border-line-strong bg-surface py-14 text-center">
+    <Inbox className="mx-auto h-8 w-8 text-ink-subtle" />
+    <p className="text-sm font-medium text-ink">{title}</p>
+    {description && <p className="text-sm text-ink-muted">{description}</p>}
+    {action && <div className="flex justify-center pt-2">{action}</div>}
   </div>
 );
 
@@ -28,12 +28,15 @@ export const ErrorState: React.FC<{
   message: string;
   onRetry?: () => void;
 }> = ({ message, onRetry }) => (
-  <div className="text-xs font-mono text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-2.5">
-    <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+  <div
+    role="alert"
+    className="flex items-center gap-2.5 rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
+  >
+    <AlertCircle className="h-4 w-4 shrink-0" />
     <span className="flex-1">{message}</span>
     {onRetry && (
       <Button variant="ghost" size="sm" onClick={onRetry}>
-        <RotateCw className="w-3.5 h-3.5" /> Réessayer
+        <RotateCw className="h-3.5 w-3.5" /> Retry
       </Button>
     )}
   </div>

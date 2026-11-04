@@ -36,13 +36,11 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
       icon={
         icon ?? (
           <div
-            className={`p-2 rounded-xl ${
-              danger
-                ? "bg-red-50 text-red-600 border border-red-100"
-                : "bg-purple-50 text-purple-600 border border-purple-100"
+            className={`rounded-md p-2 ${
+              danger ? "bg-danger/10 text-danger" : "bg-accent/15 text-accent-ink"
             }`}
           >
-            <AlertTriangle className="w-5 h-5" />
+            <AlertTriangle className="h-5 w-5" />
           </div>
         )
       }
@@ -62,7 +60,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         </>
       }
     >
-      <div className="text-xs text-slate-600 leading-relaxed">{description}</div>
+      <div className="text-sm leading-relaxed text-ink-muted">{description}</div>
     </Modal>
   );
 };

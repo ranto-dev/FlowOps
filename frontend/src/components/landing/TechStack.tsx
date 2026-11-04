@@ -33,16 +33,16 @@ export function TechStack() {
             <motion.div
               key={s.group}
               variants={reduce ? undefined : staggerChild}
-              className="rounded-xl border border-[#27272A] bg-[#111113] p-5"
+              className="rounded-lg border border-line bg-surface p-5"
             >
-              <dt className="font-mono text-[11px] uppercase tracking-[0.2em] text-violet-300/90">
+              <dt className="font-mono text-xs text-accent-ink">
                 {t(s.group)}
               </dt>
               <dd className="mt-3 flex flex-wrap gap-2">
                 {s.items.map((item) => (
                   <span
                     key={item}
-                    className="rounded-md border border-[#27272A] bg-[#18181B] px-2.5 py-1 font-mono text-xs text-[#A1A1AA]"
+                    className="rounded-md border border-line bg-surface-2 px-2.5 py-1 font-mono text-xs text-ink-muted"
                   >
                     {item}
                   </span>
@@ -50,11 +50,11 @@ export function TechStack() {
               </dd>
             </motion.div>
           ))}
-          <Reveal className="rounded-xl border border-dashed border-[#3f3f46] p-5 sm:col-span-2 lg:col-span-1">
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#71717A]">
+          <Reveal className="rounded-lg border border-dashed border-line-strong p-5 sm:col-span-2 lg:col-span-1">
+            <p className="font-mono text-xs text-ink-subtle">
               {t("Data flow")}
             </p>
-            <p className="mt-3 font-mono text-xs leading-6 text-[#A1A1AA]">
+            <p className="mt-3 font-mono text-xs leading-6 text-ink-muted">
               React → FastAPI → GitHub Actions
               <br />
               → execution data → MLflow → predictions

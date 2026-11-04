@@ -37,24 +37,24 @@ export function ProductPreview() {
     >
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <motion.div
-          initial={{ opacity: 0, y: reduce ? 0 : 48 }}
+          initial={{ opacity: 0, y: reduce ? 0 : 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.7, ease: EASE }}
-          className="overflow-hidden rounded-xl border border-[#27272A] bg-[#111113] shadow-2xl shadow-black/50"
+          transition={{ duration: 0.4, ease: EASE }}
+          className="overflow-hidden rounded-lg border border-line bg-surface"
         >
           {/* window chrome */}
-          <div className="flex items-center justify-between border-b border-[#27272A] bg-[#18181B] px-4 py-3">
+          <div className="flex items-center justify-between border-b border-line bg-surface-2 px-4 py-3">
             <div className="flex items-center gap-2" aria-hidden="true">
-              <span className="size-2.5 rounded-full bg-[#3f3f46]" />
-              <span className="size-2.5 rounded-full bg-[#3f3f46]" />
-              <span className="size-2.5 rounded-full bg-[#3f3f46]" />
+              <span className="size-2.5 rounded-full bg-line-strong" />
+              <span className="size-2.5 rounded-full bg-line-strong" />
+              <span className="size-2.5 rounded-full bg-line-strong" />
             </div>
-            <p className="font-mono text-xs text-[#71717A]">
+            <p className="font-mono text-xs text-ink-subtle">
               FlowOps <span aria-hidden="true">—</span> workflow.yml
             </p>
-            <span className="flex items-center gap-1.5 font-mono text-[11px] text-emerald-400">
-              <span className="size-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
+            <span className="flex items-center gap-1.5 font-mono text-xs text-success">
+              <span className="size-1.5 rounded-full bg-success" aria-hidden="true" />
               {t("Ready")}
             </span>
           </div>
@@ -65,31 +65,31 @@ export function ProductPreview() {
               initial="hidden"
               whileInView="show"
               viewport={{ once: true, amount: 0.3 }}
-              className="flex flex-col gap-3 border-b border-[#27272A] p-5 sm:p-6 lg:border-b-0 lg:border-r"
+              className="flex flex-col gap-3 border-b border-line p-5 sm:p-6 lg:border-b-0 lg:border-r"
             >
-              <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#71717A]">
+              <p className="font-mono text-xs text-ink-subtle">
                 {t("Workflow")}
               </p>
               {STEPS.map((step) => (
                 <motion.div
                   key={step.label}
                   variants={reduce ? undefined : staggerChild}
-                  className="rounded-lg border border-[#27272A] bg-[#18181B] p-3.5"
+                  className="rounded-lg border border-line bg-surface-2 p-3.5"
                 >
-                  <p className="text-[11px] font-medium uppercase tracking-wider text-[#71717A]">
+                  <p className="text-xs font-medium text-ink-subtle">
                     {t(step.label)}
                   </p>
-                  <p className="mt-1 font-mono text-sm text-[#FAFAFA]">
+                  <p className="mt-1 font-mono text-sm text-ink">
                     {step.value}
                   </p>
-                  <p className="mt-0.5 font-mono text-[11px] text-[#71717A]">
+                  <p className="mt-0.5 font-mono text-xs text-ink-subtle">
                     {step.detail}
                   </p>
                 </motion.div>
               ))}
               <motion.div
                 variants={reduce ? undefined : staggerChild}
-                className="mt-1 flex items-center justify-center gap-2 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white"
+                className="mt-1 flex items-center justify-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-white"
                 aria-hidden="true"
               >
                 <Play className="size-4" />
@@ -98,13 +98,13 @@ export function ProductPreview() {
             </motion.div>
 
             <div
-              className="bg-[#09090B] p-5 sm:p-6"
+              className="bg-code p-5 sm:p-6"
               aria-label={t("Example generated YAML")}
             >
-              <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-[#71717A]">
+              <p className="mb-3 font-mono text-xs text-ink-subtle">
                 {t("Example generated YAML")}
               </p>
-              <pre className="min-h-36 overflow-x-auto font-mono text-[12px] leading-6 text-[#A1A1AA]">
+              <pre className="min-h-36 overflow-x-auto font-mono text-xs leading-6 text-ink-muted">
                 <code>{YAML_EXAMPLE}</code>
               </pre>
             </div>

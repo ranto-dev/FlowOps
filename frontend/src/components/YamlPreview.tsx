@@ -5,10 +5,13 @@ import {
   Save,
   FileCode,
   Copy,
-  Loader2,
+  Check,
   CheckCircle,
 } from "lucide-react";
 import type { VirtualFile } from "../@types/workflow";
+import { usePreferences } from "../lib/usePreferences";
+import { Button } from "./ui/Button";
+import { CodeSurface } from "./ui/CodeSurface";
 
 interface YamlPreviewProps {
   activeFile: VirtualFile;
@@ -27,6 +30,7 @@ export const YamlPreview: React.FC<YamlPreviewProps> = ({
   onSaveToServer,
   saveStatus,
 }) => {
+  const { t } = usePreferences();
   const [copied, setCopied] = React.useState(false);
 
   const copyToClipboard = () => {
@@ -45,104 +49,109 @@ export const YamlPreview: React.FC<YamlPreviewProps> = ({
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col bg-slate-950 rounded-3xl shadow-2xl overflow-hidden border border-slate-800 text-left">
+    <div className="mx-auto flex w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-line bg-surface text-left">
       {/* BARRE DE CONTRÔLE SUPÉRIEURE */}
-      <div className="bg-slate-900/80 px-6 py-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-ping"></div>
-          <span className="text-xs font-mono font-bold text-slate-300 flex items-center gap-1.5">
-            <FileCode className="w-4 h-4 text-purple-400" />
-            {activeFile.filename || "production-pipeline.yaml"}
-          </span>
-        </div>
+      <div className="flex flex-col justify-between gap-3 border-b border-line px-4 py-3 sm:flex-row sm:items-center">
+        <span className="flex items-center gap-2 font-mono text-xs text-ink">
+          <FileCode className="h-4 w-4 text-accent-ink" />
+          {activeFile.filename || "production-pipeline.yaml"}
+        </span>
 
         {/* LES TROIS BOUTONS */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={onNewWorkflow}
             disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-[11px] rounded-xl transition-all border border-slate-700 disabled:opacity-50"
           >
-            <Plus className="w-3.5 h-3.5" />
-            Nouveau workflow
-          </button>
-          <button
+            <Plus className="h-3.5 w-3.5" />
+            {t("New workflow")}
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={onReconfigure}
             disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-[11px] rounded-xl transition-all border border-slate-700 disabled:opacity-50"
           >
-            <RefreshCcw className="w-3.5 h-3.5" />
-            Reconfigurer
-          </button>
-          <button
+            <RefreshCcw className="h-3.5 w-3.5" />
+            {t("Reconfigure")}
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
             onClick={onSaveToServer}
-            disabled={loading}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-violet-600 to-purple-600 hover:opacity-90 text-white font-black text-[11px] rounded-xl transition-all shadow-md shadow-purple-900/20 disabled:opacity-50"
+            loading={loading}
           >
-            {loading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Save className="w-3.5 h-3.5" />
-            )}
-            Enregistrer le workflow
-          </button>
+            {!loading && <Save className="h-3.5 w-3.5" />}
+            {t("Save workflow")}
+          </Button>
         </div>
       </div>
 
-      {/* RECEPTACLE DE CODE SOURCE AVEC NUMÉROTATION DE LIGNES */}
-      <div className="flex-1 p-6 overflow-auto font-mono text-xs leading-relaxed relative min-h-[450px] bg-slate-950">
+      {/* CODE SOURCE AVEC NUMÉROTATION DE LIGNES */}
+      <div className="relative min-h-[450px] p-4">
         {saveStatus && (
-          <div className="mb-4 p-3 bg-emerald-950/40 border border-emerald-800/40 rounded-xl text-emerald-400 text-[11px] font-medium flex items-center gap-2">
-            <CheckCircle className="w-4 h-4" /> {saveStatus}
+          <div className="mb-4 flex items-center gap-2 rounded-md border border-success/30 bg-success/10 p-3 text-xs font-medium text-success">
+            <CheckCircle className="h-4 w-4" /> {saveStatus}
           </div>
         )}
 
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={copyToClipboard}
-          className="absolute top-4 right-4 p-2 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg border border-slate-800 transition-colors z-10"
+          className="absolute right-6 top-6 z-10"
           title="Copier le code"
+          aria-label="Copier le code"
         >
           {copied ? (
-            <span className="text-[10px] text-emerald-400 font-bold px-1">
-              Copied!
-            </span>
+            <>
+              <Check className="h-3.5 w-3.5 text-success" /> Copied!
+            </>
           ) : (
-            <Copy className="w-3.5 h-3.5" />
+            <Copy className="h-3.5 w-3.5" />
           )}
-        </button>
+        </Button>
 
         {activeFile.yaml ? (
-          <div className="flex items-start select-text pt-2">
-            {/* Gouttière des numéros de ligne */}
-            <div className="flex flex-col text-right pr-4 text-slate-600 select-none border-r border-slate-800/60 min-w-[2.5rem]">
-              {yamlLines.map((_, index) => (
-                <span
-                  key={index}
-                  className="h-5 text-[11px] font-medium tracking-sm"
-                >
-                  {index + 1}
-                </span>
-              ))}
-            </div>
-
-            {/* Contenu du code YAML */}
-            <div className="flex flex-col pl-4 text-purple-300 overflow-x-auto w-full">
+          <CodeSurface className="max-h-[600px] select-text text-xs">
+            <code className="block">
               {yamlLines.map((line, index) => (
-                <span
-                  key={index}
-                  className="h-5 whitespace-pre block hover:bg-slate-900/40 px-1 rounded transition-colors text-emerald-400 font-medium"
-                >
-                  {line || " "}
+                <span key={index} className="flex">
+                  <span className="w-10 shrink-0 select-none pr-4 text-right text-ink-subtle">
+                    {index + 1}
+                  </span>
+                  <span className="whitespace-pre">{highlight(line)}</span>
                 </span>
               ))}
-            </div>
-          </div>
+            </code>
+          </CodeSurface>
         ) : (
-          <div className="h-full flex items-center justify-center text-slate-600 text-center py-20">
+          <div className="flex items-center justify-center py-20 text-center text-sm text-ink-muted">
             Génération du flux en cours...
           </div>
         )}
       </div>
     </div>
+  );
+};
+
+/** Coloration minimale d'une ligne YAML avec les tokens du thème. */
+const highlight = (line: string): React.ReactNode => {
+  if (!line) return " ";
+  if (line.trimStart().startsWith("#")) {
+    return <span className="text-ink-muted">{line}</span>;
+  }
+  const m = line.match(/^(\s*(?:- )?)([\w.\-/]+)(:)(.*)$/);
+  if (!m) return <span className="text-success">{line}</span>;
+  const [, indent, key, colon, rest] = m;
+  return (
+    <>
+      {indent}
+      <span className="text-accent-ink">{key}</span>
+      <span className="text-ink-muted">{colon}</span>
+      <span className="text-success">{rest}</span>
+    </>
   );
 };

@@ -1,0 +1,110 @@
+import type { DocPage } from "../types";
+import { code, h2, note, p, table } from "./blocks";
+
+export const reference: DocPage[] = [
+  {
+    slug: "workflow-schema",
+    title: "Workflow Schema",
+    description: "Every field of the FlowOps workflow configuration.",
+    keywords: ["schema", "json", "jobs", "steps", "fields"],
+    blocks: [
+      h2("Workflow"),
+      table(
+        ["Field", "Type", "Description"],
+        ["`filename`", "string", "Name of the generated file in `.github/workflows/`"],
+        ["`name`", "string", "Workflow name"],
+        ["`on_events`", "string[]", "Triggers, e.g. `push`, `pull_request`"],
+        ["`branches`", "string", "Comma-separated branch filter for `push` and `pull_request`"],
+        ["`global_env`", "string?", "`KEY=value` lines, one per variable"],
+        ["`jobs`", "Job[]", "Jobs of the workflow"],
+      ),
+      h2("Job"),
+      table(
+        ["Field", "Type", "Description"],
+        ["`id`", "string", "Editor identifier"],
+        ["`name`", "string", "Display name; also the job key (lower-cased, dashes)"],
+        ["`runs_on`", "string", "Runner, default `ubuntu-latest`"],
+        ["`needs`", "string[]", "Jobs that must finish first (default empty)"],
+        ["`matrix_key`", "string?", "Matrix variable name"],
+        ["`matrix_values`", "string?", "Comma-separated matrix values"],
+        ["`job_if`", "string?", "Job-level condition"],
+        ["`steps`", "Step[]", "Ordered steps"],
+      ),
+      h2("Step"),
+      table(
+        ["Field", "Type", "Description"],
+        ["`id`, `name`", "string", "Identifier and display name"],
+        ["`type`", "enum", "`checkout`, `setup-node`, `npm`, `upload-artifact`, `docker`, `custom-run`"],
+        ["`node_version`", "string?", "For `setup-node`"],
+        ["`npm_command`", "string?", "For `npm`"],
+        ["`docker_image`, `docker_registry`", "string?", "For `docker`"],
+        ["`custom_script`", "string?", "For `custom-run`"],
+        ["`artifact_path`", "string?", "For `upload-artifact`"],
+        ["`step_if`", "string?", "Step-level condition"],
+      ),
+      note("Types are declared in `backend/schemas.py` and mirrored in `frontend/src/@types/workflow.ts`."),
+    ],
+  },
+  {
+    slug: "environment-variables",
+    title: "Environment Variables",
+    description: "All variables read by the backend.",
+    keywords: ["env", "settings", "mlops", "mlflow", "cors"],
+    blocks: [
+      h2("API"),
+      table(
+        ["Variable", "Default", "Description"],
+        ["`GITHUB_CLIENT_ID`", "—", "OAuth App client ID (required to sign in)"],
+        ["`GITHUB_CLIENT_SECRET`", "—", "OAuth App client secret (required to sign in)"],
+        ["`MONGO_URI`", "`mongodb://localhost:27017/`", "MongoDB connection string"],
+        ["`MONGO_DB_NAME`", "`flowops_db`", "Database name"],
+        ["`CORS_ORIGINS`", "`http://localhost:5173,http://127.0.0.1:5173`", "Allowed browser origins, comma-separated"],
+        ["`GITHUB_TIMEOUT`", "`20`", "Timeout in seconds for GitHub calls"],
+      ),
+      h2("MLOps"),
+      table(
+        ["Variable", "Default", "Description"],
+        ["`FLOWOPS_MLFLOW_TRACKING_URI`", "SQLite in `backend/mlruns/`", "MLflow tracking store"],
+        ["`GITHUB_TOKEN`", "—", "Token for the offline collector (not used for sign-in)"],
+        ["`GITHUB_REPO`", "—", "Default repository for the collector"],
+        ["`MLOPS_*`", "see [thresholds](/docs/monitoring-retraining)", "Validation thresholds"],
+      ),
+      p("`backend/.env` is git-ignored; start from `backend/.env.example`."),
+    ],
+  },
+  {
+    slug: "cli-reference",
+    title: "CLI Reference",
+    description: "Commands to run the services and the MLOps pipeline.",
+    keywords: ["commands", "python -m", "uvicorn", "pnpm"],
+    blocks: [
+      h2("Services"),
+      code(
+        "bash",
+        `cd backend && ./mongo-docker.sh
+cd backend && venv/bin/python -m uvicorn main:app --reload --port 8000
+cd frontend && pnpm dev`,
+      ),
+      h2("MLOps"),
+      table(
+        ["Command", "Description"],
+        ["`python -m mlops.pipeline [--sample] [--skip-train]`", "Full pipeline"],
+        ["`python -m mlops.etl.pipeline`", "ETL and features"],
+        ["`python -m mlops.training.train_duration`", "Train the duration model"],
+        ["`python -m mlops.training.train_failure`", "Train the failure model"],
+        ["`python -m mlops.evaluation.evaluate`", "Evaluate the models"],
+        ["`python -m mlops.validation.validator`", "Validate and promote"],
+        ["`python -m mlops.collection.collector --repo R --token T`", "Collect GitHub runs"],
+      ),
+      p("Run them from `backend/` with the virtual environment interpreter (`venv/bin/python`)."),
+      h2("Quality"),
+      table(
+        ["Command", "Description"],
+        ["`venv/bin/ruff check .`", "Backend lint"],
+        ["`venv/bin/python -m pytest`", "Backend tests"],
+        ["`pnpm lint`", "Frontend lint"],
+        ["`pnpm exec tsc -b`", "Frontend type check"],
+      ),
+    ],
+  },
+];

@@ -25,8 +25,8 @@ const SetupPage = lazy(() =>
     default: page,
   })),
 );
-const DocsPage = lazy(() =>
-  import("./pages/DocsPage").then(({ DocsPage: page }) => ({ default: page })),
+const DocumentationLayout = lazy(
+  () => import("./components/docs/DocumentationLayout"),
 );
 
 // Garde-fou 1 : Protège le workspace (Redirige vers /auth si non connecté)
@@ -51,7 +51,7 @@ function App() {
           <Suspense
             fallback={
               <div
-                className="flex min-h-screen items-center justify-center text-sm text-slate-500"
+                className="flex min-h-screen items-center justify-center text-sm text-ink-muted"
                 role="status"
               >
                 {t("Loading FlowOps...")}
@@ -75,7 +75,7 @@ function App() {
                     <div className="relative">
                       <Link
                         to="/"
-                        className="absolute left-6 top-6 z-50 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur transition hover:border-violet-300 hover:text-violet-700 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200"
+                        className="absolute left-6 top-6 z-50 inline-flex items-center gap-2 rounded-md border border-line-strong bg-surface px-3 py-1.5 text-sm text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink"
                       >
                         <ArrowLeft className="h-3.5 w-3.5" />
                         <span>{t("Return home")}</span>
@@ -97,7 +97,7 @@ function App() {
               />
 
               <Route path="/setup" element={<SetupPage />} />
-              <Route path="/docs" element={<DocsPage />} />
+              <Route path="/docs/*" element={<DocumentationLayout />} />
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

@@ -67,40 +67,40 @@ export function MLOpsSection() {
           ref={counterRef}
           className="mx-auto mt-12 grid max-w-3xl gap-4 sm:grid-cols-2"
         >
-          <Reveal className="rounded-xl border border-[#27272A] bg-[#111113] p-6">
-            <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-[#71717A]">
+          <Reveal className="rounded-lg border border-line bg-surface p-6">
+            <div className="flex items-center gap-2 font-mono text-xs text-ink-subtle">
               <Clock3 className="size-4" aria-hidden="true" />
               {t("Estimated duration")}
             </div>
-            <p className="mt-3 text-5xl font-bold tracking-tight text-[#FAFAFA]">
+            <p className="mt-3 text-3xl font-semibold text-ink">
               {duration}
-              <span className="ml-1 text-lg font-medium text-[#71717A]">{t("sec")}</span>
+              <span className="ml-1 text-base font-medium text-ink-subtle">{t("sec")}</span>
             </p>
-            <p className="mt-2 font-mono text-xs text-[#71717A]">
+            <p className="mt-2 font-mono text-xs text-ink-subtle">
               {t("Illustrative value")}
             </p>
           </Reveal>
 
-          <Reveal delay={0.1} className="rounded-xl border border-[#27272A] bg-[#111113] p-6">
-            <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-[#71717A]">
+          <Reveal delay={0.1} className="rounded-lg border border-line bg-surface p-6">
+            <div className="flex items-center gap-2 font-mono text-xs text-ink-subtle">
               <ShieldAlert className="size-4" aria-hidden="true" />
               {t("Failure risk")}
             </div>
-            <p className="mt-3 text-5xl font-bold tracking-tight text-[#FAFAFA]">
+            <p className="mt-3 text-3xl font-semibold text-ink">
               {risk}
-              <span className="ml-1 text-lg font-medium text-[#71717A]">%</span>
+              <span className="ml-1 text-base font-medium text-ink-subtle">%</span>
             </p>
-            <p className="mt-2 font-mono text-xs text-[#71717A]">{t("Illustrative value")}</p>
+            <p className="mt-2 font-mono text-xs text-ink-subtle">{t("Illustrative value")}</p>
           </Reveal>
         </div>
 
-        <Reveal className="mx-auto mt-4 max-w-3xl rounded-xl border border-[#27272A] bg-[#111113] p-6">
+        <Reveal className="mx-auto mt-4 max-w-3xl rounded-lg border border-line bg-surface p-6">
           <div className="flex items-center justify-between font-mono text-xs">
-            <span className="text-[#A1A1AA]">{t("Pipeline prediction")}</span>
+            <span className="text-ink-muted">{t("Pipeline prediction")}</span>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="cursor-help text-[#71717A] underline decoration-dotted underline-offset-4">
+                  <span className="cursor-help text-ink-subtle underline decoration-dotted underline-offset-4">
                     {risk}% {t("failure probability")}
                   </span>
                 </TooltipTrigger>
@@ -111,7 +111,7 @@ export function MLOpsSection() {
             </TooltipProvider>
           </div>
           <div
-            className="mt-3 h-2 overflow-hidden rounded-full bg-[#27272A]"
+            className="mt-3 h-2 overflow-hidden rounded-full bg-line"
             role="progressbar"
             aria-valuenow={risk}
             aria-valuemin={0}
@@ -119,14 +119,14 @@ export function MLOpsSection() {
             aria-label={t("Failure probability")}
           >
             <motion.div
-              className="h-full rounded-full bg-violet-400"
+              className="h-full rounded-full bg-accent"
               initial={{ width: 0 }}
               whileInView={{ width: `${risk}%` }}
               viewport={{ once: true, amount: 0.4 }}
               transition={{ duration: reduce ? 0 : 1, ease: EASE }}
             />
           </div>
-          <p className="mt-3 font-mono text-[11px] leading-relaxed text-[#71717A]">
+          <p className="mt-3 font-mono text-xs leading-relaxed text-ink-subtle">
             {t("Illustrative values only. In the workspace, predictions come from available local models.")}
           </p>
         </Reveal>
@@ -134,7 +134,7 @@ export function MLOpsSection() {
         {/* pipeline chain */}
         <div className="mx-auto mt-16 max-w-2xl">
           <Reveal>
-            <h3 className="text-center font-mono text-[11px] uppercase tracking-[0.22em] text-[#71717A]">
+            <h3 className="text-center font-mono text-xs text-ink-subtle">
               {t("From execution to prediction")}
             </h3>
           </Reveal>
@@ -154,14 +154,14 @@ export function MLOpsSection() {
                 <span
                   className={
                     i === 0 || i === PIPELINE.length - 1
-                      ? "rounded-lg border border-violet-500/30 bg-violet-500/10 px-4 py-2 font-mono text-[13px] text-violet-200"
-                      : "rounded-lg border border-[#27272A] bg-[#111113] px-4 py-2 font-mono text-[13px] text-[#A1A1AA]"
+                      ? "rounded-md border border-accent/30 bg-accent/15 px-4 py-2 font-mono text-sm text-accent-ink"
+                      : "rounded-md border border-line bg-surface px-4 py-2 font-mono text-sm text-ink-muted"
                   }
                 >
                   {t(step)}
                 </span>
                 {i < PIPELINE.length - 1 && (
-                  <span aria-hidden="true" className="py-1 font-mono text-[#3f3f46]">
+                  <span aria-hidden="true" className="py-1 font-mono text-line-strong">
                     ↓
                   </span>
                 )}
