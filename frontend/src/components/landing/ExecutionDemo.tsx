@@ -45,9 +45,13 @@ export function ExecutionDemo() {
       setTick(STEPS.length);
       return;
     }
+    // Déroulé joué une seule fois, puis figé sur l'état final.
     const id = window.setInterval(() => {
-      setTick((t) => (t >= STEPS.length ? 0 : t + 1));
-    }, 1400);
+      setTick((t) => {
+        if (t + 1 >= STEPS.length) window.clearInterval(id);
+        return Math.min(t + 1, STEPS.length);
+      });
+    }, 1000);
     return () => window.clearInterval(id);
   }, [reduce]);
 
@@ -55,7 +59,7 @@ export function ExecutionDemo() {
   const running = tick < STEPS.length;
 
   return (
-    <section aria-labelledby="exec-title" className="py-24 sm:py-32">
+    <section aria-labelledby="exec-title" className="py-20 sm:py-24">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <SectionHeader
           eyebrow={t("Illustrative execution")}
@@ -64,8 +68,8 @@ export function ExecutionDemo() {
           }
         />
         <Reveal className="mx-auto mt-12 max-w-2xl">
-          <div className="overflow-hidden rounded-lg border border-line bg-surface">
-            <div className="flex items-center justify-between border-b border-line bg-surface-2 px-5 py-3.5">
+          <div className="glass-strong overflow-hidden rounded-lg border">
+            <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
               <p className="flex items-center gap-2 font-mono text-xs">
                 <span
                   className={cn(
@@ -83,7 +87,7 @@ export function ExecutionDemo() {
               </p>
             </div>
 
-            <ul className="divide-y divide-line">
+            <ul className="divide-y divide-line bg-code">
               {STEPS.map((step, i) => {
                 const s = states[i];
                 return (
@@ -97,7 +101,7 @@ export function ExecutionDemo() {
                       <Check className="size-4 shrink-0 text-success" aria-label={t("Done")} />
                     )}
                     {s === "running" && (
-                      <Loader2 className="size-4 shrink-0 animate-spin text-accent-ink" aria-label={t("Running")} />
+                      <Loader2 className="size-4 shrink-0 text-accent-ink" aria-label={t("Running")} />
                     )}
                     {s === "pending" && (
                       <Circle className="size-4 shrink-0 text-line-strong" aria-label={t("Pending")} />
@@ -117,7 +121,7 @@ export function ExecutionDemo() {
 
             <dl className="grid grid-cols-2 gap-px border-t border-line bg-line sm:grid-cols-4">
               {META.map(([k, v]) => (
-                <div key={k} className="bg-surface px-5 py-3.5">
+                <div key={k} className="bg-code px-5 py-3.5">
                   <dt className="font-mono text-xs text-ink-subtle">
                     {t(k)}
                   </dt>

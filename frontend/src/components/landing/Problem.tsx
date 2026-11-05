@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from "framer-motion";
+import { Card } from "../ui/Card";
 import { EyeOff, FileWarning, History } from "lucide-react";
 import { SectionHeader } from "./Reveal";
 import { staggerChild, staggerParent } from "./motion";
@@ -29,7 +30,7 @@ export function Problem() {
   const { t } = usePreferences();
   const reduce = useReducedMotion();
   return (
-    <section aria-labelledby="problem-title" className="py-24 sm:py-32">
+    <section aria-labelledby="problem-title" className="py-20 sm:py-24">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <SectionHeader
           eyebrow={t("The problem")}
@@ -50,11 +51,13 @@ export function Problem() {
             <motion.li
               key={p.n}
               variants={reduce ? undefined : staggerChild}
-              className="rounded-lg border border-line bg-surface p-6"
             >
+              <Card className="h-full p-6">
               <div className="flex items-center justify-between">
-                <p.icon className="size-5 text-ink-subtle" aria-hidden="true" />
-                <span className="font-mono text-xs text-line-strong">
+                <span className="flex size-10 items-center justify-center rounded-md bg-accent/15 text-accent-ink">
+                  <p.icon className="size-5" aria-hidden="true" />
+                </span>
+                <span className="font-mono text-xs text-ink-subtle">
                   {p.n}
                 </span>
               </div>
@@ -64,6 +67,7 @@ export function Problem() {
               <p className="mt-2 text-sm leading-relaxed text-ink-muted">
                 {t(p.text)}
               </p>
+              </Card>
             </motion.li>
           ))}
         </motion.ol>

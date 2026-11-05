@@ -58,7 +58,7 @@ export const Modal: React.FC<ModalProps> = ({
             exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
             className={cn(
-              "relative w-full overflow-hidden rounded-lg border border-line-strong bg-surface shadow-xl",
+              "glass-strong relative w-full overflow-hidden rounded-lg border",
               size === "lg" ? "max-w-lg" : "max-w-md",
             )}
           >

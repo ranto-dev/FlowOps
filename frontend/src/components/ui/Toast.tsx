@@ -87,7 +87,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 8, scale: 0.97 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="pointer-events-auto relative flex items-start gap-3 overflow-hidden rounded-lg border border-line-strong bg-surface py-3 pl-4 pr-3 shadow-lg"
+              className="glass-strong pointer-events-auto relative flex items-start gap-3 overflow-hidden rounded-lg border py-3 pl-4 pr-3"
             >
               <span
                 className={`absolute left-0 top-0 bottom-0 w-1 ${TOAST_STYLE[t.type].bar}`}

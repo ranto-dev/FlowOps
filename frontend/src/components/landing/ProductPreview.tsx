@@ -41,10 +41,10 @@ export function ProductPreview() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.4, ease: EASE }}
-          className="overflow-hidden rounded-lg border border-line bg-surface"
+          className="glass-strong overflow-hidden rounded-lg border"
         >
           {/* window chrome */}
-          <div className="flex items-center justify-between border-b border-line bg-surface-2 px-4 py-3">
+          <div className="flex items-center justify-between border-b border-line px-4 py-3">
             <div className="flex items-center gap-2" aria-hidden="true">
               <span className="size-2.5 rounded-full bg-line-strong" />
               <span className="size-2.5 rounded-full bg-line-strong" />
@@ -89,7 +89,7 @@ export function ProductPreview() {
               ))}
               <motion.div
                 variants={reduce ? undefined : staggerChild}
-                className="mt-1 flex items-center justify-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-white"
+                className="mt-1 flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2.5 text-sm font-semibold text-white"
                 aria-hidden="true"
               >
                 <Play className="size-4" />

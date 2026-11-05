@@ -25,7 +25,7 @@ export function DocumentationHeader({
   isMac,
 }: Props) {
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-canvas">
+    <header className="sticky top-0 z-40 glass border-b">
       <div className="flex h-14 items-center gap-2 px-3 sm:px-4">
         <button
           type="button"

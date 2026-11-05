@@ -27,24 +27,24 @@ export function Hero() {
 
   return (
     <section
-      className="pt-36 sm:pt-44"
+      className="relative halo-vivid pt-20 sm:pt-28"
       aria-labelledby="hero-title"
     >
       <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center px-4 text-center sm:px-6">
         <motion.h1
           id="hero-title"
           {...anim(0.1)}
-          className="mt-6 max-w-3xl text-balance text-3xl font-semibold leading-tight text-ink sm:text-3xl"
+          className="max-w-4xl text-balance text-4xl font-bold leading-[1.1] tracking-tight text-ink sm:text-5xl lg:text-6xl"
         >
           {t("Build CI/CD workflows")}{" "}
-          <span className="text-accent-ink">
+          <span className="text-brand">
             {t("without the YAML complexity.")}
           </span>
         </motion.h1>
 
         <motion.p
           {...anim(0.2)}
-          className="mt-6 max-w-xl text-pretty text-base leading-relaxed text-ink-muted sm:text-base"
+          className="mt-6 max-w-xl text-pretty text-base leading-relaxed text-ink-muted sm:text-lg"
         >
           {t(
             "Design, generate, execute and optimize GitHub Actions workflows through a powerful low-code interface.",
@@ -55,7 +55,7 @@ export function Hero() {
           {...anim(0.3)}
           className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row"
         >
-          <Button size="lg" className="w-full sm:w-auto" asChild>
+          <Button size="lg" variant="brand" className="w-full sm:w-auto" asChild>
             <Link to="/auth">
               {t("Get started")}
               <ArrowRight className="size-4" />

@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { MousePointerClick, PlayCircle, TrendingUp } from "lucide-react";
+import { Card } from "../ui/Card";
 import { SectionHeader } from "./Reveal";
 import { staggerChild, staggerParent } from "./motion";
 import { usePreferences } from "../../lib/usePreferences";
@@ -64,7 +65,7 @@ export function Solution() {
   const { t } = usePreferences();
   const reduce = useReducedMotion();
   return (
-    <section aria-labelledby="solution-title" className="py-24 sm:py-32">
+    <section aria-labelledby="solution-title" className="py-20 sm:py-24">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <SectionHeader
           eyebrow={t("The solution")}
@@ -84,12 +85,14 @@ export function Solution() {
           className="mt-12 grid gap-4 lg:grid-cols-3"
         >
           {PILLARS.map((p) => (
-            <motion.article
+            <motion.div
               key={p.title}
               variants={reduce ? undefined : staggerChild}
-              className="flex flex-col rounded-lg border border-line bg-surface p-6 transition-colors hover:border-line-strong"
             >
-              <p.icon className="size-5 text-accent-ink" aria-hidden="true" />
+            <Card as="div" className="flex h-full flex-col p-6">
+              <span className="flex size-10 items-center justify-center rounded-md bg-accent/15 text-accent-ink">
+                <p.icon className="size-5" aria-hidden="true" />
+              </span>
               <h3 className="mt-4 text-xl font-semibold text-ink">
                 {t(p.title)}
               </h3>
@@ -97,7 +100,8 @@ export function Solution() {
                 {t(p.text)}
               </p>
               <div className="mt-6 flex-1">{p.visual}</div>
-            </motion.article>
+            </Card>
+            </motion.div>
           ))}
         </motion.div>
       </div>

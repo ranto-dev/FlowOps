@@ -41,7 +41,7 @@ const QA = [
 export function FAQ() {
   const { t } = usePreferences();
   return (
-    <section id="faq" aria-labelledby="faq-title" className="scroll-mt-24 py-24 sm:py-32">
+    <section id="faq" aria-labelledby="faq-title" className="scroll-mt-24 py-20 sm:py-24">
       <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
         <SectionHeader
           eyebrow={t("FAQ")}

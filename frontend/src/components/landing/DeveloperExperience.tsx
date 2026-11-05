@@ -54,7 +54,7 @@ export function DeveloperExperience() {
   const lines = useCliDemo(inView, reduce ?? false);
 
   return (
-    <section aria-labelledby="dx-title" className="py-24 sm:py-32">
+    <section aria-labelledby="dx-title" className="py-20 sm:py-24">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <SectionHeader
           eyebrow={t("Local development")}
@@ -64,10 +64,10 @@ export function DeveloperExperience() {
         <Reveal className="mx-auto mt-12 max-w-2xl">
           <motion.div
             onViewportEnter={() => setInView(true)}
-            className="overflow-hidden rounded-lg border border-line bg-code"
+            className="glass-strong overflow-hidden rounded-lg border"
           >
             <div
-              className="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3"
+              className="flex items-center gap-2 border-b border-line px-4 py-3"
               aria-hidden="true"
             >
               <span className="size-2.5 rounded-full bg-line-strong" />
@@ -75,7 +75,7 @@ export function DeveloperExperience() {
               <span className="size-2.5 rounded-full bg-line-strong" />
             </div>
             <div
-              className="min-h-56 overflow-x-auto p-5 font-mono text-sm leading-7"
+              className="min-h-56 overflow-x-auto bg-code p-5 font-mono text-sm leading-7"
               aria-label={t("Local development command examples")}
             >
               {lines.map((line, i) =>

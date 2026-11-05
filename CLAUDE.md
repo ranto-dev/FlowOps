@@ -68,10 +68,13 @@ docker container needs (see `mongo-docker.sh`).
 `ApiError`, auto-logout on 401) with types in `src/@types/api.ts`; don't use raw `fetch`. Routes and the
 `ProtectedRoute`/`PublicOnlyRoute` guards are in `src/App.tsx` (token in localStorage `flowops_token`); new routes must
 use them. Two component trees: `components/ui/*` (PascalCase app UI) and `components/landing/*` (marketing, used only by
-`pages/LandingPage.tsx`). Design system: **dark theme only**, one violet accent, no gradients. Colours come from the semantic tokens declared in
-`src/main.css` (`@theme`): `bg-canvas|surface|surface-2|code`, `border-line|line-strong`, `text-ink|ink-muted|ink-subtle`,
-`bg-accent` / `text-accent-ink`, and `success|warning|danger|info` for states only. Never use raw palette colours
-(`slate-*`, `purple-*`, `bg-white`…), `dark:` variants, `rounded-xl+`, or hex values in classes. Reuse `components/ui/*`
+`pages/LandingPage.tsx`). Design system: "startup produit" glassmorphism, dark (default) + light via `data-theme` (toggle in `PreferenceControls`/`ThemeToggle`),
+one violet accent. Full reference: `docs/DESIGN-GUIDE.md` (live page `/styleguide`, dev only). Colours, glass and radii come from the
+tokens/utilities in `src/main.css`: `bg-canvas|surface|surface-2|code`, `border-line|line-strong`, `text-ink|ink-muted|ink-subtle`,
+`bg-accent` / `text-accent-ink`, `success|warning|danger|info` (states only); glass = `glass` (level 1) / `glass-strong` (level 2) **+ an
+explicit `border`**; dense zones (fields, YAML, logs, code) stay opaque; never nest blur. Never use raw palette colours (`slate-*`,
+`purple-*`, `bg-white`…), `dark:` variants, `rounded-xl+`, hex values, ad-hoc `backdrop-blur-*`/`shadow-*`. `linear-gradient` only via
+`bg-brand`/`text-brand` (landing/auth CTAs); decorative radial halos only via `.app-root::before` and `halo-vivid`. Reuse `components/ui/*`
 (`Button`, `Card`, `Badge`, `Input`/`Select`/`Textarea`/`Field`, `StatusBadge`, `CodeSurface`, `Modal`, `Toast`…) instead of
 hand-styling. Fonts (Inter + JetBrains Mono) are self-hosted via `@fontsource-variable/*`.
 `lucide-react` v1 has no brand icons (no `Github`) — use inline SVG.

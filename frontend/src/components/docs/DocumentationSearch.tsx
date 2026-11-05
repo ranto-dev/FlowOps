@@ -74,7 +74,7 @@ export function DocumentationSearch({ onClose }: { onClose: () => void }) {
         aria-modal="true"
         aria-label="Search documentation"
         onKeyDown={onKeyDown}
-        className="flex max-h-[70vh] w-full max-w-xl flex-col overflow-hidden rounded-lg border border-line-strong bg-surface shadow-2xl"
+        className="flex max-h-[70vh] w-full max-w-xl flex-col overflow-hidden glass-strong rounded-lg border"
       >
         <div className="flex items-center gap-3 border-b border-line px-4">
           <Search className="h-4 w-4 shrink-0 text-ink-subtle" aria-hidden />

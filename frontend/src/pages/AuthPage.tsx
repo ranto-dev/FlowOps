@@ -9,11 +9,10 @@ import type {
   DeviceCodeInfo,
 } from "../@types/api";
 import { Button } from "../components/ui/Button";
-import { Card } from "../components/ui/Card";
 import { ErrorState } from "../components/ui/States";
 import { PreferenceControls } from "../components/ui/PreferenceControls";
 import { usePreferences } from "../lib/usePreferences";
-import Logo from "../assets/logo-flowOps-transparent.png";
+import Logo from "../assets/flowops.svg";
 
 export const AuthPage: React.FC = () => {
   const navigate = useNavigate();
@@ -223,18 +222,19 @@ export const AuthPage: React.FC = () => {
 
 
   return (
-    <div className="flex min-h-screen flex-col bg-canvas px-4 py-4 text-ink antialiased sm:px-8">
+    <div className="relative isolate flex min-h-screen flex-col bg-canvas px-4 py-4 text-ink antialiased sm:px-8">
+      <div className="halo-vivid" aria-hidden="true" />
       <header className="mx-auto flex w-full max-w-6xl items-center justify-end">
         <PreferenceControls compact />
       </header>
 
       <main className="flex flex-1 items-center justify-center py-12">
-        <Card as="section" className="w-full max-w-sm p-6 sm:p-8">
+        <section className="glass-strong w-full max-w-md rounded-lg border p-6 sm:p-10">
           <div className="mb-6 text-center">
             <div className="flex items-center justify-center">
-              <img src={Logo} alt="FlowOps" className="w-24" />
+              <img src={Logo} alt="FlowOps" className="h-14 w-14" />
             </div>
-            <h1 className="mt-2 text-2xl font-semibold text-ink">
+            <h1 className="mt-4 text-3xl font-bold leading-tight text-ink">
               {isWaiting
                 ? t("Authorize on GitHub")
                 : authState === "success"
@@ -270,14 +270,14 @@ export const AuthPage: React.FC = () => {
 
           {isWaiting && deviceInfo ? (
             <div className="space-y-4">
-              <div className="rounded-lg border border-line bg-surface-2 p-4 text-center">
+              <div className="rounded-lg border border-line bg-surface p-4 text-center">
                 <p className="mb-4 text-xs text-ink-muted">
                   {t(
                     "Copy this code. It is pre-filled on GitHub, but you can also enter it manually.",
                   )}
                 </p>
                 <div className="flex items-center justify-center gap-3">
-                  <code className="rounded-md border border-line bg-code px-4 py-3 font-mono text-2xl font-semibold text-ink">
+                  <code className="rounded-md border border-line bg-code px-4 py-3 font-mono text-2xl font-semibold tabular-nums text-ink">
                     {deviceInfo.user_code}
                   </code>
                   <Button
@@ -300,6 +300,7 @@ export const AuthPage: React.FC = () => {
               <Button
                 type="button"
                 size="lg"
+                variant="brand"
                 onClick={openGithub}
                 disabled={asking}
                 className="w-full"
@@ -320,6 +321,7 @@ export const AuthPage: React.FC = () => {
             <Button
               type="button"
               size="lg"
+              variant="brand"
               onClick={startDeviceFlow}
               loading={loading}
               disabled={authState === "success"}
@@ -341,7 +343,7 @@ export const AuthPage: React.FC = () => {
               )}
             </p>
           </div>
-        </Card>
+        </section>
       </main>
     </div>
   );

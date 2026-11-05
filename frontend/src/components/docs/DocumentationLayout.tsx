@@ -102,7 +102,7 @@ export default function DocumentationLayout() {
   const { prev, next } = getNeighbours(slug);
 
   return (
-    <div className="min-h-screen bg-canvas text-ink">
+    <div className="min-h-screen text-ink">
       <DocumentationHeader
         activeTab={activeTab}
         onToggleSidebar={toggleSidebar}

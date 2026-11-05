@@ -125,7 +125,7 @@ MONGO_URI=mongodb://localhost:27017/`,
 
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-canvas text-ink antialiased">
+    <div className="relative isolate flex min-h-screen w-full flex-col bg-canvas text-ink antialiased">
       {/* HEADER */}
       <header className="mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
         <div className="flex items-center gap-3">
@@ -230,7 +230,7 @@ MONGO_URI=mongodb://localhost:27017/`,
             {steps.map((step, i) => (
               <li
                 key={step.title}
-                className="flex items-start gap-4 rounded-lg border border-line bg-surface-2 p-4"
+                className="flex items-start gap-4 rounded-lg border border-line bg-surface p-4"
               >
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-white">
                   {i + 1}

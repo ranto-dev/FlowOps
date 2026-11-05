@@ -25,6 +25,7 @@ const SetupPage = lazy(() =>
     default: page,
   })),
 );
+const StyleguidePage = lazy(() => import("./pages/StyleguidePage"));
 const DocumentationLayout = lazy(
   () => import("./components/docs/DocumentationLayout"),
 );
@@ -51,10 +52,12 @@ function App() {
           <Suspense
             fallback={
               <div
-                className="flex min-h-screen items-center justify-center text-sm text-ink-muted"
+                className="flex min-h-screen items-center justify-center"
                 role="status"
               >
-                {t("Loading FlowOps...")}
+                <span className="glass rounded-md border px-3 py-1.5 text-sm text-ink-muted">
+                  {t("Loading FlowOps...")}
+                </span>
               </div>
             }
           >
@@ -75,7 +78,7 @@ function App() {
                     <div className="relative">
                       <Link
                         to="/"
-                        className="absolute left-6 top-6 z-50 inline-flex items-center gap-2 rounded-md border border-line-strong bg-surface px-3 py-1.5 text-sm text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink"
+                        className="absolute left-6 top-6 z-50 inline-flex items-center gap-2 glass rounded-md border px-3 py-1.5 text-sm text-ink-muted transition-colors hover:text-ink"
                       >
                         <ArrowLeft className="h-3.5 w-3.5" />
                         <span>{t("Return home")}</span>
@@ -97,6 +100,9 @@ function App() {
               />
 
               <Route path="/setup" element={<SetupPage />} />
+              {import.meta.env.DEV && (
+                <Route path="/styleguide" element={<StyleguidePage />} />
+              )}
               <Route path="/docs/*" element={<DocumentationLayout />} />
 
               <Route path="*" element={<Navigate to="/" replace />} />

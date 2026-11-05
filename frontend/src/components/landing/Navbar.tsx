@@ -1,38 +1,24 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
 import { GITHUB_URL, NAV_LINKS } from "./data";
 import { Button } from "./ui/button";
-import { cn } from "../../lib/utils";
 import { PreferenceControls } from "../ui/PreferenceControls";
 import { usePreferences } from "../../lib/usePreferences";
 import Logo from "../../assets/logo-flowOps-transparent.png";
 
 export function Navbar() {
   const { t } = usePreferences();
-  const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   return (
     <motion.header
-      initial={{ y: -16, opacity: 0 }}
+      initial={{ y: -8, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className={cn(
-        "fixed inset-x-0 top-0 z-50 transition-colors duration-150",
-        scrolled || open
-          ? "border-b border-line bg-canvas"
-          : "border-b border-transparent bg-transparent",
-      )}
+      className="glass sticky top-0 z-50 border-b"
     >
       <nav
         aria-label="Main navigation"
@@ -86,7 +72,7 @@ export function Navbar() {
               GitHub
             </a>
           </Button>
-          <Button size="sm" asChild>
+          <Button size="sm" variant="brand" asChild>
             <Link to="/auth">{t("Get started")}</Link>
           </Button>
         </div>
@@ -113,7 +99,7 @@ export function Navbar() {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden border-t border-line bg-canvas lg:hidden"
+            className="overflow-hidden border-t border-line lg:hidden"
           >
             <ul className="space-y-1 px-4 py-4">
               {NAV_LINKS.map((link, i) => (
@@ -155,7 +141,7 @@ export function Navbar() {
                   GitHub
                 </a>
               </Button>
-              <Button className="flex-1" asChild onClick={() => setOpen(false)}>
+              <Button variant="brand" className="flex-1" asChild onClick={() => setOpen(false)}>
                 <Link to="/auth">{t("Get started")}</Link>
               </Button>
             </div>

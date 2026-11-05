@@ -157,3 +157,9 @@ export interface PredictionResult {
   duration_error?: string;
   failure_error?: string;
 }
+
+export interface PredictionSnapshot {
+  status: "pending" | "available" | "partial" | "unavailable" | "error";
+  prediction: PredictionResult | null;
+  error?: string;
+}

@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from "framer-motion";
+import { Card } from "../ui/Card";
 import { Reveal, SectionHeader } from "./Reveal";
 import { staggerChild, staggerParent } from "./motion";
 import { usePreferences } from "../../lib/usePreferences";
@@ -15,7 +16,7 @@ export function TechStack() {
   const { t } = usePreferences();
   const reduce = useReducedMotion();
   return (
-    <section aria-labelledby="stack-title" className="py-24 sm:py-32">
+    <section aria-labelledby="stack-title" className="py-20 sm:py-24">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <SectionHeader
           eyebrow={t("Stack")}
@@ -33,9 +34,9 @@ export function TechStack() {
             <motion.div
               key={s.group}
               variants={reduce ? undefined : staggerChild}
-              className="rounded-lg border border-line bg-surface p-5"
             >
-              <dt className="font-mono text-xs text-accent-ink">
+            <Card className="h-full p-5">
+              <dt className="text-sm font-semibold text-ink">
                 {t(s.group)}
               </dt>
               <dd className="mt-3 flex flex-wrap gap-2">
@@ -48,6 +49,7 @@ export function TechStack() {
                   </span>
                 ))}
               </dd>
+            </Card>
             </motion.div>
           ))}
           <Reveal className="rounded-lg border border-dashed border-line-strong p-5 sm:col-span-2 lg:col-span-1">

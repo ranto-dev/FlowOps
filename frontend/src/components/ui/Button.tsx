@@ -2,17 +2,29 @@ import React from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "../../lib/utils";
 
-type Variant = "primary" | "secondary" | "dark" | "danger" | "success" | "ghost";
+type Variant =
+  | "primary"
+  | "brand"
+  | "secondary"
+  | "dark"
+  | "danger"
+  | "success"
+  | "ghost";
 type Size = "sm" | "md" | "lg";
 
 /** `dark` et `success` sont conservés pour compatibilité : ils rendent comme `secondary` / `primary`. */
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-accent text-white hover:bg-accent-hover",
+  primary:
+    "bg-accent text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18)] hover:bg-accent-hover",
+  /** Dégradé de marque : réservé aux CTA de la vitrine (landing, authentification). */
+  brand:
+    "bg-brand shadow-[inset_0_1px_0_rgb(255_255_255/0.25)] hover:brightness-110",
   secondary:
-    "border border-line-strong bg-surface text-ink hover:bg-surface-2",
-  dark: "border border-line-strong bg-surface text-ink hover:bg-surface-2",
+    "border border-line-strong bg-surface/60 text-ink hover:bg-surface-2",
+  dark: "border border-line-strong bg-surface/60 text-ink hover:bg-surface-2",
   danger: "bg-danger/15 text-danger border border-danger/30 hover:bg-danger/25",
-  success: "bg-accent text-white hover:bg-accent-hover",
+  success:
+    "bg-accent text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18)] hover:bg-accent-hover",
   ghost: "text-ink-muted hover:bg-surface-2 hover:text-ink",
 };
 

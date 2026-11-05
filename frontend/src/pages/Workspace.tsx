@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   FolderGit2,
@@ -10,18 +10,17 @@ import {
   Sliders,
   ArrowLeft,
   User,
-  Menu,
-  X,
   Play,
   Loader2,
   AlertCircle,
-  BookOpen,
+  ChevronRight,
   GitBranch,
   Search,
 } from "lucide-react";
 import { WorkflowForm } from "../components/WorkflowForm";
 import { YamlPreview } from "../components/YamlPreview";
 import { History } from "../components/History";
+import { AppShell, type ShellNavSection } from "../components/layout/AppShell";
 import { PredictionPanel } from "../components/PredictionPanel";
 import LogoImage from "../assets/flowops.svg";
 import { useToast } from "../components/ui/useToast";
@@ -42,19 +41,12 @@ import type {
   ExecuteResponse,
   GenerateWorkflowResponse,
   GitHubRepo,
-  PredictionResult,
+  PredictionSnapshot,
   Project,
   SaveWorkflowResponse,
 } from "../@types/api";
 
-interface StoredConfig {
-  filename: string;
-  name: string;
-  on_events: string[];
-  branches: string;
-  global_env: string;
-  jobs: FlowOpsWorkflowConfig["jobs"];
-}
+type StoredConfig = FlowOpsWorkflowConfig;
 
 export const Workspace: React.FC = () => {
   const navigate = useNavigate();
@@ -64,7 +56,8 @@ export const Workspace: React.FC = () => {
     "projects",
   );
   const [profileOpen, setProfileOpen] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const profileButtonRef = useRef<HTMLButtonElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   const username = localStorage.getItem("flowops_user") || "Developer";
   const avatarUrl = localStorage.getItem("flowops_avatar");
@@ -98,7 +91,10 @@ export const Workspace: React.FC = () => {
   const [targetProject, setTargetProject] = useState<Project | null>(null);
   const [activeConfig, setActiveConfig] = useState<StoredConfig | null>(null);
   const [compiledYaml, setCompiledYaml] = useState<string | null>(null);
-  const [prediction, setPrediction] = useState<PredictionResult | null>(null);
+  const [prediction, setPrediction] = useState<PredictionSnapshot>({
+    status: "pending",
+    prediction: null,
+  });
   const [isGenerating, setIsGenerating] = useState(false);
   const [viewState, setViewState] = useState<"form" | "preview">("form");
 
@@ -135,17 +131,25 @@ export const Workspace: React.FC = () => {
     fetchGitHubRepos();
   }, [fetchProjects, fetchGitHubRepos]);
 
+  // Menu profil = dropdown : fermeture au clic extérieur et sur Échap, sans piège de focus.
   useEffect(() => {
-    if (!profileOpen && !mobileNavOpen) return;
+    if (!profileOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (!profileRef.current?.contains(e.target as Node)) setProfileOpen(false);
+    };
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setProfileOpen(false);
-        setMobileNavOpen(false);
+        profileButtonRef.current?.focus();
       }
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [profileOpen, mobileNavOpen]);
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [profileOpen]);
 
   const handleLogout = () => {
     clearSession();
@@ -178,7 +182,7 @@ export const Workspace: React.FC = () => {
       ],
     });
     setCompiledYaml(null);
-    setPrediction(null);
+    setPrediction({ status: "pending", prediction: null });
     setIsConfiguringWorkflow(true);
     setViewState("form");
   };
@@ -336,7 +340,6 @@ export const Workspace: React.FC = () => {
   const switchTab = (tab: "projects" | "history" | "help") => {
     setActiveTab(tab);
     setIsConfiguringWorkflow(false);
-    setMobileNavOpen(false);
   };
 
   const NAV_TABS: {
@@ -349,27 +352,192 @@ export const Workspace: React.FC = () => {
     { key: "help", label: "Help", icon: <HelpCircle className="w-4 h-4" /> },
   ];
 
-  const renderNavigation = () => (
-    <nav aria-label={t("Workspace navigation")} className="flex flex-col gap-1">
-      {NAV_TABS.map((tab) => (
-        <button
-          key={tab.key}
-          type="button"
-          onClick={() => switchTab(tab.key)}
-          aria-current={activeTab === tab.key ? "page" : undefined}
-          className={cn(
-            "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors",
-            activeTab === tab.key
-              ? "bg-accent/15 text-accent-ink"
-              : "text-ink-muted hover:bg-surface-2 hover:text-ink",
-          )}
-        >
-          {tab.icon}
-          {t(tab.label)}
-        </button>
-      ))}
-    </nav>
+  const renderBrand = () => (
+    <button
+      type="button"
+      onClick={() => {
+        switchTab("projects");
+        setProfileOpen(false);
+      }}
+      className="flex w-full min-w-0 items-center gap-2.5 rounded-md p-1.5 text-left transition-colors hover:bg-surface-2/70 focus-visible:outline-2 focus-visible:outline-accent-ink"
+      aria-label={t("FlowOps projects")}
+    >
+      <img src={LogoImage} className="h-7 w-auto" alt="" />
+      <span className="text-base font-semibold text-ink">FlowOps</span>
+    </button>
   );
+
+  const renderBreadcrumbs = () => {
+    const activeLabel =
+      activeTab === "projects"
+        ? t("Projects")
+        : activeTab === "history"
+          ? t("History")
+          : t("Help");
+    const segments = [
+      {
+        label: t("Workspace"),
+        onClick: () => switchTab("projects"),
+      },
+      {
+        label: activeLabel,
+        onClick: isConfiguringWorkflow
+          ? () => setIsConfiguringWorkflow(false)
+          : undefined,
+      },
+      ...(isConfiguringWorkflow && targetProject
+        ? [
+            { label: targetProject.name },
+            {
+              label:
+                viewState === "preview"
+                  ? t("YAML preview")
+                  : t("Configuration"),
+            },
+          ]
+        : []),
+    ];
+
+    return (
+      <nav aria-label={t("Breadcrumb")} className="min-w-0">
+        <ol className="flex min-w-0 items-center gap-1.5 text-sm">
+          {segments.map((segment, index) => {
+            const current = index === segments.length - 1;
+            return (
+              <li
+                key={`${segment.label}-${index}`}
+                className="flex min-w-0 items-center gap-2"
+              >
+                {index > 0 && (
+                  <ChevronRight
+                    className="h-3.5 w-3.5 shrink-0 text-ink-subtle"
+                    aria-hidden="true"
+                  />
+                )}
+                {segment.onClick && !current ? (
+                  <button
+                    type="button"
+                    onClick={segment.onClick}
+                    className="truncate rounded-sm text-ink-muted transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-accent-ink"
+                  >
+                    {segment.label}
+                  </button>
+                ) : (
+                  <span
+                    className={cn(
+                      "truncate",
+                      current
+                        ? "font-medium text-ink"
+                        : "text-ink-muted",
+                    )}
+                    aria-current={current ? "page" : undefined}
+                  >
+                    {segment.label}
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
+    );
+  };
+
+  const profileMenu = (
+    <div className="relative" ref={profileRef}>
+      <button
+        ref={profileButtonRef}
+        onClick={() => setProfileOpen((v) => !v)}
+        type="button"
+        aria-label={`${t("Profile")}: ${username}`}
+        aria-haspopup="menu"
+        aria-expanded={profileOpen}
+        aria-controls="workspace-profile-menu"
+        className={cn(
+          "overflow-hidden rounded-full transition-opacity hover:opacity-80",
+          profileOpen && "opacity-80",
+        )}
+      >
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={username}
+            className="h-8 w-8 rounded-full object-cover"
+          />
+        ) : (
+          <div className="flex h-8 w-8 items-center justify-center bg-accent/15 text-accent-ink">
+            <User className="h-4 w-4" />
+          </div>
+        )}
+      </button>
+
+      {profileOpen && (
+        <>
+          <div
+            id="workspace-profile-menu"
+            role="group"
+            aria-label={t("Profile settings")}
+            className="absolute right-0 top-full z-50 mt-2 w-72 max-w-[calc(100vw-1.5rem)] rounded-lg border border-line-strong bg-surface p-2 shadow-lg"
+          >
+            <div className="flex items-center gap-3 border-b border-line px-2 py-2.5">
+              <div className="flex min-w-0 items-center gap-3">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={username}
+                    className="h-9 w-9 rounded-full border border-line-strong object-cover"
+                  />
+                ) : (
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent/30 bg-accent/15 text-accent-ink">
+                    <User className="h-4 w-4" />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-ink">
+                    {username}
+                  </p>
+                  <p className="flex items-center gap-1 text-xs text-success">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-success" />
+                    {t("Connected")}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-b border-line px-1 py-2">
+              <PreferenceControls layout="menu" />
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setProfileOpen(false);
+                  setLogoutConfirmOpen(true);
+                }}
+                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-danger transition-colors hover:bg-danger/10"
+              >
+                <LogOut className="h-4 w-4" /> {t("Sign out")}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
+  const navSections: ShellNavSection[] = [
+    {
+      id: "workspace",
+      items: NAV_TABS.map((tab) => ({
+        id: tab.key,
+        label: t(tab.label),
+        icon: tab.icon,
+        active: activeTab === tab.key,
+        onSelect: () => switchTab(tab.key),
+      })),
+    },
+  ];
 
   const visibleProjects = projects.filter((project) => {
     const query = projectQuery.trim().toLocaleLowerCase();
@@ -382,158 +550,30 @@ export const Workspace: React.FC = () => {
   });
 
   return (
-    <div className="flex min-h-screen flex-col bg-canvas font-sans text-ink">
-      <header className="sticky top-0 z-30 h-14 border-b border-line bg-canvas px-4 sm:px-6">
-        <div className="flex h-full items-center justify-between gap-4">
-          <button
-            type="button"
-            onClick={() => {
-              switchTab("projects");
-              setProfileOpen(false);
-            }}
-            className="flex items-center gap-2 rounded-md"
-            aria-label="FlowOps projects"
-          >
-            <img src={LogoImage} className="h-7 w-auto" alt="FlowOps Logo" />
-            <span className="text-base font-semibold text-ink">FlowOps</span>
-          </button>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setMobileNavOpen((open) => !open)}
-              className="rounded-md p-2 text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink lg:hidden"
-              aria-label={mobileNavOpen ? t("Close navigation") : t("Open navigation")}
-              aria-expanded={mobileNavOpen}
-              aria-controls="workspace-mobile-navigation"
-            >
-              {mobileNavOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
-            </button>
-
-            {/* User Profile & Actions */}
-            <div className="relative">
-              <button
-                onClick={() => setProfileOpen((v) => !v)}
-                type="button"
-                aria-label={`${t("Profile")}: ${username}`}
-                aria-haspopup="dialog"
-                aria-expanded={profileOpen}
-                className={cn(
-                  "overflow-hidden rounded-full ring-2 transition-colors",
-                  profileOpen ? "ring-accent" : "ring-transparent hover:ring-line-strong",
-                )}
-              >
-                {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt={username}
-                    className="h-8 w-8 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-8 w-8 items-center justify-center bg-accent/15 text-accent-ink">
-                    <User className="h-4 w-4" />
-                  </div>
-                )}
-              </button>
-
-              {profileOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setProfileOpen(false)}
-                    aria-hidden="true"
-                  />
-                  <div
-                    role="dialog"
-                    aria-label={t("Profile settings")}
-                    className="absolute right-0 top-12 z-50 w-64 rounded-lg border border-line bg-surface p-2 shadow-lg"
-                  >
-                    <div className="flex items-center gap-3 border-b border-line px-3 py-2.5">
-                      {avatarUrl ? (
-                        <img
-                          src={avatarUrl}
-                          alt={username}
-                          className="h-9 w-9 rounded-full border border-line-strong object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full border border-accent/30 bg-accent/15 text-accent-ink">
-                          <User className="h-4 w-4" />
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-ink">
-                          {username}
-                        </p>
-                        <p className="flex items-center gap-1 text-xs text-success">
-                          <span className="inline-block h-1.5 w-1.5 rounded-full bg-success" />
-                          {t("Connected")}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="border-b border-line px-2 py-2">
-                      <PreferenceControls compact />
-                    </div>
-
-                    <div className="pt-1.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setProfileOpen(false);
-                          setLogoutConfirmOpen(true);
-                        }}
-                        className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-danger transition-colors hover:bg-danger/10"
-                      >
-                        <LogOut className="h-4 w-4" /> {t("Sign out")}
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="flex min-h-0 flex-1">
-        <aside className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-60 shrink-0 border-r border-line bg-surface/50 p-4 lg:block">
-          {renderNavigation()}
-        </aside>
-
-        {mobileNavOpen && (
-          <>
-            <button
-              type="button"
-              className="fixed inset-0 top-14 z-40 bg-black/50 lg:hidden"
-              onClick={() => setMobileNavOpen(false)}
-              aria-label={t("Close navigation")}
-            />
-            <aside
-              id="workspace-mobile-navigation"
-              className="fixed bottom-0 left-0 top-14 z-50 w-72 border-r border-line bg-surface p-4 shadow-xl lg:hidden"
-            >
-              {renderNavigation()}
-            </aside>
-          </>
-        )}
-
-        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
+    <>
+    <AppShell
+      brand={renderBrand()}
+      sections={navSections}
+      breadcrumb={renderBreadcrumbs()}
+      actions={profileMenu}
+      labels={{
+        navigation: t("Workspace navigation"),
+        openMenu: t("Open navigation"),
+        closeMenu: t("Close navigation"),
+      }}
+    >
         {/* TAB 1: PROJECTS */}
         {activeTab === "projects" && !isConfiguringWorkflow && (
           <div className="space-y-6">
             <PageHeader
               title={t("Projects")}
               description={t("Project overview")}
-              icon={<FolderGit2 className="h-5 w-5" />}
             />
 
-            <section
+            <Card
+              as="section"
               aria-label={t("Project filters")}
-              className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
             >
               {projects.length > 0 ? (
                 <div className="relative w-full sm:max-w-md">
@@ -558,7 +598,7 @@ export const Workspace: React.FC = () => {
               <Button onClick={() => setIsModalOpen(true)} className="shrink-0">
                 <Plus className="h-4 w-4" /> {t("New project")}
               </Button>
-            </section>
+            </Card>
 
             {loadingProjects ? (
               <LoadingState label={`${t("Loading projects")}...`} />
@@ -577,39 +617,39 @@ export const Workspace: React.FC = () => {
                 ) : (
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {visibleProjects.map((p) => (
-                      <Card key={p.id} className="flex flex-col gap-4 p-5">
+                      <Card
+                        key={p.id}
+                        interactive
+                        className="flex flex-col gap-4 p-5"
+                      >
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Badge className="font-mono">ID: {p.id.slice(-6)}</Badge>
+                          <div className="flex items-start justify-between gap-3">
+                            <h3 className="min-w-0 truncate text-base font-semibold text-ink">
+                              {p.name}
+                            </h3>
                             {p.has_workflow ? (
-                              <Badge tone="purple" dot>
+                              <Badge tone="purple" dot className="shrink-0">
                                 {t("Pipeline active")}
                               </Badge>
                             ) : (
-                              <Badge>{t("No workflow")}</Badge>
+                              <Badge className="shrink-0">{t("No workflow")}</Badge>
                             )}
                           </div>
-
-                          <h3 className="text-base font-semibold text-ink">
-                            {p.name}
-                          </h3>
 
                           <p className="text-sm text-ink-muted">
                             {p.description || t("No description provided.")}
                           </p>
 
                           <div className="flex items-center gap-1.5 pt-1 font-mono text-xs text-ink-muted">
-                            <GitBranch className="h-3.5 w-3.5 text-ink-subtle" />
-                            <span>{t("Repository:")}</span>
-                            <span className="text-accent-ink">{p.repository}</span>
+                            <GitBranch className="h-3.5 w-3.5 text-ink-subtle" aria-hidden="true" />
+                            <span className="truncate">{p.repository}</span>
                           </div>
                         </div>
 
-                        <div className="flex shrink-0 items-center gap-2">
+                        <div className="mt-auto flex shrink-0 flex-wrap items-center gap-2">
                           {p.has_workflow ? (
                             <>
                               <Button
-                                variant="secondary"
                                 size="sm"
                                 onClick={() =>
                                   triggerWorkflowExecution(p.id, p.name)
@@ -671,7 +711,6 @@ export const Workspace: React.FC = () => {
             <PageHeader
               title={viewState === "preview" ? t("YAML preview") : t("Configuration")}
               description={`${targetProject.name} · ${targetProject.repository}`}
-              icon={<Sliders className="h-5 w-5" />}
               actions={
                 <Button
                   variant="ghost"
@@ -683,8 +722,15 @@ export const Workspace: React.FC = () => {
               }
             />
 
-            {viewState === "form" && activeConfig && (
-              <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(18rem,1fr)]">
+            {activeConfig && (
+              <div
+                className={
+                  viewState === "form"
+                    ? "grid items-start gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(18rem,1fr)]"
+                    : "hidden"
+                }
+                aria-hidden={viewState !== "form"}
+              >
                 <WorkflowForm
                   activeConfig={activeConfig}
                   onChangeConfig={setActiveConfig}
@@ -692,11 +738,13 @@ export const Workspace: React.FC = () => {
                   loading={isGenerating}
                 />
 
-                <PredictionPanel
-                  config={activeConfig as unknown as Record<string, unknown>}
-                  repository={targetProject.repository}
-                  onPredictionChange={setPrediction}
-                />
+                <div className="lg:sticky lg:top-[4.5rem]">
+                  <PredictionPanel
+                    config={activeConfig}
+                    repository={targetProject.repository}
+                    onPredictionChange={setPrediction}
+                  />
+                </div>
               </div>
             )}
 
@@ -706,7 +754,7 @@ export const Workspace: React.FC = () => {
                   id: targetProject.id,
                   filename: activeConfig.filename,
                   yaml: compiledYaml,
-                  config: activeConfig as FlowOpsWorkflowConfig,
+                  config: activeConfig,
                 }}
                 loading={false}
                 onNewWorkflow={() => {
@@ -728,7 +776,6 @@ export const Workspace: React.FC = () => {
             <PageHeader
               title={t("History")}
               description={t("Run history and available job logs")}
-              icon={<HistoryIcon className="h-5 w-5" />}
             />
             <History />
           </div>
@@ -740,14 +787,13 @@ export const Workspace: React.FC = () => {
             <PageHeader
               title={t("Help")}
               description={t("Documentation and best practices")}
-              icon={<BookOpen className="h-5 w-5" />}
             />
             <Card as="section" className="space-y-4 p-6">
               <div className="max-w-3xl space-y-3 text-sm text-ink-muted">
                 <p>
                   {t("FlowOps helps you model CI/CD workflows in low-code, publish them to a GitHub repository, and inspect runner executions.")}
                 </p>
-                <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-4 text-xs text-warning">
+                <div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 p-4 text-xs text-warning">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                   <span>
                     <span className="font-semibold">{t("Prerequisite:")}</span>{" "}
@@ -768,8 +814,7 @@ export const Workspace: React.FC = () => {
             </Card>
           </div>
         )}
-        </main>
-      </div>
+    </AppShell>
 
       {/* ================= MODAL DE CRÉATION DE PROJET ================= */}
       <Modal
@@ -884,6 +929,6 @@ export const Workspace: React.FC = () => {
         confirmLabel={t("Sign out")}
         description={t("You will need to authenticate with GitHub again to access your workspace.")}
       />
-    </div>
+    </>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Trash2,
   Settings,
@@ -33,6 +33,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
   const { t } = usePreferences();
   const [config, setConfig] = useState<FlowOpsWorkflowConfig>(activeConfig);
   const [activeJobId, setActiveJobId] = useState<string>("");
+  const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setConfig(activeConfig);
@@ -40,6 +41,20 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
       setActiveJobId(activeConfig.jobs[0].id);
     }
   }, [activeConfig, activeJobId]);
+
+  // Raccourci : Ctrl/⌘ + Entrée génère le YAML depuis n'importe quel champ.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      // Le formulaire reste monté (masqué) pendant l'aperçu YAML : on ignore alors le raccourci.
+      const visible = rootRef.current?.offsetParent != null;
+      if (visible && event.key === "Enter" && (event.ctrlKey || event.metaKey) && !loading) {
+        event.preventDefault();
+        onGenerate();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [loading, onGenerate]);
 
   const updateGlobal = <K extends keyof FlowOpsWorkflowConfig>(
     field: K,
@@ -172,32 +187,20 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
 
   const selectedJob = config.jobs.find((j) => j.id === activeJobId);
 
+  const totalSteps = config.jobs.reduce((sum, job) => sum + job.steps.length, 0);
+
   return (
+    <div ref={rootRef} className="w-full text-left">
     <div
       aria-busy={loading}
-      className="w-full rounded-lg border border-line bg-surface p-6 text-left"
+      className="glass-strong w-full rounded-lg border p-5"
     >
       <fieldset
         disabled={loading}
         className="min-w-0 space-y-6 border-0 p-0"
       >
-      <div className="flex justify-end border-b border-line pb-4">
-        <Button
-          type="button"
-          size="lg"
-          onClick={onGenerate}
-          loading={loading}
-          className="w-full sm:w-auto"
-        >
-          {!loading && <Play className="h-3.5 w-3.5 fill-current" />}
-          {loading
-            ? t("Compiling configuration...")
-            : t("Generate workflow YAML")}
-        </Button>
-      </div>
-
       {/* SECTION 1 */}
-      <section className="space-y-4 rounded-lg border border-line bg-surface-2/40 p-4">
+      <section className="space-y-4 rounded-md bg-surface-2/50 p-4">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-ink">
           <Settings className="h-4 w-4 text-accent-ink" /> 1.{" "}
           {t("Pipeline configuration")}
@@ -232,7 +235,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
           <span className="block text-sm font-medium text-ink">
             {t("Trigger events")}
           </span>
-          <div className="flex flex-wrap gap-4 rounded-md border border-line bg-surface p-3">
+          <div className="flex flex-wrap gap-4 rounded-md border border-line-strong bg-surface-2 p-3">
             {["push", "pull_request", "workflow_dispatch"].map((ev) => (
               <label
                 key={ev}
@@ -295,10 +298,10 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
             <div
               key={j.id}
               className={cn(
-                "flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
+                "flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
                 j.id === activeJobId
                   ? "border-accent/30 bg-accent/15 text-accent-ink"
-                  : "border-line-strong bg-surface text-ink-muted hover:bg-surface-2 hover:text-ink",
+                  : "border-line-strong bg-surface-2/50 text-ink-muted hover:bg-surface-2 hover:text-ink",
               )}
             >
               <button
@@ -324,7 +327,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
 
       {/* SECTION 3 */}
       {selectedJob && (
-        <section className="space-y-4 rounded-lg border border-line bg-surface p-4">
+        <section className="space-y-4 rounded-md border border-line-strong bg-surface-2/50 p-4">
           <h4 className="text-sm font-semibold text-ink">{selectedJob.name}</h4>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Field label={t("Job name")}>
@@ -377,7 +380,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
             </Field>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 rounded-md border border-line bg-surface-2/40 p-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 rounded-md border border-line-strong p-3 sm:grid-cols-2">
             <Field label={t("Matrix key")}>
               {(id) => (
                 <Input
@@ -436,7 +439,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
               {selectedJob.steps.map((step, idx) => (
                 <div
                   key={step.id}
-                  className="space-y-2 rounded-md border border-line bg-surface-2/50 p-3"
+                  className="space-y-2 rounded-md border border-line-strong bg-surface p-3"
                 >
                   <div className="flex items-center justify-between text-sm font-medium text-ink">
                     <span className="flex items-center gap-2">
@@ -569,6 +572,35 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
         </section>
       )}
       </fieldset>
+    </div>
+
+    {/* BARRE D'ACTION COLLANTE : le bouton reste visible, quelle que soit la longueur du workflow.
+        Frère du panneau (et non enfant) : le verre flou ne s'imbrique pas dans `glass-strong`. */}
+    <div
+      role="region"
+      aria-label={t("Workflow actions")}
+      className="sticky bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 mt-4 flex items-center justify-between gap-3 rounded-lg border border-line bg-surface px-3 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] sm:px-4"
+    >
+      <div className="min-w-0 text-xs text-ink-muted">
+        <p className="truncate font-mono text-ink">{config.filename || "—"}</p>
+        <p className="mt-0.5 tabular-nums">
+          {config.jobs.length} {t("Jobs")} · {totalSteps} {t("Steps")}
+        </p>
+      </div>
+      <Button
+        type="button"
+        onClick={onGenerate}
+        loading={loading}
+        title="Ctrl/⌘ + Enter"
+        aria-keyshortcuts="Control+Enter Meta+Enter"
+        className="shrink-0"
+      >
+        {!loading && <Play className="h-3.5 w-3.5 fill-current" />}
+        {loading
+          ? t("Compiling configuration...")
+          : t("Generate workflow YAML")}
+      </Button>
+    </div>
     </div>
   );
 };

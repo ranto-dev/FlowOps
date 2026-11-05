@@ -9,7 +9,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import type { VirtualFile } from "../@types/workflow";
-import type { PredictionResult } from "../@types/api";
+import type { PredictionSnapshot } from "../@types/api";
 import { usePreferences } from "../lib/usePreferences";
 import { Button } from "./ui/Button";
 import { CodeSurface } from "./ui/CodeSurface";
@@ -21,7 +21,7 @@ interface YamlPreviewProps {
   onReconfigure: () => void;
   onSaveToServer: () => void;
   saveStatus: string | null;
-  prediction: PredictionResult | null;
+  prediction: PredictionSnapshot;
 }
 
 export const YamlPreview: React.FC<YamlPreviewProps> = ({
@@ -50,11 +50,17 @@ export const YamlPreview: React.FC<YamlPreviewProps> = ({
   if (yamlLines.length > 1 && yamlLines[yamlLines.length - 1] === "") {
     yamlLines.pop();
   }
+  const failurePercentage =
+    prediction.prediction?.failure_percentage ??
+    (prediction.prediction?.failure_probability != null
+      ? prediction.prediction.failure_probability * 100
+      : null);
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-line bg-surface text-left">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 text-left">
+      <div className="glass divide-y divide-line rounded-lg border">
       {/* BARRE DE CONTRÔLE SUPÉRIEURE */}
-      <div className="flex flex-col justify-between gap-3 border-b border-line px-4 py-3 sm:flex-row sm:items-center">
+      <div className="flex flex-col justify-between gap-3 px-4 py-3 sm:flex-row sm:items-center">
         <span className="flex items-center gap-2 font-mono text-xs text-ink">
           <FileCode className="h-4 w-4 text-accent-ink" />
           {activeFile.filename || "production-pipeline.yaml"}
@@ -92,32 +98,43 @@ export const YamlPreview: React.FC<YamlPreviewProps> = ({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-line px-4 py-3 text-sm text-ink">
+      <div
+        className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 text-sm tabular-nums text-ink"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        <span className="font-medium text-ink-muted">
+          {t(PREDICTION_STATUS_LABELS[prediction.status])}
+        </span>
+        {prediction.status === "error" && prediction.error && (
+          <span className="text-danger" title={prediction.error}>
+            {prediction.error}
+          </span>
+        )}
         <span>
           {t("Estimated duration")}:{" "}
           <strong className="font-mono font-semibold">
-            {prediction?.duration_seconds != null &&
-            Number.isFinite(prediction.duration_seconds)
-              ? `${Math.round(prediction.duration_seconds)}s`
+            {prediction.prediction?.duration_seconds != null &&
+            Number.isFinite(prediction.prediction.duration_seconds)
+              ? `${Math.round(prediction.prediction.duration_seconds)}s`
               : "—"}
           </strong>
         </span>
-        <span className="text-ink-subtle" aria-hidden="true">
-          |
-        </span>
+        <span className="text-ink-subtle" aria-hidden="true">|</span>
         <span>
           {t("Failure risk")}:{" "}
           <strong className="font-mono font-semibold">
-            {prediction?.failure_percentage != null &&
-            Number.isFinite(prediction.failure_percentage)
-              ? `${Math.round(prediction.failure_percentage)}%`
+            {failurePercentage != null && Number.isFinite(failurePercentage)
+              ? `${Math.round(failurePercentage)}%`
               : "—"}
           </strong>
         </span>
       </div>
+      </div>
 
-      {/* CODE SOURCE AVEC NUMÉROTATION DE LIGNES */}
-      <div className="relative min-h-[450px] p-4">
+      {/* CODE SOURCE AVEC NUMÉROTATION DE LIGNES (opaque) */}
+      <div className="relative min-h-[450px]">
         {saveStatus && (
           <div className="mb-4 flex items-center gap-2 rounded-md border border-success/30 bg-success/10 p-3 text-xs font-medium text-success">
             <CheckCircle className="h-4 w-4" /> {saveStatus}
@@ -128,7 +145,7 @@ export const YamlPreview: React.FC<YamlPreviewProps> = ({
           variant="secondary"
           size="sm"
           onClick={copyToClipboard}
-          className="absolute right-6 top-6 z-10"
+          className="absolute right-3 top-3 z-10"
           title="Copier le code"
           aria-label="Copier le code"
         >
@@ -162,6 +179,14 @@ export const YamlPreview: React.FC<YamlPreviewProps> = ({
       </div>
     </div>
   );
+};
+
+const PREDICTION_STATUS_LABELS: Record<PredictionSnapshot["status"], string> = {
+  pending: "Prediction pending",
+  available: "Predictions available",
+  partial: "Some predictions unavailable",
+  unavailable: "Predictions unavailable",
+  error: "Prediction service error",
 };
 
 /** Coloration minimale d'une ligne YAML avec les tokens du thème. */

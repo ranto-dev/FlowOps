@@ -361,7 +361,7 @@ export const History: React.FC = () => {
       {/* BARRE SUPERIEURE FIXE */}
       <section
         aria-label={t("History filters")}
-        className="mb-3 flex flex-none flex-col justify-end gap-3 rounded-lg border border-line bg-surface p-3 sm:flex-row sm:items-center"
+        className="mb-3 flex flex-none flex-col justify-end gap-3 glass rounded-lg border p-3 sm:flex-row sm:items-center"
       >
         <div className="flex items-center gap-2">
           <div className="relative">
@@ -564,7 +564,7 @@ export const History: React.FC = () => {
                   return (
                     <div
                       key={job.id}
-                      className={`rounded-lg border bg-surface p-3 transition-colors ${
+                      className={`rounded-md border bg-surface-2/50 p-3 transition-colors ${
                         isJobSelected
                           ? "border-accent/30 bg-accent/15"
                           : "border-line hover:border-line-strong"

@@ -33,12 +33,12 @@ const COLUMNS: Array<{ title: string; links: Array<{ label: string; href: string
 export function Footer() {
   const { t } = usePreferences();
   return (
-    <footer className="border-t border-line">
+    <footer className="border-t border-line text-ink-muted">
       <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6">
         <div className="grid gap-10 md:grid-cols-[1.2fr_2fr]">
           <div>
             <Link to="/" className="flex items-center gap-2.5" aria-label="FlowOps home">
-              <span className="flex size-8 items-center justify-center rounded-md border border-line bg-surface-2">
+              <span className="flex size-8 items-center justify-center rounded-md bg-accent/15">
                 <TerminalSquare className="size-4 text-accent-ink" />
               </span>
               <span className="text-sm font-semibold text-ink">

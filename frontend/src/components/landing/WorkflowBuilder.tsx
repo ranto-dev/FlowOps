@@ -28,7 +28,7 @@ export function WorkflowBuilder() {
     <section
       id="how-it-works"
       aria-labelledby="builder-title"
-      className="scroll-mt-24 py-24 sm:py-32"
+      className="scroll-mt-24 py-20 sm:py-24"
     >
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <SectionHeader
@@ -36,7 +36,14 @@ export function WorkflowBuilder() {
           title={<span id="builder-title">{t("Build workflows visually.")}</span>}
           description={t("Configure your pipeline without writing YAML from scratch.")}
         />
-        <div className="mx-auto mt-12 max-w-md" role="list" aria-label={t("Pipeline nodes")}>
+        <div className="glass-strong mx-auto mt-12 max-w-md overflow-hidden rounded-lg border">
+          <div className="flex items-center gap-2 border-b border-line px-4 py-3" aria-hidden="true">
+            <span className="size-2.5 rounded-full bg-line-strong" />
+            <span className="size-2.5 rounded-full bg-line-strong" />
+            <span className="size-2.5 rounded-full bg-line-strong" />
+            <span className="ml-2 font-mono text-xs text-ink-subtle">workflow</span>
+          </div>
+          <div className="p-5" role="list" aria-label={t("Pipeline nodes")}>
           {NODES.map((node, i) => (
             <div key={node.label}>
               <motion.div
@@ -45,9 +52,9 @@ export function WorkflowBuilder() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.6 }}
                 transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                className="flex items-center gap-4 rounded-lg border border-line bg-surface px-5 py-4 transition-colors hover:border-line-strong"
+                className="flex items-center gap-4 rounded-md border border-line bg-surface-2 px-4 py-3"
               >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-md border border-line bg-surface-2">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-accent/15">
                   <node.icon className="size-4 text-accent-ink" aria-hidden="true" />
                 </span>
                 <div className="flex items-center gap-3">
@@ -69,6 +76,7 @@ export function WorkflowBuilder() {
               )}
             </div>
           ))}
+          </div>
         </div>
       </div>
     </section>

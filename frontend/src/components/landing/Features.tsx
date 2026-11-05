@@ -52,7 +52,7 @@ export function Features() {
     <section
       id="features"
       aria-labelledby="features-title"
-      className="scroll-mt-24 py-24 sm:py-32"
+      className="scroll-mt-24 py-20 sm:py-24"
     >
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <SectionHeader
@@ -72,8 +72,10 @@ export function Features() {
         >
           {FEATURES.map((f) => (
             <motion.div key={f.title} variants={reduce ? undefined : staggerChild}>
-              <Card className="h-full p-6 transition-colors hover:border-line-strong">
-                <f.icon className="size-5 text-accent-ink" aria-hidden="true" />
+              <Card interactive className="h-full p-6">
+                <span className="flex size-10 items-center justify-center rounded-md bg-accent/15 text-accent-ink">
+                  <f.icon className="size-5" aria-hidden="true" />
+                </span>
                 <h3 className="pt-4 text-base font-semibold text-ink">
                   {t(f.title)}
                 </h3>
