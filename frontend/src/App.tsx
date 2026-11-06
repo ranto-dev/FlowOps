@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 import { ToastProvider } from "./components/ui/Toast";
 import { usePreferences } from "./lib/usePreferences";
+import { hasSession } from "./lib/session";
 
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const AuthPage = lazy(() =>
@@ -30,13 +31,13 @@ const DocumentationLayout = lazy(
 
 // Garde-fou 1 : Protège le workspace (Redirige vers /auth si non connecté)
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const token = localStorage.getItem("flowops_token");
+  const token = hasSession();
   return token ? <>{children}</> : <Navigate to="/auth" replace />;
 };
 
 // Garde-fou 2 : Empêche d'accéder à la Landing/Auth si déjà connecté
 const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
-  const token = localStorage.getItem("flowops_token");
+  const token = hasSession();
   return token ? <Navigate to="/workspace" replace /> : <>{children}</>;
 };
 

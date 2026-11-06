@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Check, CheckCircle2, Copy, Loader2 } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
 import { apiFetch, isApiError } from "../lib/api";
+import { hasSession, saveSession } from "../lib/session";
 import type {
   AuthStatus,
   CheckLoginResponse,
@@ -42,7 +43,7 @@ export const AuthPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (localStorage.getItem("flowops_token")) {
+    if (hasSession()) {
       navigate("/workspace", { replace: true });
       return;
     }
@@ -81,10 +82,12 @@ export const AuthPage: React.FC = () => {
         );
 
         if (data.status === "success") {
-          localStorage.setItem("flowops_token", data.token ?? "");
-          localStorage.setItem("flowops_user", data.username ?? "");
-          localStorage.setItem("flowops_avatar", data.avatar_url ?? "");
-          localStorage.setItem("flowops_github_id", data.github_id ?? "");
+          saveSession({
+            token: data.token ?? "",
+            username: data.username,
+            avatarUrl: data.avatar_url,
+            githubId: data.github_id,
+          });
 
           setAuthState("success");
           closePopup();

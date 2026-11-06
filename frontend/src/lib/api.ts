@@ -13,20 +13,10 @@
  * `src/@types/api.ts`).
  */
 import { translate } from "./i18n";
+import { clearSession, getValidToken } from "./session";
 
 /** Base URL de l'API backend, surchargeable via `VITE_API_URL`. */
 export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-
-/** Clé localStorage du jeton GitHub (posée par `AuthPage` au login). */
-export const TOKEN_STORAGE_KEY = "flowops_token";
-
-/** Clés de session effacées automatiquement lors d'un 401. */
-const SESSION_KEYS = [
-  "flowops_token",
-  "flowops_user",
-  "flowops_avatar",
-  "flowops_github_id",
-];
 
 /**
  * Erreur HTTP : la requête a répondu avec un statut non-2xx.
@@ -64,24 +54,15 @@ export function errorDetail(error: unknown, fallback: string): string {
 }
 
 /**
- * Lit le jeton courant dans localStorage.
+ * Lit le jeton courant (session valide uniquement, voir `session.ts`).
  *
- * @returns Le jeton GitHub, ou `null` si la session est absente.
+ * @returns Le jeton GitHub, ou `null` si la session est absente ou expirée.
  */
 export function getToken(): string | null {
-  return localStorage.getItem(TOKEN_STORAGE_KEY);
+  return getValidToken();
 }
 
-/**
- * Supprime l'ensemble des clés de session (jeton, profil, identifiant).
- *
- * Utilisé au logout manuel et automatiquement sur un `401`.
- */
-export function clearSession(): void {
-  for (const key of SESSION_KEYS) {
-    localStorage.removeItem(key);
-  }
-}
+export { clearSession };
 
 type UnauthorizedHandler = () => void;
 
