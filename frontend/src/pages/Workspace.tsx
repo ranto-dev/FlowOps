@@ -1,21 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   FolderGit2,
   History as HistoryIcon,
   HelpCircle,
-  LogOut,
-  Plus,
-  Trash2,
-  Sliders,
   ArrowLeft,
-  User,
-  Play,
-  Loader2,
-  AlertCircle,
   ChevronRight,
-  GitBranch,
-  Search,
 } from "lucide-react";
 import { WorkflowForm } from "../components/WorkflowForm";
 import { YamlPreview } from "../components/YamlPreview";
@@ -25,17 +15,19 @@ import { PredictionPanel } from "../components/PredictionPanel";
 import LogoImage from "../assets/logo-flowOps-transparent.png";
 import { useToast } from "../components/ui/useToast";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
-import { Modal } from "../components/ui/Modal";
+import { ProfileMenu } from "../components/workspace/ProfileMenu";
+import { ProjectsView } from "../components/workspace/ProjectsView";
+import { HelpView } from "../components/workspace/HelpView";
+import {
+  CreateProjectModal,
+  type NewProjectValues,
+} from "../components/workspace/CreateProjectModal";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Button } from "../components/ui/Button";
-import { Badge } from "../components/ui/Badge";
-import { Card } from "../components/ui/Card";
-import { Field, Input, Select, Textarea } from "../components/ui/Field";
 import { cn } from "../lib/utils";
-import { EmptyState, LoadingState } from "../components/ui/States";
-import { PreferenceControls } from "../components/ui/PreferenceControls";
 import { usePreferences } from "../lib/usePreferences";
 import type { FlowOpsWorkflowConfig } from "../@types/workflow";
+import { getSessionProfile } from "../lib/session";
 import { apiFetch, clearSession, errorDetail, getToken, isApiError } from "../lib/api";
 import type {
   ExecuteResponse,
@@ -55,19 +47,16 @@ export const Workspace: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"projects" | "history" | "help">(
     "projects",
   );
-  const [profileOpen, setProfileOpen] = useState(false);
-  const profileButtonRef = useRef<HTMLButtonElement>(null);
-  const profileRef = useRef<HTMLDivElement>(null);
 
-  const username = localStorage.getItem("flowops_user") || "Developer";
-  const avatarUrl = localStorage.getItem("flowops_avatar");
+  const profile = getSessionProfile();
+  const username = profile.username || "Developer";
+  const avatarUrl = profile.avatarUrl;
   const token = getToken();
 
   // --- DATABASE & API STATES ---
   const [projects, setProjects] = useState<Project[]>([]);
   const [gitRepos, setGitRepos] = useState<GitHubRepo[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
-  const [projectQuery, setProjectQuery] = useState("");
   const [executingProjectId, setExecutingProjectId] = useState<string | null>(
     null,
   );
@@ -75,9 +64,6 @@ export const Workspace: React.FC = () => {
   // --- MODAL & FORM CREATION STATES ---
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [newProjName, setNewProjName] = useState("");
-  const [newProjDesc, setNewProjDesc] = useState("");
-  const [selectedRepo, setSelectedRepo] = useState("");
 
   // --- DELETE CONFIRMATION ---
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
@@ -131,36 +117,9 @@ export const Workspace: React.FC = () => {
     fetchGitHubRepos();
   }, [fetchProjects, fetchGitHubRepos]);
 
-  // Menu profil = dropdown : fermeture au clic extérieur et sur Échap, sans piège de focus.
-  useEffect(() => {
-    if (!profileOpen) return;
-    const onPointerDown = (e: PointerEvent) => {
-      if (!profileRef.current?.contains(e.target as Node)) setProfileOpen(false);
-    };
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setProfileOpen(false);
-        profileButtonRef.current?.focus();
-      }
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [profileOpen]);
-
   const handleLogout = () => {
     clearSession();
     navigate("/auth", { replace: true });
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setNewProjName("");
-    setNewProjDesc("");
-    setSelectedRepo("");
   };
 
   const initWorkflowConfig = (project: Project) => {
@@ -187,40 +146,28 @@ export const Workspace: React.FC = () => {
     setViewState("form");
   };
 
-  const createProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProjName.trim() || !selectedRepo) {
-      toast.error(
-        t("Missing info"),
-        t("Add a project name and pick a GitHub repo."),
-      );
-      return;
-    }
-
+  const createProject = async (values: NewProjectValues): Promise<boolean> => {
     setIsCreating(true);
-
     try {
       const createdProject = await apiFetch<Project>("/api/projects", {
         method: "POST",
-        body: {
-          name: newProjName.trim(),
-          description: newProjDesc.trim() || "",
-          repository: selectedRepo,
-        },
+        body: values,
       });
 
-      closeModal();
+      setIsModalOpen(false);
       await fetchProjects();
       toast.success(
         t("Project created"),
         t("{name} is ready. Set up its workflow.", { name: createdProject.name }),
       );
       initWorkflowConfig(createdProject);
+      return true;
     } catch (err) {
       toast.error(
         isApiError(err) ? t("Couldn't create the project") : t("Connection problem"),
         errorDetail(err, t("Can't reach the server.")),
       );
+      return false;
     } finally {
       setIsCreating(false);
     }
@@ -355,10 +302,7 @@ export const Workspace: React.FC = () => {
   const renderBrand = () => (
     <button
       type="button"
-      onClick={() => {
-        switchTab("projects");
-        setProfileOpen(false);
-      }}
+      onClick={() => switchTab("projects")}
       className="flex w-full min-w-0 items-center gap-2.5 rounded-md p-1.5 text-left transition-colors hover:bg-surface-2/70 focus-visible:outline-2 focus-visible:outline-accent-ink"
       aria-label={t("FlowOps projects")}
     >
@@ -443,89 +387,6 @@ export const Workspace: React.FC = () => {
     );
   };
 
-  const profileMenu = (
-    <div className="relative" ref={profileRef}>
-      <button
-        ref={profileButtonRef}
-        onClick={() => setProfileOpen((v) => !v)}
-        type="button"
-        aria-label={`${t("Profile")}: ${username}`}
-        aria-haspopup="menu"
-        aria-expanded={profileOpen}
-        aria-controls="workspace-profile-menu"
-        className={cn(
-          "overflow-hidden rounded-full transition-opacity hover:opacity-80",
-          profileOpen && "opacity-80",
-        )}
-      >
-        {avatarUrl ? (
-          <img
-            src={avatarUrl}
-            alt={username}
-            className="h-8 w-8 rounded-full object-cover"
-          />
-        ) : (
-          <div className="flex h-8 w-8 items-center justify-center bg-accent/15 text-accent-ink">
-            <User className="h-4 w-4" />
-          </div>
-        )}
-      </button>
-
-      {profileOpen && (
-        <>
-          <div
-            id="workspace-profile-menu"
-            role="group"
-            aria-label={t("Profile settings")}
-            className="absolute right-0 top-full z-50 mt-2 w-72 max-w-[calc(100vw-1.5rem)] rounded-lg border border-line-strong bg-surface p-2 shadow-lg"
-          >
-            <div className="flex items-center gap-3 border-b border-line px-2 py-2.5">
-              <div className="flex min-w-0 items-center gap-3">
-                {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt={username}
-                    className="h-9 w-9 rounded-full border border-line-strong object-cover"
-                  />
-                ) : (
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent/30 bg-accent/15 text-accent-ink">
-                    <User className="h-4 w-4" />
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-ink">
-                    {username}
-                  </p>
-                  <p className="flex items-center gap-1 text-xs text-success">
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-success" />
-                    {t("Connected")}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-b border-line px-1 py-2">
-              <PreferenceControls layout="menu" />
-            </div>
-
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setProfileOpen(false);
-                  setLogoutConfirmOpen(true);
-                }}
-                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-danger transition-colors hover:bg-danger/10"
-              >
-                <LogOut className="h-4 w-4" /> {t("Sign out")}
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
-
   const navSections: ShellNavSection[] = [
     {
       id: "workspace",
@@ -539,23 +400,19 @@ export const Workspace: React.FC = () => {
     },
   ];
 
-  const visibleProjects = projects.filter((project) => {
-    const query = projectQuery.trim().toLocaleLowerCase();
-    return (
-      !query ||
-      project.name.toLocaleLowerCase().includes(query) ||
-      project.repository.toLocaleLowerCase().includes(query) ||
-      project.description.toLocaleLowerCase().includes(query)
-    );
-  });
-
   return (
     <>
     <AppShell
       brand={renderBrand()}
       sections={navSections}
       breadcrumb={renderBreadcrumbs()}
-      actions={profileMenu}
+      actions={
+        <ProfileMenu
+          username={username}
+          avatarUrl={avatarUrl}
+          onSignOut={() => setLogoutConfirmOpen(true)}
+        />
+      }
       labels={{
         navigation: t("Workspace navigation"),
         openMenu: t("Open navigation"),
@@ -564,145 +421,15 @@ export const Workspace: React.FC = () => {
     >
         {/* TAB 1: PROJECTS */}
         {activeTab === "projects" && !isConfiguringWorkflow && (
-          <div className="space-y-6">
-            <PageHeader
-              title={t("Projects")}
-              description={t("Project overview")}
-            />
-
-            <Card
-              as="section"
-              aria-label={t("Project filters")}
-              className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
-            >
-              {projects.length > 0 ? (
-                <div className="relative w-full sm:max-w-md">
-                  <Search
-                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle"
-                    aria-hidden="true"
-                  />
-                  <Input
-                    type="search"
-                    value={projectQuery}
-                    onChange={(event) => setProjectQuery(event.currentTarget.value)}
-                    placeholder={t("Search projects")}
-                    aria-label={t("Search projects")}
-                    className="pl-9"
-                  />
-                </div>
-              ) : (
-                <span className="text-sm text-ink-muted">
-                  {t("Connect a GitHub repository to get started.")}
-                </span>
-              )}
-              <Button onClick={() => setIsModalOpen(true)} className="shrink-0">
-                <Plus className="h-4 w-4" /> {t("New project")}
-              </Button>
-            </Card>
-
-            {loadingProjects ? (
-              <LoadingState label={`${t("Loading projects")}...`} />
-            ) : projects.length === 0 ? (
-              <EmptyState
-                title={t("No projects found")}
-                description={t("Click New project to connect a GitHub repository.")}
-              />
-            ) : (
-              <>
-                {visibleProjects.length === 0 ? (
-                  <EmptyState
-                    title={t("No projects found")}
-                    description={t("Try another name or repository.")}
-                  />
-                ) : (
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {visibleProjects.map((p) => (
-                      <Card
-                        key={p.id}
-                        interactive
-                        className="flex flex-col gap-4 p-5"
-                      >
-                        <div className="space-y-2">
-                          <div className="flex items-start justify-between gap-3">
-                            <h3 className="min-w-0 truncate text-base font-semibold text-ink">
-                              {p.name}
-                            </h3>
-                            {p.has_workflow ? (
-                              <Badge tone="purple" dot className="shrink-0">
-                                {t("Pipeline active")}
-                              </Badge>
-                            ) : (
-                              <Badge className="shrink-0">{t("No workflow")}</Badge>
-                            )}
-                          </div>
-
-                          <p className="text-sm text-ink-muted">
-                            {p.description || t("No description provided.")}
-                          </p>
-
-                          <div className="flex items-center gap-1.5 pt-1 font-mono text-xs text-ink-muted">
-                            <GitBranch className="h-3.5 w-3.5 text-ink-subtle" aria-hidden="true" />
-                            <span className="truncate">{p.repository}</span>
-                          </div>
-                        </div>
-
-                        <div className="mt-auto flex shrink-0 flex-wrap items-center gap-2">
-                          {p.has_workflow ? (
-                            <>
-                              <Button
-                                size="sm"
-                                onClick={() =>
-                                  triggerWorkflowExecution(p.id, p.name)
-                                }
-                                disabled={executingProjectId !== null}
-                              >
-                                {executingProjectId === p.id ? (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                  <Play className="h-3.5 w-3.5" />
-                                )}
-                                {t("Run")}
-                              </Button>
-
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => initWorkflowConfig(p)}
-                                disabled={executingProjectId !== null}
-                              >
-                                <Sliders className="h-3.5 w-3.5" /> {t("Edit workflow")}
-                              </Button>
-                            </>
-                          ) : (
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => initWorkflowConfig(p)}
-                              disabled={executingProjectId !== null}
-                            >
-                              <Sliders className="h-3.5 w-3.5" /> {t("Create workflow")}
-                            </Button>
-                          )}
-
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setProjectToDelete(p)}
-                            disabled={executingProjectId !== null}
-                            className="ml-auto hover:text-danger"
-                            title={t("Delete project")}
-                            aria-label={`${t("Delete")} ${p.name}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+          <ProjectsView
+            projects={projects}
+            loading={loadingProjects}
+            executingId={executingProjectId}
+            onCreate={() => setIsModalOpen(true)}
+            onRun={(p) => triggerWorkflowExecution(p.id, p.name)}
+            onEdit={initWorkflowConfig}
+            onDelete={setProjectToDelete}
+          />
         )}
 
         {/* WORKFLOW CONFIGURATION VIEW */}
@@ -782,121 +509,16 @@ export const Workspace: React.FC = () => {
         )}
 
         {/* TAB 3: HELP CENTER */}
-        {activeTab === "help" && (
-          <div className="space-y-6">
-            <PageHeader
-              title={t("Help")}
-              description={t("Documentation and best practices")}
-            />
-            <Card as="section" className="space-y-4 p-6">
-              <div className="max-w-3xl space-y-3 text-sm text-ink-muted">
-                <p>
-                  {t("FlowOps helps you model CI/CD workflows in low-code, publish them to a GitHub repository, and inspect runner executions.")}
-                </p>
-                <div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 p-4 text-xs text-warning">
-                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                  <span>
-                    <span className="font-semibold">{t("Prerequisite:")}</span>{" "}
-                    {t("A local or remote MongoDB instance on port")}
-                    <code className="rounded-md bg-warning/10 px-1 py-0.5 font-mono font-semibold">
-                      27017
-                    </code>{" "}
-                    {t("and the backend service must be available before triggering runs.")}
-                  </span>
-                </div>
-                <Link
-                  to="/docs"
-                  className="inline-flex items-center gap-2 font-medium text-accent-ink hover:text-ink"
-                >
-                  {t("View documentation")} <ArrowLeft className="h-3.5 w-3.5 rotate-180" />
-                </Link>
-              </div>
-            </Card>
-          </div>
-        )}
+        {activeTab === "help" && <HelpView />}
     </AppShell>
 
-      {/* ================= MODAL DE CRÉATION DE PROJET ================= */}
-      <Modal
+      <CreateProjectModal
         open={isModalOpen}
-        onClose={closeModal}
-        title={t("New project")}
-        description={t("Connect a GitHub repository to configure an automated workflow.")}
-        icon={
-          <div className="rounded-md bg-accent/15 p-2 text-accent-ink">
-            <FolderGit2 className="h-5 w-5" />
-          </div>
-        }
-        footer={
-          <>
-            <Button variant="secondary" size="sm" onClick={closeModal}>
-              {t("Cancel")}
-            </Button>
-            <Button
-              size="sm"
-              form="create-project-form"
-              type="submit"
-              loading={isCreating}
-            >
-              {isCreating ? t("Creating...") : (
-                <>
-                  <Plus className="h-3.5 w-3.5" /> {t("Initialize")}
-                </>
-              )}
-            </Button>
-          </>
-        }
-      >
-        <form id="create-project-form" onSubmit={createProject} className="space-y-4">
-          <Field label={`${t("Project name")} *`}>
-            {(id) => (
-              <Input
-                id={id}
-                type="text"
-                value={newProjName}
-                onChange={(e) => setNewProjName(e.target.value)}
-                placeholder={t("e.g. Production API")}
-                required
-              />
-            )}
-          </Field>
-
-          <Field label={`${t("GitHub repository")} *`}>
-            {(id) => (
-              <Select
-                id={id}
-                value={selectedRepo}
-                onChange={(e) => setSelectedRepo(e.target.value)}
-                className="font-mono"
-              >
-                <option value="">
-                  {gitRepos.length === 0
-                    ? `-- ${t("No repositories available")} --`
-                    : `-- ${t("Select a GitHub repository")} --`}
-                </option>
-                {gitRepos.map((repo) => (
-                  <option key={repo.id} value={repo.full_name}>
-                    {repo.full_name}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-
-          <Field label={t("Description")}>
-            {(id) => (
-              <Textarea
-                id={id}
-                rows={3}
-                value={newProjDesc}
-                onChange={(e) => setNewProjDesc(e.target.value)}
-                className="resize-none"
-                placeholder={t("Optional project details...")}
-              />
-            )}
-          </Field>
-        </form>
-      </Modal>
+        repos={gitRepos}
+        creating={isCreating}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={createProject}
+      />
 
       {/* ================= DIALOGUE DE SUPPRESSION ================= */}
       <ConfirmDialog
@@ -911,7 +533,6 @@ export const Workspace: React.FC = () => {
         confirmLabel={t("Delete")}
         description={
           <>
-            Le projet{" "}
             <span className="font-semibold text-ink">
               « {projectToDelete?.name} »
             </span>{" "}
