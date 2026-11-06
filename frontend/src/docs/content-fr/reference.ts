@@ -1,0 +1,110 @@
+import type { DocPage } from "../types";
+import { code, h2, note, p, table } from "../content/blocks";
+
+export const referenceFr: DocPage[] = [
+  {
+    slug: "workflow-schema",
+    title: "Schéma de workflow",
+    description: "Chaque champ de la configuration de workflow FlowOps.",
+    keywords: ["schema", "json", "jobs", "steps", "fields", "schéma", "champs", "étapes"],
+    blocks: [
+      h2("Workflow"),
+      table(
+        ["Champ", "Type", "Description"],
+        ["`filename`", "string", "Nom du fichier généré dans `.github/workflows/`"],
+        ["`name`", "string", "Nom du workflow"],
+        ["`on_events`", "string[]", "Déclencheurs, par ex. `push`, `pull_request`"],
+        ["`branches`", "string", "Filtre de branches séparées par des virgules pour `push` et `pull_request`"],
+        ["`global_env`", "string?", "Lignes `KEY=value`, une par variable"],
+        ["`jobs`", "Job[]", "Jobs du workflow"],
+      ),
+      h2("Job"),
+      table(
+        ["Champ", "Type", "Description"],
+        ["`id`", "string", "Identifiant dans l'éditeur"],
+        ["`name`", "string", "Nom affiché ; sert aussi de clé du job (minuscules, tirets)"],
+        ["`runs_on`", "string", "Runner, `ubuntu-latest` par défaut"],
+        ["`needs`", "string[]", "Jobs qui doivent se terminer avant (vide par défaut)"],
+        ["`matrix_key`", "string?", "Nom de la variable de matrice"],
+        ["`matrix_values`", "string?", "Valeurs de matrice séparées par des virgules"],
+        ["`job_if`", "string?", "Condition au niveau du job"],
+        ["`steps`", "Step[]", "Étapes ordonnées"],
+      ),
+      h2("Étape"),
+      table(
+        ["Champ", "Type", "Description"],
+        ["`id`, `name`", "string", "Identifiant et nom affiché"],
+        ["`type`", "enum", "`checkout`, `setup-node`, `npm`, `upload-artifact`, `docker`, `custom-run`"],
+        ["`node_version`", "string?", "Pour `setup-node`"],
+        ["`npm_command`", "string?", "Pour `npm`"],
+        ["`docker_image`, `docker_registry`", "string?", "Pour `docker`"],
+        ["`custom_script`", "string?", "Pour `custom-run`"],
+        ["`artifact_path`", "string?", "Pour `upload-artifact`"],
+        ["`step_if`", "string?", "Condition au niveau de l'étape"],
+      ),
+      note("Les types sont déclarés dans `backend/schemas.py` et reflétés dans `frontend/src/@types/workflow.ts`."),
+    ],
+  },
+  {
+    slug: "environment-variables",
+    title: "Variables d'environnement",
+    description: "Toutes les variables lues par le backend.",
+    keywords: ["env", "settings", "mlops", "mlflow", "cors", "variables", "environnement", "configuration"],
+    blocks: [
+      h2("API"),
+      table(
+        ["Variable", "Valeur par défaut", "Description"],
+        ["`GITHUB_CLIENT_ID`", "—", "Client ID de l'OAuth App (requis pour se connecter)"],
+        ["`GITHUB_CLIENT_SECRET`", "—", "Client secret de l'OAuth App (requis pour se connecter)"],
+        ["`MONGO_URI`", "`mongodb://localhost:27017/`", "Chaîne de connexion MongoDB"],
+        ["`MONGO_DB_NAME`", "`flowops_db`", "Nom de la base"],
+        ["`CORS_ORIGINS`", "`http://localhost:5173,http://127.0.0.1:5173`", "Origines navigateur autorisées, séparées par des virgules"],
+        ["`GITHUB_TIMEOUT`", "`20`", "Délai d'expiration en secondes des appels GitHub"],
+      ),
+      h2("MLOps"),
+      table(
+        ["Variable", "Valeur par défaut", "Description"],
+        ["`FLOWOPS_MLFLOW_TRACKING_URI`", "SQLite dans `backend/mlruns/`", "Store de tracking MLflow"],
+        ["`GITHUB_TOKEN`", "—", "Token du collecteur hors ligne (pas utilisé pour la connexion)"],
+        ["`GITHUB_REPO`", "—", "Dépôt par défaut du collecteur"],
+        ["`MLOPS_*`", "voir [seuils](/docs/monitoring-retraining)", "Seuils de validation"],
+      ),
+      p("`backend/.env` est ignoré par git ; partez de `backend/.env.example`."),
+    ],
+  },
+  {
+    slug: "cli-reference",
+    title: "Référence CLI",
+    description: "Les commandes pour lancer les services et le pipeline MLOps.",
+    keywords: ["commands", "python -m", "uvicorn", "pnpm", "commandes", "cli"],
+    blocks: [
+      h2("Services"),
+      code(
+        "bash",
+        `cd backend && ./mongo-docker.sh
+cd backend && venv/bin/python -m uvicorn main:app --reload --port 8000
+cd frontend && pnpm dev`,
+      ),
+      h2("MLOps"),
+      table(
+        ["Commande", "Description"],
+        ["`python -m mlops.pipeline [--sample] [--skip-train]`", "Pipeline complet"],
+        ["`python -m mlops.etl.pipeline`", "ETL et features"],
+        ["`python -m mlops.training.train_duration`", "Entraîner le modèle de durée"],
+        ["`python -m mlops.training.train_failure`", "Entraîner le modèle d'échec"],
+        ["`python -m mlops.evaluation.evaluate`", "Évaluer les modèles"],
+        ["`python -m mlops.validation.validator`", "Valider et promouvoir"],
+        ["`python -m mlops.collection.collector --repo R --token T`", "Collecter les runs GitHub"],
+      ),
+      p("Lancez-les depuis `backend/` avec l'interpréteur de l'environnement virtuel (`venv/bin/python`)."),
+      h2("Qualité"),
+      table(
+        ["Commande", "Description"],
+        ["`venv/bin/ruff check .`", "Lint backend"],
+        ["`venv/bin/python -m pytest`", "Tests backend"],
+        ["`pnpm lint`", "Lint frontend"],
+        ["`pnpm exec tsc -b`", "Vérification des types frontend"],
+      ),
+    ],
+  },
+];

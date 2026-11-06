@@ -4,7 +4,7 @@ import { Separator } from "./ui/separator";
 import { usePreferences } from "../../lib/usePreferences";
 import Logo from "../../assets/logo-flowOps-transparent.png";
 
-const COLUMNS: Array<{ title: string; links: Array<{ label: string; href: string; external?: boolean }> }> = [
+const COLUMNS: Array<{ title: string; links: Array<{ label: string; href: string; external?: boolean; newTab?: boolean }> }> = [
   {
     title: "Product",
     links: [
@@ -17,7 +17,7 @@ const COLUMNS: Array<{ title: string; links: Array<{ label: string; href: string
   {
     title: "Resources",
     links: [
-      { label: "Documentation", href: "/docs" },
+      { label: "Documentation", href: "/docs", newTab: true },
       { label: "Setup guide", href: "/setup" },
     ],
   },
@@ -80,6 +80,7 @@ export function Footer() {
                       ) : (
                         <Link
                           to={link.href}
+                          {...(link.newTab ? { target: "_blank", rel: "noreferrer" } : {})}
                           className="text-sm text-ink-muted transition-colors hover:text-ink"
                         >
                           {t(link.label)}

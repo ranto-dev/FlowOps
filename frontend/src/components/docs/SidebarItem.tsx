@@ -24,8 +24,8 @@ export function SidebarItem({
   onNavigate,
   depth = 0,
 }: Props) {
-  const page = getPage(item.slug);
-  const { t } = usePreferences();
+  const { t, language } = usePreferences();
+  const page = getPage(item.slug, language);
   const linkRef = useRef<HTMLAnchorElement>(null);
   const active = item.slug === activeSlug;
   const expanded = open.has(item.slug);

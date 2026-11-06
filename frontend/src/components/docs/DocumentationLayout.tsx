@@ -4,7 +4,7 @@ import { usePreferences } from "../../lib/usePreferences";
 import { getHeadings } from "../../docs/headings";
 import { DOCS_CONFIG, NAVIGATION } from "../../docs/navigation";
 import type { DocTab } from "../../docs/types";
-import { getEntry, getNeighbours } from "../../docs/pages";
+import { getEntry, getNeighbours, type DocLang } from "../../docs/pages";
 import { DocumentationContent } from "./DocumentationContent";
 import { DocumentationHeader } from "./DocumentationHeader";
 import { DocumentationSearch } from "./DocumentationSearch";
@@ -13,15 +13,15 @@ import { DocumentationTableOfContents } from "./DocumentationTableOfContents";
 import { PageNavigation } from "./PageNavigation";
 
 /** Section + parents d'une page : à déplier dans la sidebar. */
-function ancestorsOf(slug: string): string[] {
-  const entry = getEntry(slug);
+function ancestorsOf(slug: string, lang: DocLang): string[] {
+  const entry = getEntry(slug, lang);
   return entry
     ? [entry.section.id, ...entry.ancestors.map((a) => a.slug)]
     : [NAVIGATION[0].id];
 }
 
 export default function DocumentationLayout() {
-  const { t } = usePreferences();
+  const { t, language } = usePreferences();
   const { "*": splat } = useParams();
   const { hash } = useLocation();
   const slug = (splat ?? "").replace(/\/+$/, "");
@@ -30,13 +30,13 @@ export default function DocumentationLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [open, setOpen] = useState<ReadonlySet<string>>(
-    () => new Set(ancestorsOf(slug)),
+    () => new Set(ancestorsOf(slug, language)),
   );
 
   const isMac =
     typeof navigator !== "undefined" && /mac/i.test(navigator.platform);
 
-  const entry = getEntry(slug);
+  const entry = getEntry(slug, language);
   const activeTab: DocTab = entry?.section.tab ?? "guides";
   const sections = useMemo(
     () => NAVIGATION.filter((s) => s.tab === activeTab),
@@ -46,8 +46,8 @@ export default function DocumentationLayout() {
 
   // Déplie la section (et le parent) de la page courante à chaque navigation.
   useEffect(() => {
-    setOpen((prev) => new Set([...prev, ...ancestorsOf(slug)]));
-  }, [slug]);
+    setOpen((prev) => new Set([...prev, ...ancestorsOf(slug, language)]));
+  }, [slug, language]);
 
   // Ancre dans l'URL → défilement ; sinon retour en haut de page.
   useEffect(() => {
@@ -101,7 +101,7 @@ export default function DocumentationLayout() {
     return <Navigate to={`${DOCS_CONFIG.basePath}/${DOCS_CONFIG.homeSlug}`} replace />;
   }
 
-  const { prev, next } = getNeighbours(slug);
+  const { prev, next } = getNeighbours(slug, language);
 
   return (
     <div className="min-h-screen text-ink">

@@ -5,7 +5,7 @@ import { DOCS_CONFIG, TAB_LABELS } from "../../docs/navigation";
 import type { DocTab } from "../../docs/types";
 import { cn } from "../../lib/utils";
 import { usePreferences } from "../../lib/usePreferences";
-import { ThemeToggle } from "../ui/ThemeToggle";
+import { PreferenceControls } from "../ui/PreferenceControls";
 
 interface Props {
   activeTab: DocTab;
@@ -77,11 +77,11 @@ export function DocumentationHeader({
             type="button"
             onClick={onOpenSearch}
             aria-label={t("Search documentation")}
-            className="flex h-9 items-center gap-2 rounded-md border border-line-strong bg-surface px-3 text-sm text-ink-muted transition-colors hover:border-line-strong hover:text-ink focus-visible:outline-2 focus-visible:outline-accent-ink sm:w-full"
+            className="group flex h-9 items-center gap-2.5 rounded-md border border-line-strong bg-surface-2/60 px-3 text-sm text-ink-muted transition-colors hover:border-accent/50 hover:bg-surface-2 hover:text-ink focus-visible:outline-2 focus-visible:outline-accent-ink max-sm:w-9 max-sm:justify-center max-sm:px-0 sm:w-full"
           >
-            <Search className="h-4 w-4" aria-hidden />
-            <span className="max-sm:hidden">{t("Search documentation")}</span>
-            <kbd className="ml-auto rounded border border-line-strong px-1.5 text-[10px] text-ink-subtle max-sm:hidden">
+            <Search className="h-4 w-4 shrink-0 text-ink-subtle transition-colors group-hover:text-accent-ink" aria-hidden />
+            <span className="truncate max-sm:hidden">{t("Search documentation")}</span>
+            <kbd className="ml-auto rounded-sm border border-line-strong bg-surface px-1.5 py-0.5 font-mono text-[10px] text-ink-subtle max-sm:hidden">
               {isMac ? "⌘K" : "Ctrl K"}
             </kbd>
           </button>
@@ -96,7 +96,7 @@ export function DocumentationHeader({
           >
             GitHub <ExternalLink className="h-3.5 w-3.5" aria-hidden />
           </a>
-          <ThemeToggle />
+          <PreferenceControls compact />
           <Link
             to={DOCS_CONFIG.appUrl}
             className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink"

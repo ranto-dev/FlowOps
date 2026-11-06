@@ -1,5 +1,6 @@
 import { TAB_LABELS } from "./navigation";
-import { READING_ORDER } from "./pages";
+import { getReadingOrder, type DocLang } from "./pages";
+import { translate } from "../lib/i18n";
 import { slugify, stripInline } from "./utils";
 
 export interface SearchResult {
@@ -24,16 +25,16 @@ interface Entry {
 }
 
 /** Index : une entrée par page (intro) et par titre h2/h3. */
-function buildIndex(): Entry[] {
+function buildIndex(lang: DocLang): Entry[] {
   const entries: Entry[] = [];
-  for (const { page, section } of READING_ORDER) {
+  for (const { page, section } of getReadingOrder(lang)) {
     const base = {
       slug: page.slug,
       pageTitle: page.title,
       sectionTitle:
         section.tab === "developers"
-          ? `${TAB_LABELS.developers} · ${section.title}`
-          : section.title,
+          ? `${translate(TAB_LABELS.developers, undefined, lang)} · ${translate(section.title, undefined, lang)}`
+          : translate(section.title, undefined, lang),
       keywords: (page.keywords ?? []).join(" ").toLowerCase(),
     };
     let current: Entry = { ...base, body: stripInline(page.description) };
@@ -67,7 +68,7 @@ function buildIndex(): Entry[] {
   return entries;
 }
 
-let index: Entry[] | null = null;
+const indexes: Partial<Record<DocLang, Entry[]>> = {};
 
 export function queryTokens(query: string): string[] {
   return query.toLowerCase().split(/\s+/).filter(Boolean);
@@ -87,10 +88,10 @@ function snippetFor(body: string, tokens: string[]): string {
   return `${start > 0 ? "…" : ""}${slice}${start + 120 < text.length ? "…" : ""}`;
 }
 
-export function search(query: string, limit = 10): SearchResult[] {
+export function search(query: string, lang: DocLang, limit = 10): SearchResult[] {
   const tokens = queryTokens(query);
   if (tokens.length === 0) return [];
-  index ??= buildIndex();
+  const index = (indexes[lang] ??= buildIndex(lang));
 
   const results: SearchResult[] = [];
   for (const e of index) {

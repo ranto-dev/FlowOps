@@ -27,13 +27,13 @@ function Highlight({ text, tokens }: { text: string; tokens: string[] }) {
 
 export function DocumentationSearch({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
-  const { t } = usePreferences();
+  const { t, language } = usePreferences();
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
   const listRef = useRef<HTMLUListElement>(null);
 
   const tokens = useMemo(() => queryTokens(query), [query]);
-  const results = useMemo(() => search(query), [query]);
+  const results = useMemo(() => search(query, language), [query, language]);
 
   useEffect(() => {
     listRef.current
@@ -66,7 +66,7 @@ export function DocumentationSearch({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 px-4 pt-[12vh]"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 px-4 pt-[10vh]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -78,8 +78,8 @@ export function DocumentationSearch({ onClose }: { onClose: () => void }) {
         onKeyDown={onKeyDown}
         className="flex max-h-[70vh] w-full max-w-xl flex-col overflow-hidden glass-strong rounded-lg border"
       >
-        <div className="flex items-center gap-3 border-b border-line px-4">
-          <Search className="h-4 w-4 shrink-0 text-ink-subtle" aria-hidden />
+        <div className="flex items-center gap-3 border-b border-line px-4 transition-colors focus-within:border-accent/50">
+          <Search className="h-5 w-5 shrink-0 text-accent-ink" aria-hidden />
           <input
             autoFocus
             value={query}
@@ -92,16 +92,24 @@ export function DocumentationSearch({ onClose }: { onClose: () => void }) {
             aria-controls="docs-search-results"
             aria-activedescendant={results[cursor] ? `docs-result-${cursor}` : undefined}
             placeholder={t("Search the documentation…")}
-            className="h-12 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-subtle"
+            className="h-14 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-ink-subtle"
           />
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t("Close search")}
-            className="rounded p-1 text-ink-subtle hover:text-ink focus-visible:outline-2 focus-visible:outline-accent-ink"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          {query && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setCursor(0);
+              }}
+              aria-label={t("Clear search")}
+              className="rounded-md p-1.5 text-ink-subtle transition-colors hover:bg-surface-2 hover:text-ink focus-visible:outline-2 focus-visible:outline-accent-ink"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+          <kbd className="rounded-sm border border-line-strong bg-surface px-1.5 py-0.5 font-mono text-[10px] text-ink-subtle max-sm:hidden">
+            esc
+          </kbd>
         </div>
 
         <ul
@@ -131,7 +139,7 @@ export function DocumentationSearch({ onClose }: { onClose: () => void }) {
               onClick={() => go(i)}
               className={cn(
                 "flex cursor-pointer items-start gap-3 rounded-lg px-3 py-2.5",
-                i === cursor ? "bg-accent/15" : "hover:bg-surface-2",
+                i === cursor ? "bg-accent/15 ring-1 ring-inset ring-accent/30" : "hover:bg-surface-2",
               )}
             >
               {r.heading ? (
@@ -164,9 +172,9 @@ export function DocumentationSearch({ onClose }: { onClose: () => void }) {
         </ul>
 
         <div className="flex items-center gap-4 border-t border-line px-4 py-2 text-[11px] text-ink-subtle">
-          <span>↑↓ {t("navigate")}</span>
-          <span>↵ {t("open")}</span>
-          <span>esc {t("close")}</span>
+          <span><kbd className="font-mono">↑↓</kbd> {t("navigate")}</span>
+          <span><kbd className="font-mono">↵</kbd> {t("open")}</span>
+          <span><kbd className="font-mono">esc</kbd> {t("close")}</span>
         </div>
       </div>
     </div>

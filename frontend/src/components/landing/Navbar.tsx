@@ -48,6 +48,8 @@ export function Navbar() {
               {link.internal ? (
                 <Link
                   to={link.href}
+                  target="_blank"
+                  rel="noreferrer"
                   className="rounded-md px-3 py-2 text-sm text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink"
                 >
                   {t(link.label)}
@@ -117,6 +119,8 @@ export function Navbar() {
                   {link.internal ? (
                     <Link
                       to={link.href}
+                      target="_blank"
+                      rel="noreferrer"
                       onClick={() => setOpen(false)}
                       className="block rounded-md px-3 py-2.5 text-sm text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink"
                     >

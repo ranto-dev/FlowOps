@@ -416,5 +416,18 @@
   "Running": "En cours",
   "Passed": "Réussi",
   "Failed": "Échoué",
-  "Run": "Run"
+  "Run": "Run",
+  "Project statistics": "Statistiques des projets",
+  "Quick start": "Démarrage rapide",
+  "Create a project from one of your GitHub repositories.": "Créez un projet à partir d'un de vos dépôts GitHub.",
+  "Build the workflow in the form, then generate the YAML.": "Construisez le workflow dans le formulaire, puis générez le YAML.",
+  "Save it, then press Run and follow the execution in History.": "Enregistrez-le, lancez-le avec Run et suivez l'exécution dans History.",
+  "Clear search": "Effacer la recherche",
+  "Start here": "Commencer ici",
+  "Setup": "Installation",
+  "Core Concepts": "Concepts clés",
+  "MLOps Engine": "Moteur MLOps",
+  "API Reference": "Référence API",
+  "Advanced": "Avancé",
+  "Reference": "Référence"
 }

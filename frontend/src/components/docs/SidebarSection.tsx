@@ -1,6 +1,7 @@
 import { ChevronDown } from "lucide-react";
 import type { NavSection } from "../../docs/types";
 import { cn } from "../../lib/utils";
+import { usePreferences } from "../../lib/usePreferences";
 import { SidebarItem } from "./SidebarItem";
 
 interface Props {
@@ -18,6 +19,7 @@ export function SidebarSection({
   onToggle,
   onNavigate,
 }: Props) {
+  const { t } = usePreferences();
   const expanded = open.has(section.id);
   const listId = `docs-section-${section.id}`;
   return (
@@ -29,7 +31,7 @@ export function SidebarSection({
         aria-controls={listId}
         className="flex w-full items-center justify-between rounded-md px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-ink-subtle transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-accent-ink"
       >
-        {section.title}
+        {t(section.title)}
         <ChevronDown
           className={cn("h-3.5 w-3.5 transition-transform", !expanded && "-rotate-90")}
           aria-hidden

@@ -83,7 +83,7 @@ export const concepts: DocPage[] = [
         "The frontend calls `POST /api/auth/device-code` and shows the returned user code.",
         "The user authorises the app on GitHub.",
         "The frontend polls `POST /api/auth/check-login` with the `device_code` until it succeeds.",
-        "The response contains the GitHub access token, which the frontend stores in `localStorage` (`flowops_token`).",
+        "The response contains the GitHub access token, which the frontend stores in `localStorage` (`flowops_token`) for 30 days of inactivity (sliding expiry, see `lib/session.ts`), so GitHub sign-in and its two-factor step are not repeated on every visit.",
       ),
       h2("Authenticated requests"),
       code("bash", 'curl http://localhost:8000/api/projects \\\n  -H "Authorization: Bearer $GITHUB_TOKEN"'),

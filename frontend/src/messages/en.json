@@ -416,5 +416,18 @@
   "Running": "Running",
   "Passed": "Passed",
   "Failed": "Failed",
-  "Run": "Run"
+  "Run": "Run",
+  "Project statistics": "Project statistics",
+  "Quick start": "Quick start",
+  "Create a project from one of your GitHub repositories.": "Create a project from one of your GitHub repositories.",
+  "Build the workflow in the form, then generate the YAML.": "Build the workflow in the form, then generate the YAML.",
+  "Save it, then press Run and follow the execution in History.": "Save it, then press Run and follow the execution in History.",
+  "Clear search": "Clear search",
+  "Start here": "Start here",
+  "Setup": "Setup",
+  "Core Concepts": "Core Concepts",
+  "MLOps Engine": "MLOps Engine",
+  "API Reference": "API Reference",
+  "Advanced": "Advanced",
+  "Reference": "Reference"
 }

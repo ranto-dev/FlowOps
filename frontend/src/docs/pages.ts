@@ -8,11 +8,25 @@ import { guidesStart } from "./content/guides-start";
 import { guidesUse } from "./content/guides-use";
 import { mlops } from "./content/mlops";
 import { reference } from "./content/reference";
+import { advancedFr } from "./content-fr/advanced";
+import { apiFr } from "./content-fr/api";
+import { conceptsFr } from "./content-fr/concepts";
+import { gettingStartedFr } from "./content-fr/getting-started";
+import { guidesConceptsFr } from "./content-fr/guides-concepts";
+import { guidesHelpFr } from "./content-fr/guides-help";
+import { guidesStartFr } from "./content-fr/guides-start";
+import { guidesUseFr } from "./content-fr/guides-use";
+import { mlopsFr } from "./content-fr/mlops";
+import { referenceFr } from "./content-fr/reference";
+import { workflowsFr } from "./content-fr/workflows";
 import { workflows } from "./content/workflows";
 import { NAVIGATION } from "./navigation";
 import type { DocPage, NavItem, NavSection } from "./types";
 
-const PAGES: DocPage[] = [
+/** Langues de la documentation (mêmes codes que les préférences de l'UI). */
+export type DocLang = "en" | "fr";
+
+const PAGES_EN: DocPage[] = [
   ...guidesStart,
   ...guidesUse,
   ...guidesConcepts,
@@ -26,11 +40,19 @@ const PAGES: DocPage[] = [
   ...reference,
 ];
 
-const PAGE_MAP = new Map<string, DocPage>();
-for (const page of PAGES) {
-  if (PAGE_MAP.has(page.slug)) throw new Error(`Doc slug en double : ${page.slug}`);
-  PAGE_MAP.set(page.slug, page);
-}
+const PAGES_FR: DocPage[] = [
+  ...guidesStartFr,
+  ...guidesUseFr,
+  ...guidesConceptsFr,
+  ...guidesHelpFr,
+  ...gettingStartedFr,
+  ...conceptsFr,
+  ...workflowsFr,
+  ...mlopsFr,
+  ...apiFr,
+  ...advancedFr,
+  ...referenceFr,
+];
 
 export interface PageEntry {
   page: DocPage;
@@ -39,35 +61,59 @@ export interface PageEntry {
   ancestors: DocPage[];
 }
 
-/** Pages dans l'ordre de lecture (parent puis enfants), avec leur contexte. */
-export const READING_ORDER: PageEntry[] = [];
+interface DocSet {
+  pageMap: Map<string, DocPage>;
+  /** Pages dans l'ordre de lecture (parent puis enfants), avec leur contexte. */
+  readingOrder: PageEntry[];
+}
 
-function walk(items: NavItem[], section: NavSection, ancestors: DocPage[]) {
-  for (const item of items) {
-    const page = PAGE_MAP.get(item.slug);
-    if (!page) throw new Error(`Navigation : page inconnue « ${item.slug} »`);
-    READING_ORDER.push({ page, section, ancestors });
-    if (item.children) walk(item.children, section, [...ancestors, page]);
+function buildSet(pages: DocPage[], fallback: DocPage[] = []): DocSet {
+  const pageMap = new Map<string, DocPage>();
+  // La version anglaise sert de repli si une page n'est pas (encore) traduite.
+  for (const page of fallback) pageMap.set(page.slug, page);
+  const seen = new Set<string>();
+  for (const page of pages) {
+    if (seen.has(page.slug)) throw new Error(`Doc slug en double : ${page.slug}`);
+    seen.add(page.slug);
+    pageMap.set(page.slug, page);
   }
-}
-for (const section of NAVIGATION) walk(section.items, section, []);
 
-export function getEntry(slug: string): PageEntry | undefined {
-  return READING_ORDER.find((e) => e.page.slug === slug);
-}
-
-export function getNeighbours(slug: string): {
-  prev?: DocPage;
-  next?: DocPage;
-} {
-  const i = READING_ORDER.findIndex((e) => e.page.slug === slug);
-  if (i === -1) return {};
-  return {
-    prev: READING_ORDER[i - 1]?.page,
-    next: READING_ORDER[i + 1]?.page,
+  const readingOrder: PageEntry[] = [];
+  const walk = (items: NavItem[], section: NavSection, ancestors: DocPage[]) => {
+    for (const item of items) {
+      const page = pageMap.get(item.slug);
+      if (!page) throw new Error(`Navigation : page inconnue « ${item.slug} »`);
+      readingOrder.push({ page, section, ancestors });
+      if (item.children) walk(item.children, section, [...ancestors, page]);
+    }
   };
+  for (const section of NAVIGATION) walk(section.items, section, []);
+  return { pageMap, readingOrder };
 }
 
-export function getPage(slug: string): DocPage | undefined {
-  return PAGE_MAP.get(slug);
+const SETS: Record<DocLang, DocSet> = {
+  en: buildSet(PAGES_EN),
+  fr: buildSet(PAGES_FR, PAGES_EN),
+};
+
+export function getReadingOrder(lang: DocLang): PageEntry[] {
+  return SETS[lang].readingOrder;
+}
+
+export function getEntry(slug: string, lang: DocLang): PageEntry | undefined {
+  return SETS[lang].readingOrder.find((e) => e.page.slug === slug);
+}
+
+export function getNeighbours(
+  slug: string,
+  lang: DocLang,
+): { prev?: DocPage; next?: DocPage } {
+  const order = SETS[lang].readingOrder;
+  const i = order.findIndex((e) => e.page.slug === slug);
+  if (i === -1) return {};
+  return { prev: order[i - 1]?.page, next: order[i + 1]?.page };
+}
+
+export function getPage(slug: string, lang: DocLang): DocPage | undefined {
+  return SETS[lang].pageMap.get(slug);
 }

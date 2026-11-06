@@ -36,7 +36,7 @@ export function DocumentationBreadcrumb({ entry }: { entry: PageEntry }) {
         )}
         <li className="flex items-center gap-1.5">
           <ChevronRight className="h-3 w-3" aria-hidden />
-          <span>{entry.section.title}</span>
+          <span>{t(entry.section.title)}</span>
         </li>
         {crumbs.map((c) => (
           <li key={c.to} className="flex items-center gap-1.5">
