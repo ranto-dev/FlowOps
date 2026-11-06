@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { DOCS_CONFIG } from "../../docs/navigation";
 import { queryTokens, search } from "../../docs/search";
 import { cn } from "../../lib/utils";
+import { usePreferences } from "../../lib/usePreferences";
 
 function Highlight({ text, tokens }: { text: string; tokens: string[] }) {
   if (tokens.length === 0) return <>{text}</>;
@@ -26,6 +27,7 @@ function Highlight({ text, tokens }: { text: string; tokens: string[] }) {
 
 export function DocumentationSearch({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
+  const { t } = usePreferences();
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
   const listRef = useRef<HTMLUListElement>(null);
@@ -72,7 +74,7 @@ export function DocumentationSearch({ onClose }: { onClose: () => void }) {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Search documentation"
+        aria-label={t("Search documentation")}
         onKeyDown={onKeyDown}
         className="flex max-h-[70vh] w-full max-w-xl flex-col overflow-hidden glass-strong rounded-lg border"
       >
@@ -89,13 +91,13 @@ export function DocumentationSearch({ onClose }: { onClose: () => void }) {
             aria-expanded
             aria-controls="docs-search-results"
             aria-activedescendant={results[cursor] ? `docs-result-${cursor}` : undefined}
-            placeholder="Search the documentation…"
+            placeholder={t("Search the documentation…")}
             className="h-12 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-subtle"
           />
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close search"
+            aria-label={t("Close search")}
             className="rounded p-1 text-ink-subtle hover:text-ink focus-visible:outline-2 focus-visible:outline-accent-ink"
           >
             <X className="h-4 w-4" />
@@ -110,12 +112,12 @@ export function DocumentationSearch({ onClose }: { onClose: () => void }) {
         >
           {tokens.length === 0 && (
             <li className="px-3 py-8 text-center text-sm text-ink-subtle">
-              Type to search pages, headings and content.
+              {t("Type to search pages, headings and content.")}
             </li>
           )}
           {tokens.length > 0 && results.length === 0 && (
             <li className="px-3 py-8 text-center text-sm text-ink-subtle">
-              No results for “{query}”.
+              {t("No results for “{query}”.", { query })}
             </li>
           )}
           {results.map((r, i) => (
@@ -162,9 +164,9 @@ export function DocumentationSearch({ onClose }: { onClose: () => void }) {
         </ul>
 
         <div className="flex items-center gap-4 border-t border-line px-4 py-2 text-[11px] text-ink-subtle">
-          <span>↑↓ navigate</span>
-          <span>↵ open</span>
-          <span>esc close</span>
+          <span>↑↓ {t("navigate")}</span>
+          <span>↵ {t("open")}</span>
+          <span>esc {t("close")}</span>
         </div>
       </div>
     </div>

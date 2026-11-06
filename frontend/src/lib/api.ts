@@ -12,6 +12,7 @@
  * endroit qui interprète le contrat HTTP (formes de réponse typées dans
  * `src/@types/api.ts`).
  */
+import { translate } from "./i18n";
 
 /** Base URL de l'API backend, surchargeable via `VITE_API_URL`. */
 export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -171,7 +172,7 @@ export async function apiFetch<T>(
 
   if (res.status === 401 && auth) {
     handleUnauthorized();
-    throw new ApiError(401, "Session expirée — reconnectez-vous pour continuer.");
+    throw new ApiError(401, translate("Session expired. Sign in again to continue."));
   }
 
   if (!res.ok) {

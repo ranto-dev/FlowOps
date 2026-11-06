@@ -3,6 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import type { CalloutTone } from "../../docs/types";
 import { cn } from "../../lib/utils";
 import { InlineText } from "./InlineText";
+import { usePreferences } from "../../lib/usePreferences";
 
 const TONES: Record<
   CalloutTone,
@@ -37,16 +38,17 @@ export function Callout({
   title?: string;
   text: string;
 }) {
-  const t = TONES[tone];
-  const Icon = t.icon;
+  const style = TONES[tone];
+  const { t } = usePreferences();
+  const Icon = style.icon;
   return (
     <aside
       role="note"
-      className={cn("my-6 flex gap-3 rounded-lg border p-4", t.box)}
+      className={cn("my-6 flex gap-3 rounded-lg border p-4", style.box)}
     >
-      <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", t.icon_)} aria-hidden />
+      <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", style.icon_)} aria-hidden />
       <div className="min-w-0 text-sm leading-6 text-ink">
-        <p className="font-semibold text-ink">{title ?? t.label}</p>
+        <p className="font-semibold text-ink">{title ?? t(style.label)}</p>
         <p className="mt-1">
           <InlineText text={text} />
         </p>

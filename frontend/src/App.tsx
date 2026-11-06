@@ -5,9 +5,7 @@ import {
   Routes,
   Route,
   Navigate,
-  Link,
 } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
 import { ToastProvider } from "./components/ui/Toast";
 import { usePreferences } from "./lib/usePreferences";
 
@@ -75,17 +73,7 @@ function App() {
                 path="/auth"
                 element={
                   <PublicOnlyRoute>
-                    <div className="relative">
-                      <Link
-                        to="/"
-                        className="absolute left-6 top-6 z-50 inline-flex items-center gap-2 glass rounded-md border px-3 py-1.5 text-sm text-ink-muted transition-colors hover:text-ink"
-                      >
-                        <ArrowLeft className="h-3.5 w-3.5" />
-                        <span>{t("Return home")}</span>
-                      </Link>
-
-                      <AuthPage />
-                    </div>
+                    <AuthPage />
                   </PublicOnlyRoute>
                 }
               />

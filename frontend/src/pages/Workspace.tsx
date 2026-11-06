@@ -22,7 +22,7 @@ import { YamlPreview } from "../components/YamlPreview";
 import { History } from "../components/History";
 import { AppShell, type ShellNavSection } from "../components/layout/AppShell";
 import { PredictionPanel } from "../components/PredictionPanel";
-import LogoImage from "../assets/flowops.svg";
+import LogoImage from "../assets/logo-flowOps-transparent.png";
 import { useToast } from "../components/ui/useToast";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { Modal } from "../components/ui/Modal";
@@ -106,13 +106,13 @@ export const Workspace: React.FC = () => {
       // Un 401 a déjà déclenché la déconnexion centralisée dans apiFetch.
       if (isApiError(err) && err.status === 401) return;
       toast.error(
-        "Impossible de charger les projets",
-        errorDetail(err, "Le serveur est peut-être arrêté."),
+        t("Couldn't load your projects"),
+        errorDetail(err, t("The server may be down.")),
       );
     } finally {
       setLoadingProjects(false);
     }
-  }, [toast]);
+  }, [toast, t]);
 
   const fetchGitHubRepos = useCallback(async () => {
     try {
@@ -191,8 +191,8 @@ export const Workspace: React.FC = () => {
     e.preventDefault();
     if (!newProjName.trim() || !selectedRepo) {
       toast.error(
-        "Informations incomplètes",
-        "Renseignez le nom du projet et sélectionnez un dépôt GitHub.",
+        t("Missing info"),
+        t("Add a project name and pick a GitHub repo."),
       );
       return;
     }
@@ -212,14 +212,14 @@ export const Workspace: React.FC = () => {
       closeModal();
       await fetchProjects();
       toast.success(
-        "Projet créé",
-        `« ${createdProject.name} » est prêt. Configurez son workflow.`,
+        t("Project created"),
+        t("{name} is ready. Set up its workflow.", { name: createdProject.name }),
       );
       initWorkflowConfig(createdProject);
     } catch (err) {
       toast.error(
-        isApiError(err) ? "Création refusée" : "Échec de communication",
-        errorDetail(err, "Impossible de joindre le serveur."),
+        isApiError(err) ? t("Couldn't create the project") : t("Connection problem"),
+        errorDetail(err, t("Can't reach the server.")),
       );
     } finally {
       setIsCreating(false);
@@ -234,15 +234,15 @@ export const Workspace: React.FC = () => {
         method: "DELETE",
       });
       toast.success(
-        "Projet supprimé",
-        `« ${projectToDelete.name} » a été retiré de la base.`,
+        t("Project deleted"),
+        t("{name} was removed.", { name: projectToDelete.name }),
       );
       setProjectToDelete(null);
       fetchProjects();
     } catch (err) {
       toast.error(
-        isApiError(err) ? "Suppression impossible" : "Erreur de communication",
-        errorDetail(err, "Impossible de joindre le serveur pendant la suppression."),
+        isApiError(err) ? t("Couldn't delete the project") : t("Connection problem"),
+        errorDetail(err, t("Can't reach the server to delete this project.")),
       );
     } finally {
       setIsDeleting(false);
@@ -255,8 +255,8 @@ export const Workspace: React.FC = () => {
   ) => {
     if (!token) {
       toast.error(
-        "Session expirée",
-        "Votre jeton GitHub a expiré. Ré-authentifiez-vous.",
+        t("Session expired"),
+        t("Your GitHub token expired. Sign in again."),
       );
       return;
     }
@@ -271,20 +271,20 @@ export const Workspace: React.FC = () => {
 
       if (data.status === "success") {
         toast.success(
-          "Workflow déclenché",
+          t("Workflow triggered"),
           `${projectName} — ${data.message}`,
         );
         setActiveTab("history");
       } else {
         toast.error(
-          "Échec du déclenchement",
-          data.message || "Erreur inconnue.",
+          t("Couldn't trigger the workflow"),
+          data.message || t("Unknown error."),
         );
       }
     } catch (err) {
       toast.error(
-        "Workflow non déclenché",
-        errorDetail(err, "Impossible de joindre le runner d'exécution."),
+        t("Workflow not triggered"),
+        errorDetail(err, t("Can't reach the runner.")),
       );
     } finally {
       setExecutingProjectId(null);
@@ -300,15 +300,15 @@ export const Workspace: React.FC = () => {
       );
 
       toast.success(
-        "Workflow enregistré",
-        `Le workflow de « ${targetProject.name} » a été sauvegardé.`,
+        t("Workflow saved"),
+        t("The workflow for {name} is saved.", { name: targetProject.name }),
       );
       setIsConfiguringWorkflow(false);
       fetchProjects();
     } catch (err) {
       toast.error(
-        isApiError(err) ? "Enregistrement impossible" : "Erreur de communication",
-        errorDetail(err, "Impossible de sauvegarder le workflow."),
+        isApiError(err) ? t("Couldn't save the workflow") : t("Connection problem"),
+        errorDetail(err, t("Couldn't save the workflow.")),
       );
     }
   };
@@ -322,14 +322,14 @@ export const Workspace: React.FC = () => {
         { method: "POST", body: activeConfig, auth: false },
       );
       if (!data.yaml) {
-        throw new Error("Réponse invalide du compilateur.");
+        throw new Error(t("Invalid compiler response."));
       }
       setCompiledYaml(data.yaml);
       setViewState("preview");
     } catch (err) {
       toast.error(
-        "Génération impossible",
-        errorDetail(err, "Le serveur n'a pas pu compiler le workflow."),
+        t("Couldn't generate the YAML"),
+        errorDetail(err, t("The server couldn't compile this workflow.")),
       );
       setViewState("form");
     } finally {
@@ -362,7 +362,7 @@ export const Workspace: React.FC = () => {
       className="flex w-full min-w-0 items-center gap-2.5 rounded-md p-1.5 text-left transition-colors hover:bg-surface-2/70 focus-visible:outline-2 focus-visible:outline-accent-ink"
       aria-label={t("FlowOps projects")}
     >
-      <img src={LogoImage} className="h-7 w-auto" alt="" />
+      <img src={LogoImage} className="h-7 w-7 object-contain" alt="" />
       <span className="text-base font-semibold text-ink">FlowOps</span>
     </button>
   );
@@ -855,7 +855,7 @@ export const Workspace: React.FC = () => {
                 type="text"
                 value={newProjName}
                 onChange={(e) => setNewProjName(e.target.value)}
-                placeholder="e.g. Production API"
+                placeholder={t("e.g. Production API")}
                 required
               />
             )}

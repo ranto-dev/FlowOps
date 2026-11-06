@@ -73,8 +73,8 @@ one violet accent. Full reference: `docs/DESIGN-GUIDE.md` (live page `/styleguid
 tokens/utilities in `src/main.css`: `bg-canvas|surface|surface-2|code`, `border-line|line-strong`, `text-ink|ink-muted|ink-subtle`,
 `bg-accent` / `text-accent-ink`, `success|warning|danger|info` (states only); glass = `glass` (level 1) / `glass-strong` (level 2) **+ an
 explicit `border`**; dense zones (fields, YAML, logs, code) stay opaque; never nest blur. Never use raw palette colours (`slate-*`,
-`purple-*`, `bg-white`…), `dark:` variants, `rounded-xl+`, hex values, ad-hoc `backdrop-blur-*`/`shadow-*`. `linear-gradient` only via
-`bg-brand`/`text-brand` (landing/auth CTAs); decorative radial halos only via `.app-root::before` and `halo-vivid`. Reuse `components/ui/*`
+`purple-*`, `bg-white`…), `dark:` variants, `rounded-xl+`, hex values, ad-hoc `backdrop-blur-*`/`shadow-*`. Palette = zinc + un seul violet (guide `design-guide.md` à la racine). `linear-gradient` only via
+`text-brand`/`text-gradient`/`bg-grid`; landing/auth CTAs = `Button variant="brand"` (pilule blanche + `glow-accent`); decorative halos only via `.app-root::before`, `halo-vivid` and `aurora aurora-violet|indigo`. Pill (`rounded-full`) allowed for brand CTAs only. Reuse `components/ui/*`
 (`Button`, `Card`, `Badge`, `Input`/`Select`/`Textarea`/`Field`, `StatusBadge`, `CodeSurface`, `Modal`, `Toast`…) instead of
 hand-styling. Fonts (Inter + JetBrains Mono) are self-hosted via `@fontsource-variable/*`.
 `lucide-react` v1 has no brand icons (no `Github`) — use inline SVG.
@@ -82,6 +82,11 @@ hand-styling. Fonts (Inter + JetBrains Mono) are self-hosted via `@fontsource-va
 **Documentation (`/docs`).** Data-driven: sidebar in `src/docs/navigation.ts` (two tabs: `guides` = end-user usage,
 `developers` = technical), pages in `src/docs/content/*.ts` (typed blocks, helpers in `blocks.ts`), UI in
 `src/components/docs/*`. Guides must describe the real UI labels (check `WorkflowForm.tsx` / `Workspace.tsx` / `History.tsx`).
+
+**i18n.** UI texts live in `frontend/src/messages/{en,fr}.json` (key = original English text, value = displayed text; same keys in both).
+Components use `const { t } = usePreferences()` → `t("Text")` or `t("Hi {name}", { name })`; non-React code uses `translate()` from
+`src/lib/i18n.ts`. Never inline dictionaries or hard-code user-visible strings (toasts, aria-labels, placeholders included). Tone: short,
+direct, product/startup. Check with `pnpm i18n:check`. Docs page content (`src/docs/content/*`) is still English only.
 
 ## Gotchas
 

@@ -1,4 +1,3 @@
-import { motion, useReducedMotion } from "framer-motion";
 import {
   Container,
   Download,
@@ -8,7 +7,7 @@ import {
   TerminalSquare,
   Upload,
 } from "lucide-react";
-import { SectionHeader } from "./Reveal";
+import { Reveal, SectionHeader } from "./Reveal";
 import { usePreferences } from "../../lib/usePreferences";
 
 const NODES = [
@@ -23,7 +22,6 @@ const NODES = [
 
 export function WorkflowBuilder() {
   const { t } = usePreferences();
-  const reduce = useReducedMotion();
   return (
     <section
       id="how-it-works"
@@ -36,7 +34,7 @@ export function WorkflowBuilder() {
           title={<span id="builder-title">{t("Build workflows visually.")}</span>}
           description={t("Configure your pipeline without writing YAML from scratch.")}
         />
-        <div className="glass-strong mx-auto mt-12 max-w-md overflow-hidden rounded-lg border">
+        <div className="glass-flat mx-auto mt-12 max-w-md overflow-hidden rounded-lg border">
           <div className="flex items-center gap-2 border-b border-line px-4 py-3" aria-hidden="true">
             <span className="size-2.5 rounded-full bg-line-strong" />
             <span className="size-2.5 rounded-full bg-line-strong" />
@@ -46,12 +44,8 @@ export function WorkflowBuilder() {
           <div className="p-5" role="list" aria-label={t("Pipeline nodes")}>
           {NODES.map((node, i) => (
             <div key={node.label}>
-              <motion.div
-                role="listitem"
-                initial={{ opacity: 0, y: reduce ? 0 : 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.6 }}
-                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              <Reveal
+                delay={Math.min(i, 3) * 0.05}
                 className="flex items-center gap-4 rounded-md border border-line bg-surface-2 px-4 py-3"
               >
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-accent/15">
@@ -65,7 +59,7 @@ export function WorkflowBuilder() {
                     {t(node.label)}
                   </span>
                 </div>
-              </motion.div>
+              </Reveal>
               {i < NODES.length - 1 && (
                 <div
                   className="flex justify-center py-1"

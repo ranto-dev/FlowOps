@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Check, CheckCircle2, Copy, Loader2 } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
 import { apiFetch, isApiError } from "../lib/api";
@@ -12,7 +12,7 @@ import { Button } from "../components/ui/Button";
 import { ErrorState } from "../components/ui/States";
 import { PreferenceControls } from "../components/ui/PreferenceControls";
 import { usePreferences } from "../lib/usePreferences";
-import Logo from "../assets/flowops.svg";
+import Logo from "../assets/logo-flowOps-transparent.png";
 
 export const AuthPage: React.FC = () => {
   const navigate = useNavigate();
@@ -222,19 +222,29 @@ export const AuthPage: React.FC = () => {
 
 
   return (
-    <div className="relative isolate flex min-h-screen flex-col bg-canvas px-4 py-4 text-ink antialiased sm:px-8">
-      <div className="halo-vivid" aria-hidden="true" />
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-end">
-        <PreferenceControls compact />
+    <div className="relative isolate flex min-h-screen flex-col bg-canvas text-ink antialiased">
+      <div className="bg-grid absolute inset-0 -z-10" aria-hidden="true" />
+      <div className="aurora aurora-violet left-1/2 top-[-10rem] -z-10 h-[30rem] w-[48rem] -translate-x-1/2" aria-hidden="true" />
+      <header className="relative z-10 shrink-0">
+        <div className="mx-auto flex h-16 w-full items-center justify-between px-4 sm:px-8">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2.5 rounded-md text-ink transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent-ink"
+            aria-label={t("FlowOps home")}
+          >
+            <img src={Logo} alt="" className="h-8 w-8" />
+            <span className="text-base font-semibold tracking-tight">
+              FlowOps
+            </span>
+          </Link>
+          <PreferenceControls compact />
+        </div>
       </header>
 
-      <main className="flex flex-1 items-center justify-center py-12">
-        <section className="glass-strong w-full max-w-md rounded-lg border p-6 sm:p-10">
-          <div className="mb-6 text-center">
-            <div className="flex items-center justify-center">
-              <img src={Logo} alt="FlowOps" className="h-14 w-14" />
-            </div>
-            <h1 className="mt-4 text-3xl font-bold leading-tight text-ink">
+      <main className="relative z-0 flex flex-1 items-center justify-center px-4 py-10 sm:px-8 sm:py-14">
+        <section className="glass-strong w-full max-w-md rounded-xl border p-6 sm:p-10">
+          <div className="mb-7 text-center">
+            <h1 className="text-gradient text-3xl font-semibold leading-tight tracking-tight">
               {isWaiting
                 ? t("Authorize on GitHub")
                 : authState === "success"

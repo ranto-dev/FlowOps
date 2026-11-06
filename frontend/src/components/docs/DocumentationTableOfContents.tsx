@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Heading } from "../../docs/headings";
 import { cn } from "../../lib/utils";
+import { usePreferences } from "../../lib/usePreferences";
 
 export function DocumentationTableOfContents({
   headings,
@@ -10,6 +11,7 @@ export function DocumentationTableOfContents({
   pageKey: string;
 }) {
   const [active, setActive] = useState<string | null>(null);
+  const { t } = usePreferences();
 
   useEffect(() => {
     const els = headings
@@ -31,9 +33,9 @@ export function DocumentationTableOfContents({
   if (headings.length === 0) return null;
 
   return (
-    <nav aria-label="On this page" className="text-sm">
+    <nav aria-label={t("On this page")} className="text-sm">
       <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink-muted">
-        On this page
+        {t("On this page")}
       </p>
       <ul className="space-y-1.5 border-l border-line">
         {headings.map((h) => (

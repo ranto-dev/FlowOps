@@ -1,8 +1,6 @@
-import { motion, useReducedMotion } from "framer-motion";
 import { MousePointerClick, PlayCircle, TrendingUp } from "lucide-react";
 import { Card } from "../ui/Card";
-import { SectionHeader } from "./Reveal";
-import { staggerChild, staggerParent } from "./motion";
+import { Reveal, SectionHeader } from "./Reveal";
 import { usePreferences } from "../../lib/usePreferences";
 
 const PILLARS = [
@@ -63,7 +61,6 @@ const PILLARS = [
 
 export function Solution() {
   const { t } = usePreferences();
-  const reduce = useReducedMotion();
   return (
     <section aria-labelledby="solution-title" className="py-20 sm:py-24">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
@@ -77,19 +74,10 @@ export function Solution() {
             </span>
           }
         />
-        <motion.div
-          variants={staggerParent}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, amount: 0.2 }}
-          className="mt-12 grid gap-4 lg:grid-cols-3"
-        >
-          {PILLARS.map((p) => (
-            <motion.div
-              key={p.title}
-              variants={reduce ? undefined : staggerChild}
-            >
-            <Card as="div" className="flex h-full flex-col p-6">
+        <div className="mt-12 grid gap-4 lg:grid-cols-3">
+          {PILLARS.map((p, i) => (
+            <Reveal key={p.title} delay={i * 0.06}>
+            <Card as="div" variant="flat" className="flex h-full flex-col p-6">
               <span className="flex size-10 items-center justify-center rounded-md bg-accent/15 text-accent-ink">
                 <p.icon className="size-5" aria-hidden="true" />
               </span>
@@ -101,9 +89,9 @@ export function Solution() {
               </p>
               <div className="mt-6 flex-1">{p.visual}</div>
             </Card>
-            </motion.div>
+            </Reveal>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

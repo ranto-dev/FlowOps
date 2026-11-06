@@ -16,9 +16,9 @@ type Size = "sm" | "md" | "lg";
 const VARIANTS: Record<Variant, string> = {
   primary:
     "bg-accent text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18)] hover:bg-accent-hover",
-  /** Dégradé de marque : réservé aux CTA de la vitrine (landing, authentification). */
+  /** Pilule blanche + glow violet : réservé aux CTA de la vitrine (landing, authentification). */
   brand:
-    "bg-brand shadow-[inset_0_1px_0_rgb(255_255_255/0.25)] hover:brightness-110",
+    "rounded-full bg-ink text-canvas glow-accent transition-transform hover:scale-[1.03] active:scale-95",
   secondary:
     "border border-line-strong bg-surface/60 text-ink hover:bg-surface-2",
   dark: "border border-line-strong bg-surface/60 text-ink hover:bg-surface-2",

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
@@ -12,17 +12,24 @@ import Logo from "../../assets/logo-flowOps-transparent.png";
 export function Navbar() {
   const { t } = usePreferences();
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
     <motion.header
       initial={{ y: -8, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className="glass sticky top-0 z-50 border-b"
-    >
+      className={`fixed inset-x-0 top-0 z-50 border-b ${scrolled || open ? "glass-strong animate-navbar-drop" : "border-transparent bg-transparent"}`}>
       <nav
-        aria-label="Main navigation"
-        className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6"
+        aria-label={t("Main navigation")}
+        className={`mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 transition-[height] duration-300 sm:px-6 ${scrolled ? "h-14" : "h-16"}`}
       >
         <Link
           to="/"
@@ -30,11 +37,9 @@ export function Navbar() {
           aria-label="FlowOps home"
         >
           <span className="flex size-8 items-center justify-center">
-            <img src={Logo} className="w-full" />
+            <img src={Logo} alt="" className="h-full w-full object-contain" />
           </span>
-          <span className="text-sm font-semibold text-ink">
-            FlowOps
-          </span>
+          <span className="text-sm font-semibold text-ink">FlowOps</span>
         </Link>
 
         <ul className="hidden items-center gap-1 lg:flex">
@@ -66,7 +71,7 @@ export function Navbar() {
               href={GITHUB_URL}
               target="_blank"
               rel="noreferrer"
-              aria-label="View FlowOps on GitHub"
+              aria-label={t("View FlowOps on GitHub")}
             >
               <FaGithub className="size-4" />
               GitHub
@@ -94,7 +99,7 @@ export function Navbar() {
       <AnimatePresence>
         {open && (
           <motion.nav
-            aria-label="Mobile navigation"
+            aria-label={t("Mobile navigation")}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -141,7 +146,12 @@ export function Navbar() {
                   GitHub
                 </a>
               </Button>
-              <Button variant="brand" className="flex-1" asChild onClick={() => setOpen(false)}>
+              <Button
+                variant="brand"
+                className="flex-1"
+                asChild
+                onClick={() => setOpen(false)}
+              >
                 <Link to="/auth">{t("Get started")}</Link>
               </Button>
             </div>

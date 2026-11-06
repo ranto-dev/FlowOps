@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
 import { Reveal, SectionHeader } from "./Reveal";
 import { usePreferences } from "../../lib/usePreferences";
@@ -51,6 +50,26 @@ export function DeveloperExperience() {
   const { t } = usePreferences();
   const reduce = useReducedMotion();
   const [inView, setInView] = useState(false);
+  const terminalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const node = terminalRef.current;
+    if (!node || typeof IntersectionObserver === "undefined") {
+      setInView(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          io.disconnect();
+        }
+      },
+      { threshold: 0.3 },
+    );
+    io.observe(node);
+    return () => io.disconnect();
+  }, []);
   const lines = useCliDemo(inView, reduce ?? false);
 
   return (
@@ -62,9 +81,9 @@ export function DeveloperExperience() {
           description={t("Start the API and frontend locally using the documented repository commands.")}
         />
         <Reveal className="mx-auto mt-12 max-w-2xl">
-          <motion.div
-            onViewportEnter={() => setInView(true)}
-            className="glass-strong overflow-hidden rounded-lg border"
+          <div
+            ref={terminalRef}
+            className="glass-flat overflow-hidden rounded-lg border"
           >
             <div
               className="flex items-center gap-2 border-b border-line px-4 py-3"
@@ -93,7 +112,7 @@ export function DeveloperExperience() {
                 ),
               )}
             </div>
-          </motion.div>
+          </div>
         </Reveal>
       </div>
     </section>

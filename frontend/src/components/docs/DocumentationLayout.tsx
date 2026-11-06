@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useLocation, useParams } from "react-router-dom";
+import { usePreferences } from "../../lib/usePreferences";
 import { getHeadings } from "../../docs/headings";
 import { DOCS_CONFIG, NAVIGATION } from "../../docs/navigation";
 import type { DocTab } from "../../docs/types";
@@ -20,6 +21,7 @@ function ancestorsOf(slug: string): string[] {
 }
 
 export default function DocumentationLayout() {
+  const { t } = usePreferences();
   const { "*": splat } = useParams();
   const { hash } = useLocation();
   const slug = (splat ?? "").replace(/\/+$/, "");
@@ -139,15 +141,15 @@ export default function DocumentationLayout() {
               </>
             ) : (
               <div className="py-24 text-center">
-                <h1 className="text-2xl font-semibold text-ink">Page not found</h1>
+                <h1 className="text-2xl font-semibold text-ink">{t("Page not found")}</h1>
                 <p className="mt-2 text-ink-muted">
-                  “{slug}” does not exist in the documentation.
+                  {t("“{slug}” does not exist in the documentation.", { slug })}
                 </p>
                 <Link
                   to={`${DOCS_CONFIG.basePath}/${DOCS_CONFIG.homeSlug}`}
                   className="mt-6 inline-block text-accent-ink hover:underline"
                 >
-                  Back to the introduction
+                  {t("Back to the introduction")}
                 </Link>
               </div>
             )}

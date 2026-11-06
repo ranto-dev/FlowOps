@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { usePreferences } from "../../lib/usePreferences";
 import { cn } from "../../lib/utils";
 
 export interface ModalProps {
@@ -24,6 +25,7 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   size = "md",
 }) => {
+  const { t } = usePreferences();
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -75,7 +77,7 @@ export const Modal: React.FC<ModalProps> = ({
               <button
                 onClick={onClose}
                 className="rounded-md p-1.5 text-ink-subtle transition-colors hover:bg-surface-2 hover:text-ink"
-                aria-label="Close"
+                aria-label={t("Close")}
               >
                 <X className="h-4 w-4" />
               </button>

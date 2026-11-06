@@ -5,6 +5,7 @@ import { DOCS_CONFIG } from "../../docs/navigation";
 import { getPage } from "../../docs/pages";
 import type { NavItem } from "../../docs/types";
 import { cn } from "../../lib/utils";
+import { usePreferences } from "../../lib/usePreferences";
 
 interface Props {
   item: NavItem;
@@ -24,6 +25,7 @@ export function SidebarItem({
   depth = 0,
 }: Props) {
   const page = getPage(item.slug);
+  const { t } = usePreferences();
   const linkRef = useRef<HTMLAnchorElement>(null);
   const active = item.slug === activeSlug;
   const expanded = open.has(item.slug);
@@ -58,7 +60,7 @@ export function SidebarItem({
             type="button"
             onClick={() => onToggle(item.slug)}
             aria-expanded={expanded}
-            aria-label={`${expanded ? "Collapse" : "Expand"} ${page.title}`}
+            aria-label={t(expanded ? "Collapse {title}" : "Expand {title}", { title: page.title })}
             className="ml-0.5 rounded p-1.5 text-ink-subtle hover:bg-surface-2 hover:text-ink focus-visible:outline-2 focus-visible:outline-accent-ink"
           >
             <ChevronRight

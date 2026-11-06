@@ -1,6 +1,7 @@
 import type { NavSection } from "../../docs/types";
 import { cn } from "../../lib/utils";
 import { SidebarSection } from "./SidebarSection";
+import { usePreferences } from "../../lib/usePreferences";
 
 interface Props {
   sections: NavSection[];
@@ -23,10 +24,11 @@ export function DocumentationSidebar({
   mobileOpen,
   onNavigate,
 }: Props) {
+  const { t } = usePreferences();
   return (
     <aside
       id="docs-sidebar"
-      aria-label="Documentation navigation"
+      aria-label={t("Documentation navigation")}
       className={cn(
         "w-72 shrink-0 overflow-y-auto overscroll-contain glass border-r px-3 py-6",
         "[scrollbar-color:var(--color-line-strong)_transparent] [scrollbar-width:thin]",

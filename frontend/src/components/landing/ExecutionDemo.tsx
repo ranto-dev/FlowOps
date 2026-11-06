@@ -68,7 +68,7 @@ export function ExecutionDemo() {
           }
         />
         <Reveal className="mx-auto mt-12 max-w-2xl">
-          <div className="glass-strong overflow-hidden rounded-lg border">
+          <div className="glass-flat overflow-hidden rounded-lg border">
             <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
               <p className="flex items-center gap-2 font-mono text-xs">
                 <span

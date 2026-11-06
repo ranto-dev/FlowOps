@@ -1,9 +1,10 @@
 import { ExternalLink, Menu, PanelLeft, Search } from "lucide-react";
 import { Link } from "react-router-dom";
-import logo from "../../assets/flowops.svg";
+import logo from "../../assets/logo-flowOps-transparent.png";
 import { DOCS_CONFIG, TAB_LABELS } from "../../docs/navigation";
 import type { DocTab } from "../../docs/types";
 import { cn } from "../../lib/utils";
+import { usePreferences } from "../../lib/usePreferences";
 import { ThemeToggle } from "../ui/ThemeToggle";
 
 interface Props {
@@ -24,13 +25,14 @@ export function DocumentationHeader({
   onOpenSearch,
   isMac,
 }: Props) {
+  const { t } = usePreferences();
   return (
     <header className="sticky top-0 z-40 glass border-b">
       <div className="flex h-14 items-center gap-2 px-3 sm:px-4">
         <button
           type="button"
           onClick={onToggleSidebar}
-          aria-label="Toggle navigation"
+          aria-label={t("Toggle navigation")}
           aria-expanded={sidebarOpen}
           aria-controls="docs-sidebar"
           className={ICON_BTN}
@@ -45,14 +47,14 @@ export function DocumentationHeader({
         >
           <img src={logo} alt="" className="h-7 w-7" />
           <span className="text-sm font-semibold text-ink max-sm:hidden">
-            {DOCS_CONFIG.name} <span className="font-normal text-ink-muted">Docs</span>
+            {DOCS_CONFIG.name} <span className="font-normal text-ink-muted">{t("Docs")}</span>
           </span>
           <span className="rounded-full border border-line-strong px-2 py-0.5 text-[11px] text-ink-muted">
             {DOCS_CONFIG.version}
           </span>
         </Link>
 
-        <nav aria-label="Documentation sections" className="ml-2 flex items-center gap-1 max-md:hidden">
+        <nav aria-label={t("Documentation sections")} className="ml-2 flex items-center gap-1 max-md:hidden">
           {(["guides", "developers"] as const).map((tab) => (
             <Link
               key={tab}
@@ -65,7 +67,7 @@ export function DocumentationHeader({
                   : "text-ink-muted hover:bg-surface-2 hover:text-ink",
               )}
             >
-              {TAB_LABELS[tab]}
+              {t(TAB_LABELS[tab])}
             </Link>
           ))}
         </nav>
@@ -74,18 +76,18 @@ export function DocumentationHeader({
           <button
             type="button"
             onClick={onOpenSearch}
-            aria-label="Search documentation"
+            aria-label={t("Search documentation")}
             className="flex h-9 items-center gap-2 rounded-md border border-line-strong bg-surface px-3 text-sm text-ink-muted transition-colors hover:border-line-strong hover:text-ink focus-visible:outline-2 focus-visible:outline-accent-ink sm:w-full"
           >
             <Search className="h-4 w-4" aria-hidden />
-            <span className="max-sm:hidden">Search documentation</span>
+            <span className="max-sm:hidden">{t("Search documentation")}</span>
             <kbd className="ml-auto rounded border border-line-strong px-1.5 text-[10px] text-ink-subtle max-sm:hidden">
               {isMac ? "⌘K" : "Ctrl K"}
             </kbd>
           </button>
         </div>
 
-        <nav className="flex items-center gap-1" aria-label="Resources">
+        <nav className="flex items-center gap-1" aria-label={t("Resources")}>
           <a
             href={DOCS_CONFIG.repoUrl}
             target="_blank"
@@ -99,7 +101,7 @@ export function DocumentationHeader({
             to={DOCS_CONFIG.appUrl}
             className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink"
           >
-            Open app
+            {t("Open app")}
           </Link>
         </nav>
       </div>

@@ -1,5 +1,6 @@
 import React from "react";
 import { Loader2, Inbox, AlertCircle, RotateCw } from "lucide-react";
+import { usePreferences } from "../../lib/usePreferences";
 import { Button } from "./Button";
 
 export const LoadingState: React.FC<{ label?: string }> = ({
@@ -27,7 +28,9 @@ export const EmptyState: React.FC<{
 export const ErrorState: React.FC<{
   message: string;
   onRetry?: () => void;
-}> = ({ message, onRetry }) => (
+}> = ({ message, onRetry }) => {
+  const { t } = usePreferences();
+  return (
   <div
     role="alert"
     className="flex items-center gap-2.5 rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
@@ -36,8 +39,9 @@ export const ErrorState: React.FC<{
     <span className="flex-1">{message}</span>
     {onRetry && (
       <Button variant="ghost" size="sm" onClick={onRetry}>
-        <RotateCw className="h-3.5 w-3.5" /> Retry
+        <RotateCw className="h-3.5 w-3.5" /> {t("Retry")}
       </Button>
     )}
   </div>
 );
+};

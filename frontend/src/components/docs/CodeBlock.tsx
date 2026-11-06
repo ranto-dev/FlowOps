@@ -6,6 +6,7 @@ import {
   tokenize,
   type TokenKind,
 } from "../../docs/highlight";
+import { usePreferences } from "../../lib/usePreferences";
 
 const KIND_CLASS: Record<TokenKind, string> = {
   comment: "italic text-ink-subtle",
@@ -29,6 +30,7 @@ export function CodeBlock({
   title?: string;
 }) {
   const [copied, setCopied] = useState(false);
+  const { t } = usePreferences();
   const timer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
@@ -58,18 +60,18 @@ export function CodeBlock({
         <button
           type="button"
           onClick={copy}
-          aria-label={copied ? "Code copied" : "Copy code"}
+          aria-label={copied ? t("Code copied") : t("Copy code")}
           className="flex shrink-0 items-center gap-1.5 rounded px-1.5 py-1 text-ink-muted transition hover:bg-surface-2 hover:text-ink focus-visible:outline-2 focus-visible:outline-accent-ink"
         >
           {copied ? (
             <>
               <Check className="h-3.5 w-3.5 text-success" aria-hidden />
-              Copied
+              {t("Copied")}
             </>
           ) : (
             <>
               <Copy className="h-3.5 w-3.5" aria-hidden />
-              Copy
+              {t("Copy")}
             </>
           )}
         </button>

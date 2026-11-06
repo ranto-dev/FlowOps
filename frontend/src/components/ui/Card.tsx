@@ -3,8 +3,8 @@ import { cn } from "../../lib/utils";
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   as?: "div" | "section";
-  /** `glass` (défaut) : surface structurante. `solid` : zones denses (formulaires, tableaux). */
-  variant?: "glass" | "solid";
+  /** `glass` (défaut) : verre flouté. `flat` : même teinte sans flou (grilles de cartes). `solid` : zones denses. */
+  variant?: "glass" | "flat" | "solid";
   /** Léger relèvement au survol, pour les cartes cliquables. */
   interactive?: boolean;
 }
@@ -22,7 +22,11 @@ export const Card: React.FC<CardProps> = ({
     <Tag
       className={cn(
         "rounded-lg border",
-        variant === "glass" ? "glass" : "border-line bg-surface",
+        variant === "glass"
+          ? "glass"
+          : variant === "flat"
+            ? "glass-flat"
+            : "border-line bg-surface",
         interactive &&
           "transition duration-200 hover:-translate-y-0.5 hover:border-accent/40",
         className,

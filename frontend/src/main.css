@@ -13,18 +13,19 @@
   --text-sm--line-height: 1.5rem;
 
   /* --- Design tokens (thème sombre unique, un seul accent violet) --- */
-  --color-canvas: #0b1020; /* fond de page */
-  --color-surface: #111827; /* cartes, panneaux, sidebar */
-  --color-surface-2: #1a2236; /* champs, survols */
-  --color-code: #070b17; /* blocs de code, logs */
-  --color-line: #243047; /* bordures */
-  --color-line-strong: #334155; /* bordures de champs, séparateurs forts */
-  --color-ink: #e2e8f0; /* texte principal */
-  --color-ink-muted: #94a3b8; /* texte secondaire */
-  --color-ink-subtle: #8393ad; /* aides, placeholders */
-  --color-accent: #7c3aed; /* remplissage (boutons) */
-  --color-accent-hover: #6d28d9;
+  --color-canvas: #09090b; /* fond de page */
+  --color-surface: #0f0f12; /* cartes, panneaux, sidebar */
+  --color-surface-2: #18181b; /* champs, survols */
+  --color-code: #060608; /* blocs de code, logs */
+  --color-line: #27272a; /* bordures */
+  --color-line-strong: #3f3f46; /* bordures de champs, séparateurs forts */
+  --color-ink: #fafafa; /* texte principal */
+  --color-ink-muted: #a1a1aa; /* texte secondaire */
+  --color-ink-subtle: #8b8b96; /* aides, placeholders */
+  --color-accent: #8b5cf6; /* remplissage (boutons) */
+  --color-accent-hover: #7c3aed;
   --color-accent-ink: #a78bfa; /* texte / liens / états actifs */
+  --color-indigo: #6366f1; /* fin de dégradé de marque */
   --color-success: #34d399;
   --color-warning: #fbbf24;
   --color-danger: #f87171;
@@ -58,20 +59,21 @@
   --muted: var(--color-ink-muted);
   --accent: var(--color-accent-ink);
   /* --- Verre (thème sombre) : voir docs/DESIGN-GUIDE.md --- */
-  --glass-bg: rgb(17 24 39 / 0.55);
-  --glass-bg-strong: rgb(17 24 39 / 0.78);
-  --glass-border: rgb(255 255 255 / 0.08);
+  --glass-bg: rgb(255 255 255 / 0.03);
+  --glass-bg-strong: rgb(24 24 27 / 0.82);
+  --glass-border: rgb(255 255 255 / 0.07);
   --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 0.06);
   --glass-blur: 16px;
   --glass-blur-strong: 24px;
   --glass-shadow: 0 1px 2px rgb(0 0 0 / 0.25), 0 8px 24px -8px rgb(0 0 0 / 0.35);
   --glass-shadow-strong: 0 16px 48px -12px rgb(0 0 0 / 0.55);
   /* Halos du fond ambiant */
-  --halo-1: rgb(124 58 237 / 0.26);
-  --halo-2: rgb(59 90 200 / 0.2);
-  --halo-3: rgb(124 58 237 / 0.1);
+  --halo-1: rgb(139 92 246 / 0.22);
+  --halo-2: rgb(99 102 241 / 0.16);
+  --halo-3: rgb(139 92 246 / 0.08);
   --brand-from: #c4b5fd;
-  --brand-to: #7dd3fc;
+  --brand-mid: #8b5cf6;
+  --brand-to: #6366f1;
   background: var(--color-canvas);
   color: var(--color-ink);
 }
@@ -88,8 +90,8 @@
   --color-ink: #0f172a;
   --color-ink-muted: #475569;
   --color-ink-subtle: #5b6b82;
-  --color-accent: #7c3aed;
-  --color-accent-hover: #6d28d9;
+  --color-accent: #8b5cf6;
+  --color-accent-hover: #7c3aed;
   --color-accent-ink: #6d28d9;
   --color-success: #047857;
   --color-warning: #92400e;
@@ -104,8 +106,9 @@
   --halo-1: rgb(124 58 237 / 0.16);
   --halo-2: rgb(59 130 246 / 0.12);
   --halo-3: rgb(124 58 237 / 0.07);
-  --brand-from: #6d28d9;
-  --brand-to: #0369a1;
+  --brand-from: #7c3aed;
+  --brand-mid: #6d28d9;
+  --brand-to: #4338ca;
 }
 
 :root[data-theme="light"] ::selection {
@@ -123,6 +126,7 @@ body {
   background: var(--page-bg);
   color: var(--page-fg);
   font-family: var(--font-sans);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -184,12 +188,12 @@ h3 {
  * Les halos radiaux décoratifs (hero, authentification) utilisent `halo-vivid`.
  */
 @utility bg-brand {
-  background-image: linear-gradient(135deg, #7c3aed, #4f46e5);
+  background-image: linear-gradient(135deg, #8b5cf6, #6366f1);
   color: #ffffff;
 }
 
 @utility text-brand {
-  background-image: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+  background-image: linear-gradient(90deg, var(--brand-from), var(--brand-mid) 50%, var(--brand-to));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -201,14 +205,265 @@ h3 {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(40rem 26rem at 20% 0%, rgb(124 58 237 / 0.34), transparent 65%),
-    radial-gradient(34rem 24rem at 85% 20%, rgb(56 189 248 / 0.2), transparent 65%);
+    radial-gradient(40rem 26rem at 20% 0%, rgb(139 92 246 / 0.34), transparent 65%),
+    radial-gradient(34rem 24rem at 85% 20%, rgb(99 102 241 / 0.22), transparent 65%);
 }
 
 @media (prefers-reduced-transparency: reduce) {
   .halo-vivid {
     display: none;
   }
+}
+
+/*
+ * Verre « à plat » : mêmes teintes que `glass`, SANS flou. Pour les grilles de cartes répétées et
+ * les grands cadres dont le contenu est opaque : le flou y coûte cher et ne se voit pas.
+ */
+@utility glass-flat {
+  background: var(--glass-bg-strong);
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-highlight);
+}
+
+/* --- Animations d'apparition : transform + opacity uniquement (compositeur, 0 JS par image) --- */
+.reveal {
+  opacity: 0;
+  transform: translate3d(0, var(--reveal-y, 12px), 0);
+  transition:
+    opacity 0.7s cubic-bezier(0.21, 0.47, 0.32, 0.98) var(--reveal-delay, 0s),
+    transform 0.7s cubic-bezier(0.21, 0.47, 0.32, 0.98) var(--reveal-delay, 0s);
+}
+
+.reveal[data-in] {
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--delay, 0s);
+}
+
+/*
+ * --- Vitrine « Vercel » : typo Geist, grille, spotlight, 3D, beam, marquee ---
+ * Réservé à `.landing-root` / composants landing. Tout passe par les tokens (couleurs, bordures).
+ */
+.landing-root h1,
+.landing-root h2 {
+  letter-spacing: -0.04em;
+}
+
+/* Grille masquée radialement (haut de page). Lignes en ink translucide : valable en sombre et en clair. */
+@utility bg-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--color-ink) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--color-ink) 6%, transparent) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 30%, transparent 100%);
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 30%, transparent 100%);
+}
+
+/* Titre dégradé ink → ink-muted (H1/H2 de la vitrine). */
+@utility text-gradient {
+  background-image: linear-gradient(180deg, var(--color-ink) 30%, var(--color-ink-muted) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Glow violet : réservé aux éléments d'action (CTA). */
+@utility glow-accent {
+  box-shadow: 0 0 40px -6px rgb(139 92 246 / 0.8);
+}
+
+/* Aurora : gros halo flou animé (hero, auth, CTA final). Taille/position via classes utilitaires. */
+@keyframes aurora-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(4%, 6%, 0) scale(1.15);
+  }
+}
+
+@utility aurora {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 9999px;
+  filter: blur(64px);
+  animation: aurora-drift 14s ease-in-out infinite;
+}
+
+@utility aurora-violet {
+  background: radial-gradient(closest-side, rgb(139 92 246 / 0.38), transparent);
+}
+
+@utility aurora-indigo {
+  background: radial-gradient(closest-side, rgb(99 102 241 / 0.25), transparent);
+}
+
+/* Spotlight : halo qui suit le curseur (variables --mx / --my posées par <Spotlight>). */
+.spotlight {
+  position: relative;
+  overflow: hidden;
+}
+
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background: radial-gradient(
+    320px circle at var(--mx, 50%) var(--my, 50%),
+    rgb(124 58 237 / 0.2),
+    transparent 70%
+  );
+}
+
+.spotlight:hover::before {
+  opacity: 1;
+}
+
+.spotlight > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Scène 3D : la perspective vit sur le parent, la rotation sur l'enfant. */
+.stage-3d {
+  perspective: 1400px;
+  perspective-origin: 50% 30%;
+}
+
+.stage-3d > .stage-3d-inner {
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translate3d(0, 0, var(--z, 0px));
+  }
+  50% {
+    transform: translate3d(0, -10px, var(--z, 0px));
+  }
+}
+
+.animate-float {
+  animation: float-y 6s ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+/* Faisceau lumineux qui parcourt un trait (pipeline). */
+@keyframes beam-x {
+  from {
+    stroke-dashoffset: 200;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.beam-path {
+  stroke-dasharray: 8 12;
+  animation: beam-x 2.4s linear infinite;
+}
+
+@keyframes beam-y {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(400%);
+  }
+}
+
+.beam-y {
+  animation: beam-y 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+/* Navbar : glisse depuis le haut quand elle devient « sticky » (verre + bordure). */
+@keyframes navbar-drop {
+  from {
+    transform: translate3d(0, -100%, 0);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.animate-navbar-drop {
+  animation: navbar-drop 0.35s cubic-bezier(0.21, 0.47, 0.32, 0.98) both;
+}
+
+@keyframes marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 32s linear infinite;
+}
+
+.marquee-mask {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent);
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .beam-path,
+  .beam-y,
+  .animate-navbar-drop,
+  .aurora,
+  .animate-marquee,
+  .animate-pulse-ring {
+    animation: none;
+  }
+}
+
+/* Sections sous la ligne de flottaison : rendu et peinture différés jusqu'à leur approche. */
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 720px;
 }
 
 /* Dégradations : sans flou ou avec « réduire la transparence », le verre devient opaque. */
@@ -231,8 +486,20 @@ h3 {
   }
 }
 
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+  border-radius: 3px;
+}
+
 ::selection {
-  background: rgb(124 58 237 / 0.4);
+  background: rgb(139 92 246 / 0.3);
   color: var(--color-ink);
 }
 

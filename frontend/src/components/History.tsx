@@ -90,8 +90,8 @@ export const History: React.FC = () => {
         if (isApiError(err) && err.status === 401) return;
         console.error("Erreur chargement projets:", err);
         toast.error(
-          "Projets indisponibles",
-          errorDetail(err, "Le serveur est peut-être arrêté."),
+          t("Projects unavailable"),
+          errorDetail(err, t("The server may be down.")),
         );
       }
     };
@@ -119,8 +119,8 @@ export const History: React.FC = () => {
         console.error("Erreur chargement des runs:", err);
         if (!isBackground) {
           toast.error(
-            "Exécutions indisponibles",
-            errorDetail(err, "Le serveur est peut-être arrêté."),
+            t("Runs unavailable"),
+            errorDetail(err, t("The server may be down.")),
           );
         }
       } finally {
@@ -164,8 +164,8 @@ export const History: React.FC = () => {
         console.error("Erreur chargement des jobs:", err);
         if (!isBackground) {
           toast.error(
-            "Jobs indisponibles",
-            errorDetail(err, "Le serveur est peut-être arrêté."),
+            t("Jobs unavailable"),
+            errorDetail(err, t("The server may be down.")),
           );
         }
       } finally {
@@ -206,8 +206,8 @@ export const History: React.FC = () => {
         console.error("Erreur chargement des logs:", err);
         if (!isBackground) {
           toast.error(
-            "Logs indisponibles",
-            errorDetail(err, "Le serveur est peut-être arrêté."),
+            t("Logs unavailable"),
+            errorDetail(err, t("The server may be down.")),
           );
         }
       } finally {

@@ -11,10 +11,12 @@ export function FinalCTA() {
   return (
     <section aria-labelledby="cta-title" className="py-20 sm:py-24">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-        <Reveal className="glass-strong relative halo-vivid overflow-hidden rounded-lg border px-6 py-16 text-center sm:px-12 sm:py-20">
+        <Reveal className="glass-flat relative isolate overflow-hidden rounded-lg border px-6 py-16 text-center sm:px-12 sm:py-20">
+          <div className="bg-grid absolute inset-0 -z-10 opacity-70" aria-hidden="true" />
+          <div className="aurora aurora-violet left-1/2 top-1/2 -z-10 h-80 w-[48rem] -translate-x-1/2 -translate-y-1/2" aria-hidden="true" />
           <h2
             id="cta-title"
-            className="mx-auto max-w-2xl text-balance text-3xl font-bold tracking-tight text-ink sm:text-4xl"
+            className="mx-auto max-w-2xl text-gradient text-balance text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl"
           >
             {t("Build your next pipeline differently.")}
           </h2>

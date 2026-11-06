@@ -9,7 +9,8 @@ export interface PreferencesValue {
   theme: Theme;
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
-  t: (message: string) => string;
+  /** Traduit un texte (clé = anglais d'origine). `{nom}` est remplacé par `vars.nom`. */
+  t: (message: string, vars?: Record<string, string | number>) => string;
 }
 
 export const PreferencesContext = createContext<PreferencesValue | null>(null);

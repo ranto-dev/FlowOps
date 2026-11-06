@@ -12,9 +12,9 @@ const buttonVariants = cva(
       variant: {
         default: "bg-accent text-white hover:bg-accent-hover",
         brand:
-          "bg-brand text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25)] hover:brightness-110",
+          "rounded-full bg-ink text-canvas glow-accent transition-transform hover:scale-[1.03] active:scale-95",
         secondary:
-          "border border-line-strong bg-surface text-ink hover:bg-surface-2",
+          "glass rounded-full border text-ink hover:bg-surface-2",
         ghost: "text-ink-muted hover:bg-surface-2 hover:text-ink",
       },
       size: {

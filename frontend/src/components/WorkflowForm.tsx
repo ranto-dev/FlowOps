@@ -225,7 +225,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
                 type="text"
                 value={config.name}
                 onChange={(e) => updateGlobal("name", e.target.value)}
-                placeholder="Workflow Name"
+                placeholder={t("Workflow name")}
               />
             )}
           </Field>
@@ -374,7 +374,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
                     )
                   }
                   className="font-mono"
-                  placeholder="e.g. build"
+                  placeholder={t("e.g. build")}
                 />
               )}
             </Field>
@@ -391,7 +391,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
                     updateJobField(selectedJob.id, "matrix_key", e.target.value)
                   }
                   className="font-mono"
-                  placeholder="e.g. node-version"
+                  placeholder={t("e.g. node-version")}
                 />
               )}
             </Field>
@@ -409,7 +409,7 @@ export const WorkflowForm: React.FC<WorkflowFormProps> = ({
                     )
                   }
                   className="font-mono"
-                  placeholder="e.g. 18, 20, 22"
+                  placeholder={t("e.g. 18, 20, 22")}
                 />
               )}
             </Field>

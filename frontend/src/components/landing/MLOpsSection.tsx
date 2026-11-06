@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { motion, useInView, useReducedMotion } from "framer-motion";
+import { useEffect, useRef } from "react";
+import { useInView, useReducedMotion } from "framer-motion";
 import { Clock3, ShieldAlert } from "lucide-react";
 import { Card } from "../ui/Card";
 import { Reveal, SectionHeader } from "./Reveal";
-import { EASE, staggerChild, staggerParent } from "./motion";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { usePreferences } from "../../lib/usePreferences";
 
@@ -19,33 +18,35 @@ const PIPELINE = [
   "FlowOps",
 ];
 
-function useCountUp(target: number, active: boolean, reduce: boolean, duration = 1200): number {
-  const [value, setValue] = useState(reduce ? target : 0);
+/** Compteur animé : met à jour le texte du nœud directement (pas de setState à chaque image). */
+function CountUp({ to, active, duration = 1200 }: { to: number; active: boolean; duration?: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const reduce = useReducedMotion();
   useEffect(() => {
-    if (!active || reduce) {
-      if (reduce) setValue(target);
+    const node = ref.current;
+    if (!node) return;
+    if (reduce) {
+      node.textContent = String(to);
       return;
     }
+    if (!active) return;
     let raf = 0;
     const start = performance.now();
     const step = (now: number) => {
       const p = Math.min((now - start) / duration, 1);
-      setValue(Math.round(target * (1 - Math.pow(1 - p, 3))));
+      node.textContent = String(Math.round(to * (1 - Math.pow(1 - p, 3))));
       if (p < 1) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [active, reduce, target, duration]);
-  return value;
+  }, [active, reduce, to, duration]);
+  return <span ref={ref}>{reduce ? to : 0}</span>;
 }
 
 export function MLOpsSection() {
   const { t } = usePreferences();
-  const reduce = useReducedMotion();
   const counterRef = useRef<HTMLDivElement>(null);
   const counterInView = useInView(counterRef, { once: true, amount: 0.4 });
-  const duration = useCountUp(128, counterInView, reduce ?? false);
-  const risk = useCountUp(23, counterInView, reduce ?? false);
 
   return (
     <section
@@ -69,7 +70,7 @@ export function MLOpsSection() {
           className="mx-auto mt-12 grid max-w-3xl gap-4 sm:grid-cols-2"
         >
           <Reveal>
-          <Card className="h-full p-6">
+          <Card variant="flat" className="h-full p-6">
             <div className="flex items-center gap-3 text-sm font-medium text-ink-muted">
               <span className="flex size-9 items-center justify-center rounded-md bg-accent/15 text-accent-ink">
                 <Clock3 className="size-4" aria-hidden="true" />
@@ -77,7 +78,7 @@ export function MLOpsSection() {
               {t("Estimated duration")}
             </div>
             <p className="mt-4 text-3xl font-semibold tabular-nums text-ink">
-              {duration}
+              <CountUp to={128} active={counterInView} />
               <span className="ml-1 text-base font-medium text-ink-subtle">{t("sec")}</span>
             </p>
             <p className="mt-2 font-mono text-xs text-ink-subtle">
@@ -87,7 +88,7 @@ export function MLOpsSection() {
           </Reveal>
 
           <Reveal delay={0.1}>
-          <Card className="h-full p-6">
+          <Card variant="flat" className="h-full p-6">
             <div className="flex items-center gap-3 text-sm font-medium text-ink-muted">
               <span className="flex size-9 items-center justify-center rounded-md bg-accent/15 text-accent-ink">
                 <ShieldAlert className="size-4" aria-hidden="true" />
@@ -95,7 +96,7 @@ export function MLOpsSection() {
               {t("Failure risk")}
             </div>
             <p className="mt-4 text-3xl font-semibold tabular-nums text-ink">
-              {risk}
+              <CountUp to={23} active={counterInView} />
               <span className="ml-1 text-base font-medium text-ink-subtle">%</span>
             </p>
             <p className="mt-2 font-mono text-xs text-ink-subtle">{t("Illustrative value")}</p>
@@ -104,14 +105,14 @@ export function MLOpsSection() {
         </div>
 
         <Reveal className="mx-auto mt-4 max-w-3xl">
-        <Card className="p-6">
+        <Card variant="flat" className="p-6">
           <div className="flex items-center justify-between font-mono text-xs">
             <span className="text-ink-muted">{t("Pipeline prediction")}</span>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="cursor-help text-ink-subtle underline decoration-dotted underline-offset-4">
-                    {risk}% {t("failure probability")}
+                    <CountUp to={23} active={counterInView} />% {t("failure probability")}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -123,17 +124,14 @@ export function MLOpsSection() {
           <div
             className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2"
             role="progressbar"
-            aria-valuenow={risk}
+            aria-valuenow={23}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-label={t("Failure probability")}
           >
-            <motion.div
-              className="h-full rounded-full bg-accent"
-              initial={{ width: 0 }}
-              whileInView={{ width: `${risk}%` }}
-              viewport={{ once: true, amount: 0.4 }}
-              transition={{ duration: reduce ? 0 : 1, ease: EASE }}
+            <div
+              className="h-full origin-left rounded-full bg-accent transition-transform duration-1000 ease-out motion-reduce:transition-none"
+              style={{ transform: `scaleX(${counterInView ? 0.23 : 0})` }}
             />
           </div>
           <p className="mt-3 font-mono text-xs leading-relaxed text-ink-subtle">
@@ -149,19 +147,9 @@ export function MLOpsSection() {
               {t("From execution to prediction")}
             </h3>
           </Reveal>
-          <motion.ol
-            variants={staggerParent}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, amount: 0.2 }}
-            className="mt-6 flex flex-col items-center"
-          >
+          <ol className="mt-6 flex flex-col items-center">
             {PIPELINE.map((step, i) => (
-              <motion.li
-                key={step}
-                variants={reduce ? undefined : staggerChild}
-                className="flex flex-col items-center"
-              >
+              <Reveal as="li" key={step} delay={Math.min(i, 5) * 0.05} className="flex flex-col items-center">
                 <span
                   className={
                     i === 0 || i === PIPELINE.length - 1
@@ -176,9 +164,9 @@ export function MLOpsSection() {
                     ↓
                   </span>
                 )}
-              </motion.li>
+              </Reveal>
             ))}
-          </motion.ol>
+          </ol>
         </div>
       </div>
     </section>

@@ -1,28 +1,65 @@
-import { motion, useReducedMotion } from "framer-motion";
-import type { ReactNode } from "react";
+import { createElement, useCallback } from "react";
+import type { CSSProperties, ElementType, ReactNode } from "react";
 import { cn } from "../../lib/utils";
-import { EASE } from "./motion";
+
+/**
+ * Apparition au défilement, sans JavaScript par image : un seul IntersectionObserver partagé
+ * pose `data-in` ; la transition (opacity + transform) est en CSS (voir `.reveal` dans main.css).
+ */
+let observer: IntersectionObserver | null = null;
+
+function getObserver(): IntersectionObserver | null {
+  if (observer || typeof IntersectionObserver === "undefined") return observer;
+  observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          entry.target.setAttribute("data-in", "");
+          observer?.unobserve(entry.target);
+        }
+      }
+    },
+    { threshold: 0.12, rootMargin: "0px 0px -6% 0px" },
+  );
+  return observer;
+}
 
 interface RevealProps {
   children: ReactNode;
   className?: string;
+  /** Décalage en secondes (effet d'escalier dans une grille). */
   delay?: number;
   y?: number;
+  as?: ElementType;
 }
 
-/** Fade + slide-up on scroll, once. Honors prefers-reduced-motion. */
-export function Reveal({ children, className, delay = 0, y = 12 }: RevealProps) {
-  const reduce = useReducedMotion();
-  return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, y: reduce ? 0 : y }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: 0.4, delay, ease: EASE }}
-    >
-      {children}
-    </motion.div>
+export function Reveal({
+  children,
+  className,
+  delay = 0,
+  y = 24,
+  as: Tag = "div",
+}: RevealProps) {
+  const ref = useCallback((node: HTMLElement | null) => {
+    if (!node) return;
+    const io = getObserver();
+    if (!io) {
+      node.setAttribute("data-in", "");
+      return;
+    }
+    io.observe(node);
+    return () => io.unobserve(node);
+  }, []);
+
+  const style = {
+    "--reveal-delay": `${delay}s`,
+    "--reveal-y": `${y}px`,
+  } as CSSProperties;
+
+  return createElement(
+    Tag,
+    { ref, className: cn("reveal", className), style },
+    children,
   );
 }
 
@@ -46,10 +83,10 @@ export function SectionHeader({
         align === "center" ? "mx-auto items-center text-center" : "items-start text-left",
       )}
     >
-      <span className="text-xs font-medium text-accent-ink">
+      <span className="font-mono text-xs uppercase tracking-widest text-accent-ink">
         {eyebrow}
       </span>
-      <h2 className="text-balance text-2xl font-semibold leading-tight text-ink sm:text-3xl">
+      <h2 className="text-gradient text-balance text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-5xl">
         {title}
       </h2>
       {description ? (

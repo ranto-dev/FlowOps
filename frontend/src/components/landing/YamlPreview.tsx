@@ -1,6 +1,4 @@
-import { motion, useReducedMotion } from "framer-motion";
 import { ArrowDown, Cpu, Settings2 } from "lucide-react";
-import { EASE } from "./motion";
 import { Reveal, SectionHeader } from "./Reveal";
 import { usePreferences } from "../../lib/usePreferences";
 
@@ -33,7 +31,6 @@ const CONFIG_ROWS: Array<[string, string]> = [
 
 export function YamlPreview() {
   const { t } = usePreferences();
-  const reduce = useReducedMotion();
   return (
     <section aria-labelledby="yaml-title" className="py-20 sm:py-24">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
@@ -57,18 +54,12 @@ export function YamlPreview() {
           </span>
           <ArrowDown className="size-4" aria-hidden="true" />
           <span className="rounded-md border border-line bg-surface-2 px-3 py-1.5">
-            GitHub Actions YAML
+            {t("GitHub Actions YAML")}
           </span>
         </Reveal>
 
         <div className="mt-10 grid gap-4 lg:grid-cols-2">
-          <motion.div
-            initial={{ opacity: 0, x: reduce ? 0 : -12 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.4, ease: EASE }}
-            className="glass-strong overflow-hidden rounded-lg border"
-          >
+          <Reveal className="glass-flat overflow-hidden rounded-lg border">
             <p className="flex items-center gap-2 border-b border-line px-5 py-3 font-mono text-xs text-ink-subtle">
               <Settings2 className="size-3.5" aria-hidden="true" />
               {t("Low-code")}
@@ -81,22 +72,16 @@ export function YamlPreview() {
                 </div>
               ))}
             </dl>
-          </motion.div>
+          </Reveal>
 
-          <motion.div
-            initial={{ opacity: 0, x: reduce ? 0 : 12 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.4, ease: EASE }}
-            className="glass-strong overflow-hidden rounded-lg border"
-          >
+          <Reveal delay={0.08} className="glass-flat overflow-hidden rounded-lg border">
             <p className="border-b border-line px-5 py-3 font-mono text-xs text-ink-subtle">
               workflow.yml
             </p>
             <pre className="overflow-x-auto bg-code p-5 font-mono text-sm leading-6 text-ink-muted">
               <code>{YAML_TEXT}</code>
             </pre>
-          </motion.div>
+          </Reveal>
         </div>
       </div>
     </section>

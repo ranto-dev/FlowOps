@@ -2,8 +2,10 @@ import { ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DOCS_CONFIG, TAB_LABELS } from "../../docs/navigation";
 import type { PageEntry } from "../../docs/pages";
+import { usePreferences } from "../../lib/usePreferences";
 
 export function DocumentationBreadcrumb({ entry }: { entry: PageEntry }) {
+  const { t } = usePreferences();
   const crumbs = [
     ...entry.ancestors.map((a) => ({
       label: a.navTitle ?? a.title,
@@ -11,14 +13,14 @@ export function DocumentationBreadcrumb({ entry }: { entry: PageEntry }) {
     })),
   ];
   return (
-    <nav aria-label="Breadcrumb" className="mb-4">
+    <nav aria-label={t("Breadcrumb")} className="mb-4">
       <ol className="flex flex-wrap items-center gap-1.5 text-xs text-ink-subtle">
         <li>
           <Link
             to={DOCS_CONFIG.basePath}
             className="hover:text-ink focus-visible:outline-2 focus-visible:outline-accent-ink"
           >
-            Docs
+            {t("Docs")}
           </Link>
         </li>
         {entry.section.tab === "developers" && (
@@ -28,7 +30,7 @@ export function DocumentationBreadcrumb({ entry }: { entry: PageEntry }) {
               to={`${DOCS_CONFIG.basePath}/${DOCS_CONFIG.developerHomeSlug}`}
               className="hover:text-ink"
             >
-              {TAB_LABELS.developers}
+              {t(TAB_LABELS.developers)}
             </Link>
           </li>
         )}

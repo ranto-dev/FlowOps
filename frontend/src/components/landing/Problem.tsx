@@ -1,8 +1,6 @@
-import { motion, useReducedMotion } from "framer-motion";
 import { Card } from "../ui/Card";
 import { EyeOff, FileWarning, History } from "lucide-react";
-import { SectionHeader } from "./Reveal";
-import { staggerChild, staggerParent } from "./motion";
+import { Reveal, SectionHeader } from "./Reveal";
 import { usePreferences } from "../../lib/usePreferences";
 
 const PROBLEMS = [
@@ -28,7 +26,6 @@ const PROBLEMS = [
 
 export function Problem() {
   const { t } = usePreferences();
-  const reduce = useReducedMotion();
   return (
     <section aria-labelledby="problem-title" className="py-20 sm:py-24">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
@@ -40,19 +37,10 @@ export function Problem() {
             </span>
           }
         />
-        <motion.ol
-          variants={staggerParent}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, amount: 0.2 }}
-          className="mt-12 grid gap-4 md:grid-cols-3"
-        >
-          {PROBLEMS.map((p) => (
-            <motion.li
-              key={p.n}
-              variants={reduce ? undefined : staggerChild}
-            >
-              <Card className="h-full p-6">
+        <ol className="mt-12 grid gap-4 md:grid-cols-3">
+          {PROBLEMS.map((p, i) => (
+            <Reveal as="li" key={p.n} delay={i * 0.06}>
+              <Card variant="flat" className="h-full p-6">
               <div className="flex items-center justify-between">
                 <span className="flex size-10 items-center justify-center rounded-md bg-accent/15 text-accent-ink">
                   <p.icon className="size-5" aria-hidden="true" />
@@ -68,9 +56,9 @@ export function Problem() {
                 {t(p.text)}
               </p>
               </Card>
-            </motion.li>
+            </Reveal>
           ))}
-        </motion.ol>
+        </ol>
       </div>
     </section>
   );

@@ -7,6 +7,7 @@ import { Callout } from "./Callout";
 import { CodeBlock } from "./CodeBlock";
 import { DocumentationBreadcrumb } from "./DocumentationBreadcrumb";
 import { InlineText } from "./InlineText";
+import { usePreferences } from "../../lib/usePreferences";
 
 function Heading({ block }: { block: Extract<Block, { type: "h2" | "h3" }> }) {
   const id = slugify(block.text);
@@ -98,6 +99,7 @@ function BlockView({ block }: { block: Block }) {
 export function DocumentationContent({ entry }: { entry: PageEntry }) {
   const { page } = entry;
   const [linkCopied, setLinkCopied] = useState(false);
+  const { t } = usePreferences();
   const timer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(timer.current), []);
   useEffect(() => setLinkCopied(false), [page.slug]);
@@ -132,7 +134,7 @@ export function DocumentationContent({ entry }: { entry: PageEntry }) {
               <Link2 className="h-3.5 w-3.5" aria-hidden />
             )}
             <span className="max-sm:sr-only">
-              {linkCopied ? "Link copied" : "Copy link"}
+              {linkCopied ? t("Link copied") : t("Copy link")}
             </span>
           </button>
         </div>

@@ -146,12 +146,12 @@ export const YamlPreview: React.FC<YamlPreviewProps> = ({
           size="sm"
           onClick={copyToClipboard}
           className="absolute right-3 top-3 z-10"
-          title="Copier le code"
-          aria-label="Copier le code"
+          title={t("Copy code")}
+          aria-label={t("Copy code")}
         >
           {copied ? (
             <>
-              <Check className="h-3.5 w-3.5 text-success" /> Copied!
+              <Check className="h-3.5 w-3.5 text-success" /> {t("Copied")}
             </>
           ) : (
             <Copy className="h-3.5 w-3.5" />

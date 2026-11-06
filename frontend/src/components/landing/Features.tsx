@@ -1,4 +1,3 @@
-import { motion, useReducedMotion } from "framer-motion";
 import {
   FolderKanban,
   MousePointerClick,
@@ -7,9 +6,9 @@ import {
   Timer,
   Zap,
 } from "lucide-react";
-import { SectionHeader } from "./Reveal";
-import { staggerChild, staggerParent } from "./motion";
+import { Reveal, SectionHeader } from "./Reveal";
 import { Card } from "../ui/Card";
+import { Spotlight } from "./Spotlight";
 import { usePreferences } from "../../lib/usePreferences";
 
 const FEATURES = [
@@ -47,7 +46,6 @@ const FEATURES = [
 
 export function Features() {
   const { t } = usePreferences();
-  const reduce = useReducedMotion();
   return (
     <section
       id="features"
@@ -63,16 +61,11 @@ export function Features() {
             </span>
           }
         />
-        <motion.div
-          variants={staggerParent}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, amount: 0.1 }}
-          className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-        >
-          {FEATURES.map((f) => (
-            <motion.div key={f.title} variants={reduce ? undefined : staggerChild}>
-              <Card interactive className="h-full p-6">
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {FEATURES.map((f, i) => (
+            <Reveal key={f.title} delay={(i % 3) * 0.06}>
+              <Spotlight className="h-full rounded-lg">
+              <Card variant="flat" interactive className="h-full p-6">
                 <span className="flex size-10 items-center justify-center rounded-md bg-accent/15 text-accent-ink">
                   <f.icon className="size-5" aria-hidden="true" />
                 </span>
@@ -83,9 +76,10 @@ export function Features() {
                   {t(f.text)}
                 </p>
               </Card>
-            </motion.div>
+              </Spotlight>
+            </Reveal>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
-import { TerminalSquare } from "lucide-react";
 import { GITHUB_URL } from "./data";
 import { Separator } from "./ui/separator";
 import { usePreferences } from "../../lib/usePreferences";
+import Logo from "../../assets/logo-flowOps-transparent.png";
 
 const COLUMNS: Array<{ title: string; links: Array<{ label: string; href: string; external?: boolean }> }> = [
   {
@@ -38,8 +38,8 @@ export function Footer() {
         <div className="grid gap-10 md:grid-cols-[1.2fr_2fr]">
           <div>
             <Link to="/" className="flex items-center gap-2.5" aria-label="FlowOps home">
-              <span className="flex size-8 items-center justify-center rounded-md bg-accent/15">
-                <TerminalSquare className="size-4 text-accent-ink" />
+              <span className="flex size-8 items-center justify-center">
+                <img src={Logo} alt="" className="size-full object-contain" />
               </span>
               <span className="text-sm font-semibold text-ink">
                 FlowOps

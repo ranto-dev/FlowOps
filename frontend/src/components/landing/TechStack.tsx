@@ -1,7 +1,5 @@
-import { motion, useReducedMotion } from "framer-motion";
 import { Card } from "../ui/Card";
 import { Reveal, SectionHeader } from "./Reveal";
-import { staggerChild, staggerParent } from "./motion";
 import { usePreferences } from "../../lib/usePreferences";
 
 const STACK: Array<{ group: string; items: string[] }> = [
@@ -14,7 +12,6 @@ const STACK: Array<{ group: string; items: string[] }> = [
 
 export function TechStack() {
   const { t } = usePreferences();
-  const reduce = useReducedMotion();
   return (
     <section aria-labelledby="stack-title" className="py-20 sm:py-24">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
@@ -23,19 +20,10 @@ export function TechStack() {
           title={<span id="stack-title">{t("A modern, boring-in-a-good-way stack.")}</span>}
           description={t("No exotic dependencies. Standard tools, assembled cleanly.")}
         />
-        <motion.dl
-          variants={staggerParent}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, amount: 0.2 }}
-          className="mx-auto mt-12 grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-3"
-        >
-          {STACK.map((s) => (
-            <motion.div
-              key={s.group}
-              variants={reduce ? undefined : staggerChild}
-            >
-            <Card className="h-full p-5">
+        <dl className="mx-auto mt-12 grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {STACK.map((s, i) => (
+            <Reveal key={s.group} delay={(i % 3) * 0.06}>
+            <Card variant="flat" className="h-full p-5">
               <dt className="text-sm font-semibold text-ink">
                 {t(s.group)}
               </dt>
@@ -50,7 +38,7 @@ export function TechStack() {
                 ))}
               </dd>
             </Card>
-            </motion.div>
+            </Reveal>
           ))}
           <Reveal className="rounded-lg border border-dashed border-line-strong p-5 sm:col-span-2 lg:col-span-1">
             <p className="font-mono text-xs text-ink-subtle">
@@ -62,7 +50,7 @@ export function TechStack() {
               → execution data → MLflow → predictions
             </p>
           </Reveal>
-        </motion.dl>
+        </dl>
       </div>
     </section>
   );
