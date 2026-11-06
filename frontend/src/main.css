@@ -228,15 +228,28 @@ h3 {
 /* --- Animations d'apparition : transform + opacity uniquement (compositeur, 0 JS par image) --- */
 .reveal {
   opacity: 0;
-  transform: translate3d(0, var(--reveal-y, 12px), 0);
+  filter: blur(var(--reveal-blur, 0px));
+  transform: perspective(900px) translate3d(var(--reveal-x, 0px), var(--reveal-y, 12px), 0)
+    scale(var(--reveal-s, 1)) rotateX(var(--reveal-r, 0deg));
   transition:
     opacity 0.7s cubic-bezier(0.21, 0.47, 0.32, 0.98) var(--reveal-delay, 0s),
+    filter 0.7s cubic-bezier(0.21, 0.47, 0.32, 0.98) var(--reveal-delay, 0s),
     transform 0.7s cubic-bezier(0.21, 0.47, 0.32, 0.98) var(--reveal-delay, 0s);
 }
 
 .reveal[data-in] {
   opacity: 1;
+  filter: none;
   transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    filter: none;
+    transform: none;
+    transition: none;
+  }
 }
 
 @keyframes fade-up {
@@ -415,6 +428,107 @@ h3 {
   animation: navbar-drop 0.35s cubic-bezier(0.21, 0.47, 0.32, 0.98) both;
 }
 
+/* Reflet qui suit le curseur sur les cartes 3D (<TiltCard>). */
+.tilt-glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background: radial-gradient(
+    380px circle at var(--mx, 50%) var(--my, 50%),
+    rgb(139 92 246 / 0.22),
+    transparent 65%
+  );
+}
+
+.group:hover > .tilt-glare {
+  opacity: 1;
+}
+
+/* Balayage lumineux sur la ligne en cours d'exécution. */
+@keyframes shimmer-x {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgb(139 92 246 / 0.18), transparent);
+  animation: shimmer-x 1.6s ease-in-out infinite;
+}
+
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.animate-caret {
+  animation: caret-blink 1s step-end infinite;
+}
+
+/* Nœuds allumés à tour de rôle (chaîne de données). */
+@keyframes chip-glow {
+  0%,
+  16%,
+  100% {
+    border-color: var(--color-line);
+    box-shadow: none;
+    color: var(--color-ink-muted);
+  }
+  6%,
+  10% {
+    border-color: rgb(139 92 246 / 0.7);
+    box-shadow: 0 0 22px -4px rgb(139 92 246 / 0.7);
+    color: var(--color-ink);
+  }
+}
+
+.animate-chip-glow {
+  animation: chip-glow 6s ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+/* Bruit visuel « code illisible » (section Problème). */
+@keyframes jitter {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+.group:hover .jitter {
+  animation: jitter 0.18s linear infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes scan-y {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+.animate-scan {
+  animation: scan-y 2.4s linear infinite;
+}
+
 @keyframes marquee {
   from {
     transform: translate3d(0, 0, 0);
@@ -453,6 +567,10 @@ h3 {
   .beam-path,
   .beam-y,
   .animate-navbar-drop,
+  .shimmer::after,
+  .animate-caret,
+  .animate-chip-glow,
+  .animate-scan,
   .aurora,
   .animate-marquee,
   .animate-pulse-ring {

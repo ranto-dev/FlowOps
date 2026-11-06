@@ -7,8 +7,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Reveal, SectionHeader } from "./Reveal";
-import { Card } from "../ui/Card";
-import { Spotlight } from "./Spotlight";
+import { ParallaxGlow, TiltCard } from "./fx";
 import { usePreferences } from "../../lib/usePreferences";
 
 const FEATURES = [
@@ -50,8 +49,9 @@ export function Features() {
     <section
       id="features"
       aria-labelledby="features-title"
-      className="scroll-mt-24 py-20 sm:py-24"
+      className="relative isolate scroll-mt-24 py-20 sm:py-24"
     >
+      <ParallaxGlow className="left-1/2 top-0 h-[28rem] w-[44rem] -translate-x-1/2" from={-120} to={160} />
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <SectionHeader
           eyebrow={t("Features")}
@@ -63,20 +63,14 @@ export function Features() {
         />
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f, i) => (
-            <Reveal key={f.title} delay={(i % 3) * 0.06}>
-              <Spotlight className="h-full rounded-lg">
-              <Card variant="flat" interactive className="h-full p-6">
-                <span className="flex size-10 items-center justify-center rounded-md bg-accent/15 text-accent-ink">
-                  <f.icon className="size-5" aria-hidden="true" />
+            <Reveal key={f.title} delay={(i % 3) * 0.1} y={50} scale={0.9} rotate={14} blur={5}>
+              <TiltCard className="glass-flat rounded-lg border p-6">
+                <span className="flex size-10 items-center justify-center rounded-md bg-accent/15 text-accent-ink transition-colors duration-300 group-hover:bg-accent group-hover:text-white [transform:translateZ(44px)]">
+                  <f.icon className="size-5 transition-transform duration-500 group-hover:rotate-[360deg]" aria-hidden="true" />
                 </span>
-                <h3 className="pt-4 text-base font-semibold text-ink">
-                  {t(f.title)}
-                </h3>
-                <p className="pt-2 text-sm leading-relaxed text-ink-muted">
-                  {t(f.text)}
-                </p>
-              </Card>
-              </Spotlight>
+                <h3 className="pt-4 text-lg font-medium text-ink [transform:translateZ(26px)]">{t(f.title)}</h3>
+                <p className="pt-2 text-sm leading-relaxed text-ink-muted [transform:translateZ(12px)]">{t(f.text)}</p>
+              </TiltCard>
             </Reveal>
           ))}
         </div>

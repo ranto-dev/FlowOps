@@ -30,6 +30,11 @@ interface RevealProps {
   /** Décalage en secondes (effet d'escalier dans une grille). */
   delay?: number;
   y?: number;
+  x?: number;
+  scale?: number;
+  /** Inclinaison 3D d'entrée (degrés). */
+  rotate?: number;
+  blur?: number;
   as?: ElementType;
 }
 
@@ -38,6 +43,10 @@ export function Reveal({
   className,
   delay = 0,
   y = 24,
+  x = 0,
+  scale = 1,
+  rotate = 0,
+  blur = 0,
   as: Tag = "div",
 }: RevealProps) {
   const ref = useCallback((node: HTMLElement | null) => {
@@ -54,6 +63,10 @@ export function Reveal({
   const style = {
     "--reveal-delay": `${delay}s`,
     "--reveal-y": `${y}px`,
+    "--reveal-x": `${x}px`,
+    "--reveal-s": scale,
+    "--reveal-r": `${rotate}deg`,
+    "--reveal-blur": `${blur}px`,
   } as CSSProperties;
 
   return createElement(

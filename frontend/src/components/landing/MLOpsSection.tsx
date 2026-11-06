@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
 import { useInView, useReducedMotion } from "framer-motion";
 import { Clock3, ShieldAlert } from "lucide-react";
-import { Card } from "../ui/Card";
 import { Reveal, SectionHeader } from "./Reveal";
+import { ParallaxGlow, ScrollChain, TiltCard } from "./fx";
+import { Card } from "../ui/Card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { usePreferences } from "../../lib/usePreferences";
 
@@ -43,6 +44,32 @@ function CountUp({ to, active, duration = 1200 }: { to: number; active: boolean;
   return <span ref={ref}>{reduce ? to : 0}</span>;
 }
 
+const BARS = [38, 62, 45, 80, 55, 92, 70, 100, 66, 84];
+
+/** Jauge circulaire : l'arc se dessine quand la section entre à l'écran. */
+function RingGauge({ value, active }: { value: number; active: boolean }) {
+  const C = 2 * Math.PI * 40;
+  return (
+    <svg viewBox="0 0 100 100" className="size-24 -rotate-90" aria-hidden="true">
+      <circle cx="50" cy="50" r="40" fill="none" strokeWidth="8" className="stroke-surface-2" />
+      <circle
+        cx="50"
+        cy="50"
+        r="40"
+        fill="none"
+        strokeWidth="8"
+        strokeLinecap="round"
+        className="stroke-accent-ink drop-shadow-[0_0_6px_rgb(139_92_246)]"
+        style={{
+          strokeDasharray: C,
+          strokeDashoffset: active ? C * (1 - value / 100) : C,
+          transition: "stroke-dashoffset 1.4s cubic-bezier(0.21,0.47,0.32,0.98)",
+        }}
+      />
+    </svg>
+  );
+}
+
 export function MLOpsSection() {
   const { t } = usePreferences();
   const counterRef = useRef<HTMLDivElement>(null);
@@ -52,8 +79,9 @@ export function MLOpsSection() {
     <section
       id="mlops"
       aria-labelledby="mlops-title"
-      className="scroll-mt-24 py-20 sm:py-24"
+      className="relative isolate scroll-mt-24 py-20 sm:py-24"
     >
+      <ParallaxGlow className="-right-40 top-24 h-[30rem] w-[30rem]" from={-120} to={160} />
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <SectionHeader
           eyebrow={t("MLOps · AI predictions")}
@@ -69,38 +97,52 @@ export function MLOpsSection() {
           ref={counterRef}
           className="mx-auto mt-12 grid max-w-3xl gap-4 sm:grid-cols-2"
         >
-          <Reveal>
-          <Card variant="flat" className="h-full p-6">
-            <div className="flex items-center gap-3 text-sm font-medium text-ink-muted">
-              <span className="flex size-9 items-center justify-center rounded-md bg-accent/15 text-accent-ink">
-                <Clock3 className="size-4" aria-hidden="true" />
-              </span>
-              {t("Estimated duration")}
-            </div>
-            <p className="mt-4 text-3xl font-semibold tabular-nums text-ink">
-              <CountUp to={128} active={counterInView} />
-              <span className="ml-1 text-base font-medium text-ink-subtle">{t("sec")}</span>
-            </p>
-            <p className="mt-2 font-mono text-xs text-ink-subtle">
-              {t("Illustrative value")}
-            </p>
-          </Card>
+          <Reveal x={-50} scale={0.92} blur={5}>
+            <TiltCard className="glass-flat rounded-lg border p-6">
+              <div className="flex items-center gap-3 text-sm font-medium text-ink-muted [transform:translateZ(24px)]">
+                <span className="flex size-9 items-center justify-center rounded-md bg-accent/15 text-accent-ink">
+                  <Clock3 className="size-4" aria-hidden="true" />
+                </span>
+                {t("Estimated duration")}
+              </div>
+              <p className="mt-4 text-4xl font-semibold tabular-nums text-ink [transform:translateZ(36px)]">
+                <CountUp to={128} active={counterInView} />
+                <span className="ml-1 text-base font-medium text-ink-subtle">{t("sec")}</span>
+              </p>
+              <div className="mt-4 flex h-12 items-end gap-1" aria-hidden="true">
+                {BARS.map((h, i) => (
+                  <span
+                    key={i}
+                    className="w-full origin-bottom rounded-sm bg-accent/60 transition-all duration-700 group-hover:bg-accent-ink"
+                    style={{
+                      height: `${h}%`,
+                      transform: `scaleY(${counterInView ? 1 : 0})`,
+                      transitionDelay: `${i * 70}ms`,
+                    }}
+                  />
+                ))}
+              </div>
+              <p className="mt-3 font-mono text-xs text-ink-subtle">{t("Illustrative value")}</p>
+            </TiltCard>
           </Reveal>
 
-          <Reveal delay={0.1}>
-          <Card variant="flat" className="h-full p-6">
-            <div className="flex items-center gap-3 text-sm font-medium text-ink-muted">
-              <span className="flex size-9 items-center justify-center rounded-md bg-accent/15 text-accent-ink">
-                <ShieldAlert className="size-4" aria-hidden="true" />
-              </span>
-              {t("Failure risk")}
-            </div>
-            <p className="mt-4 text-3xl font-semibold tabular-nums text-ink">
-              <CountUp to={23} active={counterInView} />
-              <span className="ml-1 text-base font-medium text-ink-subtle">%</span>
-            </p>
-            <p className="mt-2 font-mono text-xs text-ink-subtle">{t("Illustrative value")}</p>
-          </Card>
+          <Reveal x={50} scale={0.92} blur={5} delay={0.1}>
+            <TiltCard className="glass-flat rounded-lg border p-6">
+              <div className="flex items-center gap-3 text-sm font-medium text-ink-muted [transform:translateZ(24px)]">
+                <span className="flex size-9 items-center justify-center rounded-md bg-accent/15 text-accent-ink">
+                  <ShieldAlert className="size-4" aria-hidden="true" />
+                </span>
+                {t("Failure risk")}
+              </div>
+              <div className="mt-4 flex items-center justify-between [transform:translateZ(36px)]">
+                <p className="text-4xl font-semibold tabular-nums text-ink">
+                  <CountUp to={23} active={counterInView} />
+                  <span className="ml-1 text-base font-medium text-ink-subtle">%</span>
+                </p>
+                <RingGauge value={23} active={counterInView} />
+              </div>
+              <p className="mt-3 font-mono text-xs text-ink-subtle">{t("Illustrative value")}</p>
+            </TiltCard>
           </Reveal>
         </div>
 
@@ -147,26 +189,29 @@ export function MLOpsSection() {
               {t("From execution to prediction")}
             </h3>
           </Reveal>
-          <ol className="mt-6 flex flex-col items-center">
-            {PIPELINE.map((step, i) => (
-              <Reveal as="li" key={step} delay={Math.min(i, 5) * 0.05} className="flex flex-col items-center">
-                <span
-                  className={
-                    i === 0 || i === PIPELINE.length - 1
-                      ? "rounded-md border border-accent/30 bg-accent/15 px-4 py-2 font-mono text-sm text-accent-ink"
-                      : "rounded-md border border-line bg-surface-2 px-4 py-2 font-mono text-sm text-ink-muted"
-                  }
-                >
-                  {t(step)}
-                </span>
-                {i < PIPELINE.length - 1 && (
-                  <span aria-hidden="true" className="py-1 font-mono text-ink-subtle">
-                    ↓
+          <ScrollChain
+            className="mt-6"
+            gap="h-7"
+            count={PIPELINE.length}
+            renderItem={(i, active) => {
+              const edge = i === 0 || i === PIPELINE.length - 1;
+              return (
+                <div className="flex justify-center">
+                  <span
+                    className={`rounded-md border px-4 py-2 font-mono text-sm transition-all duration-500 hover:scale-110 ${
+                      edge
+                        ? "border-accent/40 bg-accent/15 text-accent-ink"
+                        : active
+                          ? "border-accent/40 bg-surface-2 text-ink shadow-[0_0_24px_-6px_rgb(139_92_246/0.7)]"
+                          : "border-line bg-surface-2 text-ink-muted"
+                    }`}
+                  >
+                    {t(PIPELINE[i])}
                   </span>
-                )}
-              </Reveal>
-            ))}
-          </ol>
+                </div>
+              );
+            }}
+          />
         </div>
       </div>
     </section>
