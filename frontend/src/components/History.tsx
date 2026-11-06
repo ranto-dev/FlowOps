@@ -432,12 +432,13 @@ export const History: React.FC = () => {
               <EmptyState title={t("No workflow runs found.")} />
             ) : (
               <Card className="divide-y divide-line overflow-hidden">
-                {runs.map((r) => (
+                {runs.map((r, index) => (
                   <button
                     type="button"
                     key={r.id}
                     onClick={() => setSelectedRunId(r.id)}
-                    className="group flex w-full cursor-pointer items-center justify-between gap-3 p-3 text-left transition-colors hover:bg-surface-2"
+                    style={{ "--delay": `${Math.min(index, 10) * 30}ms` } as React.CSSProperties}
+                    className="animate-rise group flex w-full cursor-pointer items-center justify-between gap-3 p-3 text-left transition-colors hover:bg-surface-2"
                   >
                     <div className="min-w-0 space-y-1">
                       <div className="flex items-center gap-2">
@@ -564,7 +565,7 @@ export const History: React.FC = () => {
                   return (
                     <div
                       key={job.id}
-                      className={`rounded-md border bg-surface-2/50 p-3 transition-colors ${
+                      className={`animate-fade-in rounded-md border bg-surface-2/50 p-3 transition-colors ${
                         isJobSelected
                           ? "border-accent/30 bg-accent/15"
                           : "border-line hover:border-line-strong"

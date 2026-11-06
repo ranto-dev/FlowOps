@@ -53,7 +53,7 @@ export const Button: React.FC<ButtonProps> = ({
   <button
     disabled={disabled || loading}
     className={cn(
-      "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors duration-150",
+      "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97]",
       "disabled:pointer-events-none disabled:opacity-50",
       VARIANTS[variant],
       SIZES[size],

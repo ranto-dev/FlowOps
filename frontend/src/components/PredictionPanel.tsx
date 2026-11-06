@@ -221,8 +221,9 @@ export const PredictionPanel: React.FC<PredictionPanelProps> = ({
                   aria-label={`${t("Failure risk")}: ${failurePercentage}%`}
                 >
                   <div
+                    key={failurePercentage}
                     className={cn(
-                      "h-full rounded-full transition-all",
+                      "animate-bar-grow h-full rounded-full",
                       RISK_BAR[p.risk_level ?? ""] ?? "bg-ink-subtle",
                     )}
                     style={{

@@ -16,20 +16,22 @@ Thème sombre par défaut ; le thème clair redéfinit les mêmes tokens (`data-
 
 | Token (utilitaire) | Rôle | Sombre | Clair |
 |---|---|---|---|
-| `canvas` | fond de page | `#0b1020` | `#f8fafc` |
-| `surface` | surfaces opaques | `#111827` | `#ffffff` |
-| `surface-2` | champs, survols | `#1a2236` | `#f1f5f9` |
-| `code` | code, logs, YAML | `#070b17` | `#f1f5f9` |
-| `line` / `line-strong` | bordures / bordures de champs | `#243047` / `#334155` | `#e2e8f0` / `#cbd5e1` |
-| `ink` | texte principal | `#e2e8f0` | `#0f172a` |
-| `ink-muted` | texte secondaire | `#94a3b8` | `#475569` |
-| `ink-subtle` | aides, placeholders | `#8393ad` | `#5b6b82` |
-| `accent` | remplissage (boutons) | `#7c3aed` | `#7c3aed` |
+| `canvas` | fond de page | `#09090b` | `#ffffff` |
+| `surface` | surfaces opaques | `#0f0f12` | `#ffffff` |
+| `surface-2` | champs, survols | `#18181b` | `#f7f7f9` |
+| `code` | code, logs, YAML | `#060608` | `#fafafa` |
+| `line` / `line-strong` | bordures / bordures de champs | `#27272a` / `#3f3f46` | `#ececf0` / `#d4d4dc` |
+| `ink` | texte principal | `#fafafa` | `#09090b` |
+| `ink-muted` | texte secondaire | `#a1a1aa` | `#52525b` |
+| `ink-subtle` | aides, placeholders | `#8b8b96` | `#6b6b76` |
+| `accent` | remplissage (boutons) | `#8b5cf6` | `#8b5cf6` |
 | `accent-hover` | survol du remplissage | `#6d28d9` | `#6d28d9` |
 | `accent-ink` | liens, états actifs | `#a78bfa` | `#6d28d9` |
 | `success` `warning` `danger` `info` | **états uniquement** | `#34d399` `#fbbf24` `#f87171` `#38bdf8` | `#047857` `#92400e` `#b91c1c` `#0369a1` |
 
 **Contrastes (WCAG AA ≥ 4,5:1)** — sur verre, pire cas : `ink` ≥ 12,8 · `ink-muted` ≥ 6,2 · `ink-subtle` ≥ 4,6 · `accent-ink` ≥ 5,8 · couleurs d'état ≥ 4,7. Texte blanc sur `accent` : 5,7 ; sur le dégradé de marque : ≥ 5,7.
+
+**Thème clair — « blanc éditorial »** : fond blanc, famille zinc (comme le sombre). La hiérarchie vient des bordures fines et d'ombres douces, pas d'aplats gris : `surface-2` et `code` ne sont que très légèrement teintés. Le verre clair est quasi opaque (0,82 / 0,96) et les halos sont réduits à un souffle de violet. Voile des modales : token `scrim`. Contrastes mesurés sur blanc : `ink-muted` 7,7 · `ink-subtle` 5,3 · `accent-ink` 7,1 · états ≥ 5,5.
 
 Règles : fonds d'état en `bg-success/10` + bordure `border-success/30` + texte `text-success` ; jamais de palette Tailwind brute (`slate-*`, `purple-*`, `bg-white`…), jamais de `dark:`, jamais d'hexadécimal dans une classe.
 

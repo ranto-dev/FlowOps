@@ -80,7 +80,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({ username, avatarUrl, o
           id="workspace-profile-menu"
           role="group"
           aria-label={t("Profile settings")}
-          className="absolute right-0 top-full z-50 mt-2 w-72 max-w-[calc(100vw-1.5rem)] rounded-lg border border-line-strong bg-surface p-2 shadow-lg"
+          className="animate-profile-menu-in absolute right-0 top-full z-50 mt-2 w-72 max-w-[calc(100vw-1.5rem)] rounded-lg border border-line-strong bg-surface p-2 shadow-lg"
         >
           <div className="flex items-center gap-3 border-b border-line px-2 py-2.5">
             <Avatar username={username} avatarUrl={avatarUrl} size="md" />

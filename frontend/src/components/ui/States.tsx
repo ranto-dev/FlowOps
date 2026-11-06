@@ -6,7 +6,7 @@ import { Button } from "./Button";
 export const LoadingState: React.FC<{ label?: string }> = ({
   label = "Loading...",
 }) => (
-  <div className="flex flex-col items-center justify-center rounded-lg border border-line bg-surface py-16">
+  <div className="animate-fade-in flex flex-col items-center justify-center rounded-lg border border-line bg-surface py-16">
     <Loader2 className="mb-2 h-6 w-6 animate-spin text-accent-ink" />
     <span className="text-sm text-ink-muted">{label}</span>
   </div>
@@ -17,7 +17,7 @@ export const EmptyState: React.FC<{
   description?: string;
   action?: React.ReactNode;
 }> = ({ title, description, action }) => (
-  <div className="space-y-3 rounded-lg border border-dashed border-line-strong bg-surface py-14 text-center">
+  <div className="animate-fade-in space-y-3 rounded-lg border border-dashed border-line-strong bg-surface py-14 text-center">
     <Inbox className="mx-auto h-8 w-8 text-ink-subtle" />
     <p className="text-sm font-medium text-ink">{title}</p>
     {description && <p className="text-sm text-ink-muted">{description}</p>}

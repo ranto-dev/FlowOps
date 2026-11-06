@@ -88,10 +88,11 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
             />
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {visible.map((project) => (
+              {visible.map((project, index) => (
                 <ProjectCard
                   key={project.id}
                   project={project}
+                  index={index}
                   executingId={executingId}
                   onRun={onRun}
                   onEdit={onEdit}

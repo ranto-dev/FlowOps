@@ -38,7 +38,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     document.documentElement.dataset.theme = theme;
     document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute("content", theme === "light" ? "#f8fafc" : "#0b1020");
+      ?.setAttribute("content", theme === "light" ? "#ffffff" : "#0b1020");
     try {
       localStorage.setItem("flowops_theme", theme);
     } catch {

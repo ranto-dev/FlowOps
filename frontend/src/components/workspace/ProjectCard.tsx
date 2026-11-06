@@ -13,6 +13,8 @@ export interface ProjectCardProps {
   onRun: (project: Project) => void;
   onEdit: (project: Project) => void;
   onDelete: (project: Project) => void;
+  /** Rang dans la grille : décale l'apparition en cascade. */
+  index?: number;
 }
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({
@@ -21,12 +23,17 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   onRun,
   onEdit,
   onDelete,
+  index = 0,
 }) => {
   const { t } = usePreferences();
   const busy = executingId !== null;
 
   return (
-    <Card interactive className="flex flex-col gap-4 p-5">
+    <Card
+      interactive
+      className="animate-rise flex flex-col gap-4 p-5"
+      style={{ "--delay": `${Math.min(index, 8) * 50}ms` } as React.CSSProperties}
+    >
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-3">
           <h3 className="min-w-0 truncate text-base font-semibold text-ink">{project.name}</h3>

@@ -30,6 +30,7 @@
   --color-warning: #fbbf24;
   --color-danger: #f87171;
   --color-info: #38bdf8;
+  --color-scrim: rgb(0 0 0 / 0.6); /* voile derrière modales et tiroirs */
 
   /* --- Rayons : 2 niveaux seulement (contrôles / cartes) --- */
   --radius-md: 0.75rem;
@@ -74,6 +75,12 @@
   --brand-from: #c4b5fd;
   --brand-mid: #8b5cf6;
   --brand-to: #6366f1;
+  /* Effets décoratifs de la vitrine (réduits en clair) */
+  --aurora-violet: rgb(139 92 246 / 0.38);
+  --aurora-indigo: rgb(99 102 241 / 0.25);
+  --halo-vivid-1: rgb(139 92 246 / 0.34);
+  --halo-vivid-2: rgb(99 102 241 / 0.22);
+  --grid-line: 6%;
   background: var(--color-canvas);
   color: var(--color-ink);
 }
@@ -81,15 +88,16 @@
 /* Thème clair : seuls les tokens changent, aucun composant n'est touché. */
 :root[data-theme="light"] {
   color-scheme: light;
-  --color-canvas: #f8fafc;
+  /* Blanc éditorial : famille zinc (comme le sombre), hiérarchie par bordures fines + ombres douces. */
+  --color-canvas: #ffffff;
   --color-surface: #ffffff;
-  --color-surface-2: #f1f5f9;
-  --color-code: #f1f5f9;
-  --color-line: #e2e8f0;
-  --color-line-strong: #cbd5e1;
-  --color-ink: #0f172a;
-  --color-ink-muted: #475569;
-  --color-ink-subtle: #5b6b82;
+  --color-surface-2: #f7f7f9;
+  --color-code: #fafafa;
+  --color-line: #ececf0;
+  --color-line-strong: #d4d4dc;
+  --color-ink: #09090b;
+  --color-ink-muted: #52525b;
+  --color-ink-subtle: #6b6b76;
   --color-accent: #8b5cf6;
   --color-accent-hover: #7c3aed;
   --color-accent-ink: #6d28d9;
@@ -97,15 +105,21 @@
   --color-warning: #92400e;
   --color-danger: #b91c1c;
   --color-info: #0369a1;
-  --glass-bg: rgb(255 255 255 / 0.65);
-  --glass-bg-strong: rgb(255 255 255 / 0.88);
-  --glass-border: rgb(15 23 42 / 0.08);
-  --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 0.8);
-  --glass-shadow: 0 1px 2px rgb(15 23 42 / 0.06), 0 8px 24px -8px rgb(15 23 42 / 0.1);
-  --glass-shadow-strong: 0 16px 48px -12px rgb(15 23 42 / 0.18);
-  --halo-1: rgb(124 58 237 / 0.16);
-  --halo-2: rgb(59 130 246 / 0.12);
-  --halo-3: rgb(124 58 237 / 0.07);
+  --color-scrim: rgb(9 9 11 / 0.35);
+  --glass-bg: rgb(255 255 255 / 0.82);
+  --glass-bg-strong: rgb(255 255 255 / 0.96);
+  --glass-border: rgb(9 9 11 / 0.07);
+  --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 1);
+  --glass-shadow: 0 1px 2px rgb(9 9 11 / 0.04), 0 6px 20px -8px rgb(9 9 11 / 0.08);
+  --glass-shadow-strong: 0 20px 50px -16px rgb(9 9 11 / 0.16);
+  --halo-1: rgb(124 58 237 / 0.09);
+  --halo-2: rgb(59 130 246 / 0.06);
+  --halo-3: rgb(124 58 237 / 0.03);
+  --aurora-violet: rgb(139 92 246 / 0.16);
+  --aurora-indigo: rgb(99 102 241 / 0.1);
+  --halo-vivid-1: rgb(139 92 246 / 0.14);
+  --halo-vivid-2: rgb(99 102 241 / 0.09);
+  --grid-line: 5%;
   --brand-from: #7c3aed;
   --brand-mid: #6d28d9;
   --brand-to: #4338ca;
@@ -205,8 +219,8 @@ h3 {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(40rem 26rem at 20% 0%, rgb(139 92 246 / 0.34), transparent 65%),
-    radial-gradient(34rem 24rem at 85% 20%, rgb(99 102 241 / 0.22), transparent 65%);
+    radial-gradient(40rem 26rem at 20% 0%, var(--halo-vivid-1), transparent 65%),
+    radial-gradient(34rem 24rem at 85% 20%, var(--halo-vivid-2), transparent 65%);
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -280,8 +294,8 @@ h3 {
 /* Grille masquée radialement (haut de page). Lignes en ink translucide : valable en sombre et en clair. */
 @utility bg-grid {
   background-image:
-    linear-gradient(to right, color-mix(in oklab, var(--color-ink) 6%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in oklab, var(--color-ink) 6%, transparent) 1px, transparent 1px);
+    linear-gradient(to right, color-mix(in oklab, var(--color-ink) var(--grid-line), transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--color-ink) var(--grid-line), transparent) 1px, transparent 1px);
   background-size: 56px 56px;
   -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 30%, transparent 100%);
   mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 30%, transparent 100%);
@@ -320,11 +334,11 @@ h3 {
 }
 
 @utility aurora-violet {
-  background: radial-gradient(closest-side, rgb(139 92 246 / 0.38), transparent);
+  background: radial-gradient(closest-side, var(--aurora-violet), transparent);
 }
 
 @utility aurora-indigo {
-  background: radial-gradient(closest-side, rgb(99 102 241 / 0.25), transparent);
+  background: radial-gradient(closest-side, var(--aurora-indigo), transparent);
 }
 
 /* Spotlight : halo qui suit le curseur (variables --mx / --my posées par <Spotlight>). */
@@ -691,9 +705,60 @@ input,
   }
 }
 
+/* --- Animations légères de l'application (après authentification) : opacity/transform uniquement --- */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Entrée d'une vue ou d'un élément de liste ; `--delay` permet un décalage en cascade. */
+.animate-rise {
+  animation: rise 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--delay, 0s);
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out both;
+}
+
+.animate-bar-grow {
+  transform-origin: left;
+  animation: bar-grow 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+  .animate-rise,
+  .animate-fade-in,
+  .animate-bar-grow,
+  .animate-fade-up {
+    animation: none;
   }
   .animate-landing-accordion-down,
   .animate-landing-accordion-up,

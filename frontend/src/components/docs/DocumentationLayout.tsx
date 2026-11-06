@@ -115,7 +115,7 @@ export default function DocumentationLayout() {
 
       {mobileOpen && (
         <div
-          className="fixed inset-0 top-14 z-20 bg-black/50 lg:hidden"
+          className="fixed inset-0 top-14 z-20 bg-scrim lg:hidden"
           onClick={() => setMobileOpen(false)}
           aria-hidden
         />

@@ -419,6 +419,7 @@ export const Workspace: React.FC = () => {
         closeMenu: t("Close navigation"),
       }}
     >
+        <div key={`${activeTab}-${isConfiguringWorkflow}`} className="animate-rise">
         {/* TAB 1: PROJECTS */}
         {activeTab === "projects" && !isConfiguringWorkflow && (
           <ProjectsView
@@ -510,6 +511,7 @@ export const Workspace: React.FC = () => {
 
         {/* TAB 3: HELP CENTER */}
         {activeTab === "help" && <HelpView />}
+        </div>
     </AppShell>
 
       <CreateProjectModal

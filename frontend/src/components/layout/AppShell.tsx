@@ -168,7 +168,7 @@ export function AppShell({
         <>
           <button
             type="button"
-            className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+            className="fixed inset-0 z-40 bg-scrim lg:hidden"
             onClick={close}
             aria-label={labels.closeMenu}
           />
